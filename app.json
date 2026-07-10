@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "Nudge me Ready",
+    "slug": "nudge-me",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "nudge-me",
+    "backgroundColor": "#F8F6F3",
+    "splash": {
+      "backgroundColor": "#F8F6F3",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.helencunliffe.nudgeme",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Location is used for optional leaving-home reminders, like keys, wallet, and phone.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Background location helps leaving-home reminders work when the app is not open.",
+        "NSSpeechRecognitionUsageDescription": "Voice input is optional and helps create tasks from spoken phrases.",
+        "NSMicrophoneUsageDescription": "Microphone access lets you capture tasks and notes by voice.",
+        "NSPhotoLibraryUsageDescription": "Photo library access lets you choose a profile picture.",
+        "NSCameraUsageDescription": "Camera access lets you take a profile picture.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.helencunliffe.nudgeme",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Nudge me Ready to access your photos to set a profile picture.",
+          "cameraPermission": "Allow Nudge me Ready to use the camera for your profile picture."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Location is used for optional leaving-home reminders, like keys, wallet, and phone.",
+          "locationAlwaysAndWhenInUsePermission": "Background location helps leaving-home reminders work when the app is not open.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Microphone access lets you capture tasks and notes by voice.",
+          "speechRecognitionPermission": "Speech recognition converts what you say into text."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6ca4ec88-2487-43ae-a858-5c3d96abf41e"
+      }
+    }
+  }
+}
