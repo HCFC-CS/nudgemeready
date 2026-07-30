@@ -29,13 +29,16 @@ DNS can take from a few minutes up to 24–48 hours.
 
 ## 2. Enable GitHub Pages
 
-In the GitHub repo **Settings → Pages**:
+The workflow uses `configure-pages` with `enablement: true`, so the first deploy can create the Pages site.
 
-- Source: **GitHub Actions**
-- Custom domain: `nudgemeready.app`
-- Enable **Enforce HTTPS** after DNS verifies
+If you still see **Get Pages site failed / Not Found**, set this once in the UI:
 
-Pushing to `main` (changes under `website/`) runs `.github/workflows/deploy-website.yml`.
+1. Open https://github.com/HCFC-CS/nudgemeready/settings/pages  
+2. **Build and deployment → Source** → **GitHub Actions** (not “Deploy from a branch”)  
+3. Custom domain: `nudgemeready.app`  
+4. Enable **Enforce HTTPS** after DNS verifies  
+
+Then re-run **Deploy website** (Actions → workflow → Run workflow), or push any change under `website/`.
 
 ## 3. App Store Connect
 
