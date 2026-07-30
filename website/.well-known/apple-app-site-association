@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "656UL52XWW.com.helencunliffe.nudgeme",
+        "paths": ["/invite", "/invite/*"]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["656UL52XWW.com.helencunliffe.nudgeme"]
+  }
+}

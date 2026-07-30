@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Open Nudge me Ready invite</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 28rem; margin: 3rem auto; padding: 0 1.25rem; color: #152038; background: #D9D2C9; text-align: center; line-height: 1.5; }
+    a.button { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 1.4rem; border-radius: 12px; background: #7BA8C9; color: #152038; text-decoration: none; font-weight: 700; }
+  </style>
+  <script>
+    (function () {
+      var path = window.location.pathname + window.location.search + window.location.hash;
+      var deep = "nudge-me://" + path.replace(/^\//, "");
+      var link = document.getElementById("open");
+      if (link) link.href = deep;
+      // Try to open the app; keep the page as a fallback.
+      window.setTimeout(function () {
+        window.location.href = deep;
+      }, 400);
+    })();
+  </script>
+</head>
+<body>
+  <h1>Nudge me Ready</h1>
+  <p>Opening your Crew invite…</p>
+  <p>If the app does not open, install Nudge me Ready from TestFlight, then tap the button below.</p>
+  <a id="open" class="button" href="nudge-me://invite">Open in app</a>
+</body>
+</html>

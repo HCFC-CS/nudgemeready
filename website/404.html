@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nudge me Ready</title>
+  <link rel="icon" href="/icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script>
+    (function () {
+      var path = window.location.pathname || "/";
+      if (path.indexOf("/invite") === 0) {
+        function buildDeepLink() {
+          var clean = path.replace(/^\/+/, "");
+          return "nudge-me://" + clean + (window.location.search || "");
+        }
+        function ready() {
+          var deep = buildDeepLink();
+          var open = document.getElementById("open-app");
+          var copy = document.getElementById("deep-link");
+          var title = document.getElementById("title");
+          var body = document.getElementById("body");
+          if (title) title.textContent = "Opening your Crew invite…";
+          if (body) body.textContent = "If the app does not open automatically, install Nudge me Ready from TestFlight, then tap the button below.";
+          if (open) {
+            open.setAttribute("href", deep);
+            open.style.display = "inline-block";
+          }
+          if (copy) copy.textContent = deep;
+          window.setTimeout(function () { window.location.href = deep; }, 500);
+        }
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ready);
+        else ready();
+      }
+    })();
+  </script>
+</head>
+<body>
+  <main class="wrap center">
+    <p class="eyebrow">Nudge me Ready</p>
+    <h1 id="title">Page not found</h1>
+    <p id="body" class="lede">That page is not on this site.</p>
+    <div class="actions" style="justify-content:center">
+      <a id="open-app" class="button" href="nudge-me://invite" style="display:none">Open in app</a>
+      <a class="button quiet" href="/">Home</a>
+      <a class="button quiet" href="/support/">Support</a>
+    </div>
+    <p class="fine"><span id="deep-link"></span></p>
+  </main>
+</body>
+</html>

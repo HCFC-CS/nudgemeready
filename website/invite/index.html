@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Open invite — Nudge me Ready</title>
+  <link rel="icon" href="/icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script>
+    (function () {
+      function buildDeepLink() {
+        var path = window.location.pathname.replace(/^\/+/, "");
+        var search = window.location.search || "";
+        return "nudge-me://" + path + search;
+      }
+
+      function ready() {
+        var deep = buildDeepLink();
+        var open = document.getElementById("open-app");
+        var copy = document.getElementById("deep-link");
+        if (open) open.setAttribute("href", deep);
+        if (copy) copy.textContent = deep;
+        // Attempt to open the installed app.
+        window.setTimeout(function () {
+          window.location.href = deep;
+        }, 500);
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", ready);
+      } else {
+        ready();
+      }
+    })();
+  </script>
+</head>
+<body>
+  <main class="wrap center">
+    <p class="eyebrow">Nudge me Ready</p>
+    <h1>Opening your Crew invite…</h1>
+    <p class="lede">
+      If the app does not open automatically, install Nudge me Ready from TestFlight, then tap the button below.
+    </p>
+    <div class="actions" style="justify-content:center">
+      <a id="open-app" class="button" href="nudge-me://invite">Open in app</a>
+      <a class="button quiet" href="/support/">Need help?</a>
+    </div>
+    <p class="fine">Deep link: <span id="deep-link" class="mono">nudge-me://invite</span></p>
+  </main>
+</body>
+</html>
