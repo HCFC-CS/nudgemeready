@@ -27,18 +27,18 @@ Your domain currently shows the IONOS parking page. In **IONOS → Domains → n
 
 DNS can take from a few minutes up to 24–48 hours.
 
-## 2. Enable GitHub Pages
+## 2. Enable GitHub Pages (required once — must be done in the UI)
 
-The workflow uses `configure-pages` with `enablement: true`, so the first deploy can create the Pages site.
+GitHub Actions **cannot** turn Pages on for this repo (`Resource not accessible by integration`). A repo **admin** must do it:
 
-If you still see **Get Pages site failed / Not Found**, set this once in the UI:
+1. Open https://github.com/HCFC-CS/nudgemeready/settings/pages while signed in as an owner/admin  
+2. Under **Build and deployment → Source**, choose **GitHub Actions**  
+3. Save (the page should show that Pages is waiting for the first Actions deploy)  
+4. Custom domain (optional for now): `nudgemeready.app` — enable **Enforce HTTPS** after DNS verifies  
 
-1. Open https://github.com/HCFC-CS/nudgemeready/settings/pages  
-2. **Build and deployment → Source** → **GitHub Actions** (not “Deploy from a branch”)  
-3. Custom domain: `nudgemeready.app`  
-4. Enable **Enforce HTTPS** after DNS verifies  
+Then re-run **Deploy website** (Actions → Deploy website → Run workflow).
 
-Then re-run **Deploy website** (Actions → workflow → Run workflow), or push any change under `website/`.
+If Source only offers “Deploy from a branch”, your org may block Actions-based Pages — pick branch `gh-pages` / `/` instead and say so so we can switch the workflow.
 
 ## 3. App Store Connect
 

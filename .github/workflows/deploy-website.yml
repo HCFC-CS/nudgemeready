@@ -25,11 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      # Pages must already be enabled in the repo UI (Settings → Pages → Source: GitHub Actions).
+      # GITHUB_TOKEN cannot create the Pages site (Resource not accessible by integration).
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          # Creates/enables the Pages site if missing (fixes "Get Pages site failed")
-          enablement: true
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
