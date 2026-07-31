@@ -19,6 +19,8 @@ export type RootStackParamList = {
   Reminders: undefined;
   Routines: undefined;
   Events: undefined;
+  Appointments: undefined;
+  Notes: undefined;
   Occasions: undefined;
   SpecialDays: undefined;
   NudgyCrew: undefined;
@@ -26,10 +28,11 @@ export type RootStackParamList = {
   CrewsISupport: undefined;
   OrganisationDashboard: undefined;
   InviteCrew: undefined;
-  AcceptInvite: { inviteId?: string } | undefined;
+  AcceptInvite: { inviteId?: string; payload?: string } | undefined;
   Done: undefined;
   Profile: undefined;
   Settings: undefined;
+  LegalInfo: undefined;
 };
 
 export type TabParamList = {

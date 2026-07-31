@@ -12,8 +12,10 @@ import { useNudgeActor } from "../hooks/useNudgeActor";
 import { canEditItem } from "../services/itemPermissions";
 import { hasSpeakingReminder } from "../services/speakingReminders";
 import { createItem } from "../services/nudgeItems";
+import { formatWhenLabel } from "../services/reminderDates";
 import { colors, radii, shadows, spacing } from "../theme/theme";
 import type { NudgeItem } from "../types/nudge";
+import { VoiceFieldActions } from "../components/VoiceFieldActions";
 
 export function RemindersScreen() {
   const navigation = useNavigation<any>();
@@ -55,6 +57,7 @@ export function RemindersScreen() {
           blurOnSubmit={false}
           onSubmitEditing={quickCreate}
         />
+        <VoiceFieldActions value={newTitle} onChangeText={setNewTitle} size={28} />
         <Pressable accessibilityRole="button" onPress={quickCreate} style={s.iconBtn}>
           <Ionicons name="add-circle" size={32} color={colors.accent} />
         </Pressable>
@@ -84,7 +87,7 @@ export function RemindersScreen() {
                   ) : null}
                   <View style={s.metaRow}>
                     {reminder.reminderDate ? (
-                      <MetaPill icon="calendar-outline" label={formatWhen(reminder.reminderDate)} />
+                      <MetaPill icon="calendar-outline" label={formatWhenLabel(reminder.reminderDate)} />
                     ) : null}
                     {hasSpeakingReminder(reminder) ? <MetaPill icon="volume-medium-outline" label="Speak" /> : null}
                     {reminder.nudgeEveryTenMinutesUntilDone ? <MetaPill icon="repeat-outline" label="10 min" /> : null}
@@ -134,19 +137,6 @@ function MetaPill({ icon, label }: { icon: IoniconName; label: string }) {
       <AppText variant="caption" style={s.pillText}>{label}</AppText>
     </View>
   );
-}
-
-function formatWhen(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  const today = new Date();
-  const sameDay =
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear();
-  const time = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-  if (sameDay) return `Today ${time}`;
-  return `${date.getDate()}/${date.getMonth() + 1} ${time}`;
 }
 
 const s = StyleSheet.create({

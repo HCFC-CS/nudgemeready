@@ -14,11 +14,11 @@ export function AppProviders({ children }: PropsWithChildren) {
       <VoiceCaptureSettingsProvider>
         <HomeSettingsProvider>
           <TasksProvider>
-            <NudgeItemsProvider>
-              <CircleProvider>
-                <CrewProvider>{children}</CrewProvider>
-              </CircleProvider>
-            </NudgeItemsProvider>
+            <CrewProvider>
+              <NudgeItemsProvider>
+                <CircleProvider>{children}</CircleProvider>
+              </NudgeItemsProvider>
+            </CrewProvider>
           </TasksProvider>
         </HomeSettingsProvider>
       </VoiceCaptureSettingsProvider>

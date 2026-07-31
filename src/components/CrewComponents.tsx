@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 import {
   CONSENT_LABELS,
@@ -23,6 +24,7 @@ export function CrewMemberCard({
   onView,
   onEdit,
   onRemove,
+  onResendLink,
   onRevokeConsent
 }: {
   member: CrewMember;
@@ -30,56 +32,80 @@ export function CrewMemberCard({
   onView: () => void;
   onEdit: () => void;
   onRemove: () => void;
+  onResendLink?: () => void;
   onRevokeConsent?: (type: ConsentType) => void;
 }) {
-  const roleLabels = member.roles.map((role) => crewRoleCopy[role].title).join(", ");
+  const roleLabels = member.roles
+    .filter((role, index, all) => all.indexOf(role) === index)
+    .map((role) => crewRoleCopy[role].title)
+    .join(" · ");
+  const canResend =
+    Boolean(onResendLink) &&
+    (member.status === "sent" || member.status === "draft" || member.status === "expired");
 
   return (
-    <SoftCard>
-      <View style={styles.memberHeader}>
+    <SoftCard style={styles.memberCard}>
+      <Pressable onPress={onView} style={styles.memberHeader}>
         <View style={styles.avatar}>
-          <AppText variant="heading">{member.name.charAt(0)}</AppText>
+          <AppText variant="small" style={styles.avatarLetter}>
+            {member.name.charAt(0)}
+          </AppText>
         </View>
         <View style={styles.memberText}>
           <View style={styles.nameRow}>
-            <AppText variant="heading">{member.name}</AppText>
+            <AppText variant="heading" numberOfLines={1} style={styles.memberName}>
+              {member.name}
+            </AppText>
             {member.isPrimaryCaptain ? <CaptainBadge /> : null}
           </View>
-          <AppText variant="muted">
-            {roleLabels} · {member.relationship}
-          </AppText>
-          <AppText variant="caption" style={styles.statusLine}>
-            {formatInviteStatus(member.status)}
+          <AppText variant="caption" numberOfLines={1} style={styles.metaLine}>
+            {roleLabels}
+            {member.relationship ? ` · ${member.relationship}` : ""}
+            {member.status !== "accepted" ? ` · ${formatInviteStatus(member.status)}` : ""}
           </AppText>
         </View>
-      </View>
-      <PermissionSummary permissions={member.permissions} />
+        <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={18} color={colors.mutedText} />
+      </Pressable>
+
       {isExpanded ? (
-        <View style={styles.section}>
-          {member.email ? <AppText>{member.email}</AppText> : null}
-          {member.phone ? <AppText>{member.phone}</AppText> : null}
+        <View style={styles.expanded}>
+          {member.email ? <AppText variant="small">{member.email}</AppText> : null}
+          {member.phone ? <AppText variant="small">{member.phone}</AppText> : null}
+          <PermissionSummary permissions={member.permissions} />
           {member.consentStatus.length ? (
             <View style={styles.section}>
-              <AppText variant="small">Consent</AppText>
+              <AppText variant="caption">Consent</AppText>
               {member.consentStatus.map((consent) => (
                 <View key={consent.type} style={styles.consentRow}>
                   <AppText variant="caption">
-                    {CONSENT_LABELS[consent.type]}: {consent.granted ? "Granted" : "Pending"}
+                    {CONSENT_LABELS[consent.type]} · {consent.granted ? "On" : "Off"}
                   </AppText>
                   {consent.granted && onRevokeConsent ? (
-                    <SecondaryButton onPress={() => onRevokeConsent(consent.type)}>Revoke</SecondaryButton>
+                    <Pressable onPress={() => onRevokeConsent(consent.type)} hitSlop={8}>
+                      <AppText variant="caption" style={styles.revokeLink}>
+                        Revoke
+                      </AppText>
+                    </Pressable>
                   ) : null}
                 </View>
               ))}
             </View>
           ) : null}
+          <View style={styles.buttonRow}>
+            {canResend ? (
+              <PrimaryButton size="compact" onPress={onResendLink}>
+                Resend link
+              </PrimaryButton>
+            ) : null}
+            <SecondaryButton size="compact" onPress={onEdit}>
+              Roles
+            </SecondaryButton>
+            <SecondaryButton size="compact" onPress={onRemove}>
+              Remove
+            </SecondaryButton>
+          </View>
         </View>
       ) : null}
-      <View style={styles.buttonRow}>
-        <SecondaryButton onPress={onView}>{isExpanded ? "Hide" : "View"}</SecondaryButton>
-        <SecondaryButton onPress={onEdit}>Edit roles</SecondaryButton>
-        <SecondaryButton onPress={onRemove}>Remove</SecondaryButton>
-      </View>
     </SoftCard>
   );
 }
@@ -182,15 +208,35 @@ export function CrewRequestCard({
   request: CrewRequest;
   onAction: (requestId: string, status: CrewRequestStatus) => void;
 }) {
+  const isDeletionAlert = request.kind === "nudge_deleted";
+
   return (
-    <SoftCard>
+    <SoftCard style={styles.requestCard}>
       <AppText variant="heading">{request.title}</AppText>
-      <AppText>{request.message}</AppText>
-      <AppText variant="muted">Suggested by {request.crewMemberName}</AppText>
+      <AppText variant="small" numberOfLines={2}>
+        {request.message}
+      </AppText>
+      <AppText variant="caption" style={styles.requestMeta}>
+        {isDeletionAlert ? request.crewMemberName : `From ${request.crewMemberName}`}
+      </AppText>
       <View style={styles.buttonRow}>
-        <PrimaryButton onPress={() => onAction(request.id, "accepted")}>Accept</PrimaryButton>
-        <SecondaryButton onPress={() => onAction(request.id, "snoozed")}>Not now</SecondaryButton>
-        <SecondaryButton onPress={() => onAction(request.id, "declined")}>Decline</SecondaryButton>
+        {isDeletionAlert ? (
+          <PrimaryButton size="compact" onPress={() => onAction(request.id, "accepted")}>
+            Got it
+          </PrimaryButton>
+        ) : (
+          <>
+            <PrimaryButton size="compact" onPress={() => onAction(request.id, "accepted")}>
+              Accept
+            </PrimaryButton>
+            <SecondaryButton size="compact" onPress={() => onAction(request.id, "snoozed")}>
+              Later
+            </SecondaryButton>
+            <SecondaryButton size="compact" onPress={() => onAction(request.id, "declined")}>
+              Decline
+            </SecondaryButton>
+          </>
+        )}
       </View>
     </SoftCard>
   );
@@ -209,22 +255,32 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.sm
   },
+  memberCard: {
+    paddingVertical: spacing.md
+  },
   memberHeader: {
     flexDirection: "row",
     gap: spacing.md,
     alignItems: "center"
   },
   avatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.secondary,
     alignItems: "center",
     justifyContent: "center"
   },
+  avatarLetter: {
+    fontWeight: "700",
+    color: colors.midnightBlue
+  },
   memberText: {
     flex: 1,
-    gap: spacing.xs
+    gap: 2
+  },
+  memberName: {
+    flexShrink: 1
   },
   nameRow: {
     flexDirection: "row",
@@ -232,8 +288,15 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     alignItems: "center"
   },
-  statusLine: {
+  metaLine: {
     color: colors.mutedText
+  },
+  expanded: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight
   },
   buttonRow: {
     flexDirection: "row",
@@ -246,22 +309,23 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   permissionPill: {
-    minHeight: 34,
-    borderRadius: radii.md,
+    minHeight: 28,
+    borderRadius: radii.sm,
     backgroundColor: colors.primarySoft,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     alignItems: "center",
     justifyContent: "center"
   },
   captainBadge: {
-    borderRadius: radii.md,
+    borderRadius: radii.sm,
     backgroundColor: colors.softGold,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs
+    paddingVertical: 2
   },
   captainLabel: {
     color: colors.midnightBlue,
-    fontWeight: "700"
+    fontWeight: "700",
+    fontSize: 11
   },
   roleGrid: {
     gap: spacing.sm
@@ -283,5 +347,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.sm
+  },
+  revokeLink: {
+    color: colors.link,
+    fontWeight: "600"
+  },
+  requestCard: {
+    gap: spacing.xs
+  },
+  requestMeta: {
+    color: colors.mutedText
   }
 });

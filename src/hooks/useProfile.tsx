@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createContext,
   type PropsWithChildren,
@@ -8,15 +7,29 @@ import {
   useState
 } from "react";
 
+import { getEncryptedItem, setEncryptedItem } from "../services/encryptedStorage";
+
 const PROFILE_KEY = "do-enough-done:profile";
 
-export type ProfileIcon = "sun" | "star" | "leaf" | "moon";
+export type ProfileIcon =
+  | "sun"
+  | "star"
+  | "leaf"
+  | "moon"
+  | "heart"
+  | "sparkle"
+  | "flower"
+  | "wave";
 
 export const profileIcons: Array<{ id: ProfileIcon; symbol: string; label: string }> = [
-  { id: "sun", symbol: "○", label: "Circle" },
-  { id: "star", symbol: "◇", label: "Diamond" },
-  { id: "leaf", symbol: "△", label: "Triangle" },
-  { id: "moon", symbol: "□", label: "Square" }
+  { id: "sun", symbol: "☀️", label: "Sun" },
+  { id: "star", symbol: "⭐", label: "Star" },
+  { id: "leaf", symbol: "🌿", label: "Leaf" },
+  { id: "moon", symbol: "🌙", label: "Moon" },
+  { id: "heart", symbol: "💙", label: "Heart" },
+  { id: "sparkle", symbol: "✨", label: "Sparkle" },
+  { id: "flower", symbol: "🌸", label: "Flower" },
+  { id: "wave", symbol: "🌊", label: "Wave" }
 ];
 
 type Profile = {
@@ -27,6 +40,8 @@ type Profile = {
   phone: string;
 };
 
+export type ProfileDraft = Profile;
+
 type ProfileContextValue = {
   profile: Profile;
   updateName: (name: string) => void;
@@ -35,6 +50,7 @@ type ProfileContextValue = {
   clearAvatar: () => void;
   updateEmail: (email: string) => void;
   updatePhone: (phone: string) => void;
+  saveProfile: (next: ProfileDraft) => void;
 };
 
 const defaultProfile: Profile = {
@@ -51,7 +67,7 @@ export function ProfileProvider({ children }: PropsWithChildren) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(PROFILE_KEY)
+    getEncryptedItem(PROFILE_KEY)
       .then((raw) => {
         if (raw) {
           setProfile({ ...defaultProfile, ...JSON.parse(raw) });
@@ -62,7 +78,7 @@ export function ProfileProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (isReady) {
-      AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      void setEncryptedItem(PROFILE_KEY, JSON.stringify(profile));
     }
   }, [isReady, profile]);
 
@@ -90,9 +106,28 @@ export function ProfileProvider({ children }: PropsWithChildren) {
     setProfile((current) => ({ ...current, phone }));
   }, []);
 
+  const saveProfile = useCallback((next: ProfileDraft) => {
+    setProfile({
+      name: next.name.trim() || defaultProfile.name,
+      icon: next.icon,
+      avatarUri: next.avatarUri,
+      email: next.email.trim(),
+      phone: next.phone.trim()
+    });
+  }, []);
+
   return (
     <ProfileContext.Provider
-      value={{ profile, updateName, updateIcon, updateAvatarUri, clearAvatar, updateEmail, updatePhone }}
+      value={{
+        profile,
+        updateName,
+        updateIcon,
+        updateAvatarUri,
+        clearAvatar,
+        updateEmail,
+        updatePhone,
+        saveProfile
+      }}
     >
       {children}
     </ProfileContext.Provider>

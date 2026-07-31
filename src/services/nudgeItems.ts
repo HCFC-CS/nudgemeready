@@ -39,7 +39,15 @@ export function createItem(input: NudgeItemInput, now = new Date()): NudgeItem {
     homeLocation: input.homeLocation,
     eventTravelMinutes: input.eventTravelMinutes,
     eventReadyMinutes: input.eventReadyMinutes,
-    eventPrepSteps: input.eventPrepSteps
+    eventPrepSteps: input.eventPrepSteps,
+    guests: input.guests ?? [],
+    syncToCalendar: input.syncToCalendar,
+    calendarId: input.calendarId,
+    calendarEventId: input.calendarEventId,
+    needsCard: input.needsCard,
+    needsPresent: input.needsPresent,
+    cardReminderAt: input.cardReminderAt,
+    giftReminderAt: input.giftReminderAt
   };
 }
 

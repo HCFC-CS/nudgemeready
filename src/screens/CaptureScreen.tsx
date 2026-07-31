@@ -11,9 +11,11 @@ import { createItem } from "../services/nudgeItems";
 
 const browseLinks: Array<{ label: string; route: string; icon: IoniconName }> = [
   { label: "Lists", route: "Lists", icon: "list-outline" },
+  { label: "Notes", route: "Notes", icon: "document-text-outline" },
   { label: "Chores", route: "Chores", icon: "checkmark-circle-outline" },
   { label: "Reminders", route: "Reminders", icon: "notifications-outline" },
   { label: "Routines", route: "Routines", icon: "repeat-outline" },
+  { label: "Appointments", route: "Appointments", icon: "medkit-outline" },
   { label: "Events", route: "Events", icon: "calendar-outline" },
   { label: "Occasions", route: "Occasions", icon: "gift-outline" },
   { label: "Projects", route: "Projects", icon: "folder-outline" },

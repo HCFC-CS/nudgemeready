@@ -1,6 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, type PropsWithChildren, useContext, useEffect, useState } from "react";
 
+import { getEncryptedItem, setEncryptedItem } from "../services/encryptedStorage";
 import type { ReminderRequest, TrustedPerson, TrustedRole, VillageMemberType } from "../types/models";
 
 const CIRCLE_KEY = "do-enough-done:circle";
@@ -11,26 +11,11 @@ const CircleContext = createContext<CircleContextValue | undefined>(undefined);
 
 function useProvideCircle() {
   const [isReady, setIsReady] = useState(false);
-  const [people, setPeople] = useState<TrustedPerson[]>([
-    { id: "mum", name: "Mum", memberType: "family", roles: ["contributor", "cheerleader"], contact: "" },
-    { id: "alex", name: "Alex", memberType: "friends", roles: ["coach"], contact: "" },
-    { id: "sam", name: "Sam", memberType: "family", roles: ["viewer"], contact: "" }
-  ]);
-
-  const [requests, setRequests] = useState<ReminderRequest[]>([
-    {
-      id: "feed-dog",
-      fromName: "Mum",
-      title: "Feed the dog",
-      suggestedTime: "daily at 6pm",
-      repeatRule: "daily",
-      message: "Mum wants to add: Feed the dog - daily at 6pm",
-      status: "pending"
-    }
-  ]);
+  const [people, setPeople] = useState<TrustedPerson[]>([]);
+  const [requests, setRequests] = useState<ReminderRequest[]>([]);
 
   useEffect(() => {
-    AsyncStorage.getItem(CIRCLE_KEY)
+    getEncryptedItem(CIRCLE_KEY)
       .then((raw) => {
         if (raw) {
           setPeople(JSON.parse(raw).map(normalizePerson));
@@ -41,7 +26,7 @@ function useProvideCircle() {
 
   useEffect(() => {
     if (isReady) {
-      AsyncStorage.setItem(CIRCLE_KEY, JSON.stringify(people));
+      void setEncryptedItem(CIRCLE_KEY, JSON.stringify(people));
     }
   }, [isReady, people]);
 

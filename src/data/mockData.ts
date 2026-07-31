@@ -40,7 +40,7 @@ export const mockItems: TaskItem[] = [
     id: "mock-appointment",
     title: "Dentist check-in",
     classification: "health",
-    taskType: "appointment",
+    taskType: "event",
     durationMinutes: 30,
     usesTaskBuddy: false,
     workMinutes: 20,
@@ -180,7 +180,58 @@ function withDefaultCreators(items: NudgeItem[]): NudgeItem[] {
   }));
 }
 
-export const mockNudgeItems: NudgeItem[] = withDefaultCreators([
+const MOCK_EPOCH = Date.parse("2026-06-01T00:00:00.000Z");
+
+function shiftIsoNearToday(value?: string) {
+  if (!value) {
+    return value;
+  }
+  const original = Date.parse(value);
+  if (Number.isNaN(original)) {
+    return value;
+  }
+  const dayOffset = Math.round((original - MOCK_EPOCH) / 86_400_000);
+  const next = new Date();
+  next.setHours(0, 0, 0, 0);
+  next.setDate(next.getDate() + dayOffset);
+  const source = new Date(original);
+  next.setHours(source.getUTCHours(), source.getUTCMinutes(), source.getUTCSeconds(), 0);
+  return next.toISOString();
+}
+
+function withDatesNearToday(items: NudgeItem[]): NudgeItem[] {
+  const todayNoon = (() => {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    return date.toISOString();
+  })();
+
+  return items.map((item) => {
+    const shifted: NudgeItem = {
+      ...item,
+      createdAt: shiftIsoNearToday(item.createdAt) ?? item.createdAt,
+      updatedAt: shiftIsoNearToday(item.updatedAt) ?? item.updatedAt,
+      dueDate: shiftIsoNearToday(item.dueDate),
+      startDate: shiftIsoNearToday(item.startDate),
+      endDate: shiftIsoNearToday(item.endDate),
+      reminderDate: shiftIsoNearToday(item.reminderDate),
+      giftReminderAt: shiftIsoNearToday(item.giftReminderAt),
+      cardReminderAt: shiftIsoNearToday(item.cardReminderAt)
+    };
+
+    const hasDate = Boolean(
+      shifted.dueDate || shifted.startDate || shifted.endDate || shifted.reminderDate
+    );
+    if (item.status === "open" && !hasDate) {
+      shifted.dueDate = todayNoon;
+    }
+
+    return shifted;
+  });
+}
+
+export const mockNudgeItems: NudgeItem[] = withDatesNearToday(
+  withDefaultCreators([
   {
     id: "project-kitchen",
     title: "Kitchen Refresh",
@@ -214,7 +265,7 @@ export const mockNudgeItems: NudgeItem[] = withDefaultCreators([
   {
     id: "appointment-builder",
     title: "Builder call",
-    type: "appointment",
+    type: "event",
     status: "open",
     parentId: "project-kitchen",
     children: [],
@@ -444,4 +495,5 @@ export const mockNudgeItems: NudgeItem[] = withDefaultCreators([
     listItems: [],
     progress: 100
   }
-]);
+])
+);

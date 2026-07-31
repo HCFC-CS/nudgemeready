@@ -8,9 +8,50 @@ import { Button } from "./Button";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { AppText } from "./Text";
 
-export function ProfileAvatarPicker() {
+type Props = {
+  name?: string;
+  icon?: ProfileIcon;
+  avatarUri?: string;
+  onIconChange?: (icon: ProfileIcon) => void;
+  onAvatarChange?: (avatarUri: string | undefined) => void;
+};
+
+export function ProfileAvatarPicker({
+  name,
+  icon,
+  avatarUri,
+  onIconChange,
+  onAvatarChange
+}: Props = {}) {
   const { profile, updateIcon, updateAvatarUri, clearAvatar } = useProfile();
   const [notice, setNotice] = useState<string | null>(null);
+
+  const controlled = Boolean(onIconChange || onAvatarChange);
+  const displayName = name ?? profile.name;
+  const displayIcon = icon ?? profile.icon;
+  const displayAvatarUri = controlled ? avatarUri : profile.avatarUri;
+
+  function setIcon(next: ProfileIcon) {
+    setNotice(null);
+    if (onIconChange) {
+      onIconChange(next);
+      return;
+    }
+    updateIcon(next);
+  }
+
+  function setAvatar(uri: string | undefined) {
+    setNotice(null);
+    if (onAvatarChange) {
+      onAvatarChange(uri);
+      return;
+    }
+    if (uri) {
+      updateAvatarUri(uri);
+      return;
+    }
+    clearAvatar();
+  }
 
   async function handlePickFromLibrary() {
     setNotice(null);
@@ -20,7 +61,7 @@ export function ProfileAvatarPicker() {
       return;
     }
     if (result.uri) {
-      updateAvatarUri(result.uri);
+      setAvatar(result.uri);
     }
   }
 
@@ -32,24 +73,17 @@ export function ProfileAvatarPicker() {
       return;
     }
     if (result.uri) {
-      updateAvatarUri(result.uri);
+      setAvatar(result.uri);
     }
-  }
-
-  function handleSelectIcon(icon: ProfileIcon) {
-    setNotice(null);
-    updateIcon(icon);
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.previewRow}>
-        <ProfileAvatar size={88} />
+        <ProfileAvatar size={88} icon={displayIcon} avatarUri={displayAvatarUri} name={displayName} />
         <View style={styles.previewCopy}>
-          <AppText variant="heading">{profile.name.trim() || "Your profile"}</AppText>
-          <AppText variant="caption">
-            {profile.avatarUri ? "Using your photo" : "Using a symbol icon"}
-          </AppText>
+          <AppText variant="heading">{displayName.trim() || "Your profile"}</AppText>
+          <AppText variant="caption">{displayAvatarUri ? "Using your photo" : "Using an emoji"}</AppText>
         </View>
       </View>
 
@@ -60,32 +94,36 @@ export function ProfileAvatarPicker() {
         <Button tone="secondary" style={styles.actionButton} onPress={handleTakePhoto}>
           Take photo
         </Button>
-        {profile.avatarUri ? (
-          <Button tone="quiet" style={styles.actionButton} onPress={clearAvatar}>
+        {displayAvatarUri ? (
+          <Button tone="quiet" style={styles.actionButton} onPress={() => setAvatar(undefined)}>
             Remove photo
           </Button>
         ) : null}
       </View>
 
-      <AppText variant="section">Or pick a symbol</AppText>
+      <AppText variant="section">Or pick an emoji</AppText>
       <View style={styles.iconGrid}>
-        {profileIcons.map((icon) => {
-          const isSelected = !profile.avatarUri && profile.icon === icon.id;
+        {profileIcons.map((entry) => {
+          const isSelected = !displayAvatarUri && displayIcon === entry.id;
           return (
             <Button
-              key={icon.id}
+              key={entry.id}
               tone={isSelected ? "primary" : "quiet"}
               style={styles.iconButton}
-              onPress={() => handleSelectIcon(icon.id)}
-              accessibilityLabel={icon.label}
+              onPress={() => setIcon(entry.id)}
+              accessibilityLabel={entry.label}
             >
-              {icon.symbol}
+              {entry.symbol}
             </Button>
           );
         })}
       </View>
-      <AppText variant="muted">Your photo or symbol appears on the home screen and in your profile.</AppText>
-      {notice ? <AppText variant="small" style={styles.notice}>{notice}</AppText> : null}
+      <AppText variant="muted">Your photo or emoji appears on the home screen and in your profile.</AppText>
+      {notice ? (
+        <AppText variant="small" style={styles.notice}>
+          {notice}
+        </AppText>
+      ) : null}
     </View>
   );
 }

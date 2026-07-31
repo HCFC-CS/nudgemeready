@@ -4,191 +4,209 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { CrewSwitcher } from "../components/CrewSwitcher";
-import type { IoniconName } from "../components/iconTypes";
 import { NudgeListRow, nudgeRowMeta } from "../components/NudgeListRow";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
-import { FilterScroll, StatPill } from "../components/ModernUI";
+import { FilterScroll } from "../components/ModernUI";
 import { useCrew } from "../hooks/useCrew";
 import { useProfile } from "../hooks/useProfile";
 import { useNudgeItems } from "../hooks/useNudgeItems";
-import { getItemsForToday } from "../services/nudgeItems";
-import { colors, radii, shadows, spacing, taskTypeAccentColors } from "../theme/theme";
-import type { NudgeItem, NudgeItemWithParent } from "../types/nudge";
+import { formatNudgeTypeLabel } from "../services/typeAccent";
+import { colors, radii, spacing } from "../theme/theme";
+import type { NudgeItem, NudgeItemType, NudgeItemWithParent } from "../types/nudge";
 
-type TodaySection = {
-  title: string;
-  items: NudgeItemWithParent[];
-  icon: IoniconName;
-  accent: string;
-};
+const STATUS_FILTERS = ["open", "all", "done"] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+type TypeFilter = NudgeItemType | "allTypes";
 
-const ALL_FILTER = "All";
+const TYPE_FILTERS: TypeFilter[] = [
+  "allTypes",
+  "appointment",
+  "event",
+  "occasion",
+  "reminder",
+  "task",
+  "project",
+  "routine",
+  "chore",
+  "list",
+  "note"
+];
 
 export function TodayScreen() {
   const navigation = useNavigation<any>();
   const { profile } = useProfile();
   const { activeProfile } = useCrew();
-  const { items, setItemStatus } = useNudgeItems();
-  const [activeFilter, setActiveFilter] = useState(ALL_FILTER);
-  const todayItems = getItemsForToday(items);
-  const suggestedProjectSteps = getSuggestedProjectSteps(items, todayItems);
+  const { items, setItemStatus, deleteNudgeItem } = useNudgeItems();
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("allTypes");
 
-  const sections = useMemo(
-    () =>
-      (
-        [
-          { title: "Appointments", items: todayItems.filter((item) => item.type === "appointment"), icon: "calendar-outline", accent: taskTypeAccentColors.appointment },
-          { title: "Small Wins", items: todayItems.filter((item) => isSmallWin(item)), icon: "sparkles-outline", accent: taskTypeAccentColors.subtask },
-          { title: "Reminders", items: todayItems.filter((item) => item.type === "reminder"), icon: "notifications-outline", accent: taskTypeAccentColors.reminder },
-          { title: "Events", items: todayItems.filter((item) => item.type === "event"), icon: "calendar-number-outline", accent: taskTypeAccentColors.event },
-          {
-            title: "Occasions",
-            items: todayItems.filter((item) => item.type === "occasion" || item.type === "special_day"),
-            icon: "gift-outline",
-            accent: taskTypeAccentColors.occasion
-          },
-          { title: "Project Steps", items: suggestedProjectSteps, icon: "git-branch-outline", accent: taskTypeAccentColors.project },
-          { title: "Routines", items: todayItems.filter((item) => item.type === "routine"), icon: "repeat-outline", accent: taskTypeAccentColors.routine },
-          { title: "Waiting For", items: todayItems.filter((item) => item.status === "waiting"), icon: "hourglass-outline", accent: colors.softGrey }
-        ] satisfies TodaySection[]
-      ).filter((section) => section.items.length),
-    [todayItems, suggestedProjectSteps]
+  const allNudges = useMemo(() => {
+    const openAndDone = items.filter((item) => item.status !== "cancelled");
+    return withParents(items, openAndDone).sort((a, b) => {
+      const aDone = a.status === "done" ? 1 : 0;
+      const bDone = b.status === "done" ? 1 : 0;
+      if (aDone !== bDone) {
+        return aDone - bDone;
+      }
+      return a.title.localeCompare(b.title);
+    });
+  }, [items]);
+
+  const visible = useMemo(() => {
+    return allNudges.filter((item) => {
+      if (statusFilter === "open" && item.status === "done") {
+        return false;
+      }
+      if (statusFilter === "done" && item.status !== "done") {
+        return false;
+      }
+      if (typeFilter === "allTypes") {
+        return true;
+      }
+      if (typeFilter === "occasion") {
+        return item.type === "occasion" || item.type === "special_day";
+      }
+      if (typeFilter === "project") {
+        return item.type === "project" || item.type === "subtask";
+      }
+      return item.type === typeFilter;
+    });
+  }, [allNudges, statusFilter, typeFilter]);
+
+  const statusLabels = STATUS_FILTERS.map((value) =>
+    value === "open" ? "Open" : value === "all" ? "All" : "Completed"
   );
+  const selectedStatusLabel =
+    statusFilter === "open" ? "Open" : statusFilter === "all" ? "All" : "Completed";
 
-  const visibleSections = activeFilter === ALL_FILTER ? sections : sections.filter((section) => section.title === activeFilter);
-  const filterOptions = [ALL_FILTER, ...sections.map((section) => section.title)];
-  const totalCount = sections.reduce((sum, section) => sum + section.items.length, 0);
-  const doneCount = sections.reduce((sum, section) => sum + section.items.filter((item) => item.status === "done").length, 0);
-  const progress = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
-  const hasItems = sections.length > 0;
+  const typeLabels = TYPE_FILTERS.map((value) =>
+    value === "allTypes" ? "Every type" : formatNudgeTypeLabel(value)
+  );
+  const selectedTypeLabel =
+    typeFilter === "allTypes" ? "Every type" : formatNudgeTypeLabel(typeFilter);
+
+  const openCount = allNudges.filter((item) => item.status !== "done").length;
   const profileName = profile.name.trim();
-  const todayLabel = formatTodayLabel();
 
   return (
     <Screen>
       <CrewSwitcher />
+
       <View style={styles.hero}>
-        <View style={styles.heroGlow} />
         <View style={styles.heroTop}>
           <View style={styles.heroCopy}>
             <AppText variant="caption" style={styles.dateLine}>
-              {todayLabel}
+              {formatTodayLabel()}
             </AppText>
-            <AppText variant="title" style={styles.heroTitle}>
-              {activeProfile.isSelf ? "Nudges ready" : `${activeProfile.name}'s nudges`}
+            <AppText variant="title">
+              {activeProfile.isSelf ? "My Nudges" : `${activeProfile.name}'s nudges`}
             </AppText>
-            <AppText variant="muted" style={styles.heroSubtitle}>
-              {profileName ? `Hi ${profileName} — one gentle nudge at a time...` : "What you can, when you can."}
+            <AppText variant="muted">
+              {`${openCount} open · ${allNudges.length} total`}
+              {profileName ? ` · Hi ${profileName}` : ""}
             </AppText>
           </View>
-          <ProfileAvatar size={56} />
+          <ProfileAvatar size={48} />
         </View>
-
-        {hasItems ? (
-          <>
-            <View style={styles.statsRow}>
-              <StatPill label="Ready" value={totalCount - doneCount} />
-              <StatPill label="Complete" value={doneCount} />
-              <StatPill label="Sections" value={sections.length} />
-            </View>
-            <View style={styles.progressBlock}>
-              <View style={styles.progressMeta}>
-                <AppText variant="small" style={styles.progressLabel}>
-                  Today's progress
-                </AppText>
-                <AppText variant="small" style={styles.progressValue}>
-                  {progress}%
-                </AppText>
-              </View>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${progress}%` }]} />
-              </View>
-            </View>
-          </>
-        ) : null}
       </View>
 
-      {hasItems ? (
-        <FilterScroll options={filterOptions} selected={activeFilter} onSelect={setActiveFilter} />
+      <FilterScroll
+        options={statusLabels}
+        selected={selectedStatusLabel}
+        onSelect={(label) => {
+          if (label === "Open") {
+            setStatusFilter("open");
+            return;
+          }
+          if (label === "Completed") {
+            setStatusFilter("done");
+            return;
+          }
+          setStatusFilter("all");
+        }}
+      />
+
+      <FilterScroll
+        options={typeLabels}
+        selected={selectedTypeLabel}
+        onSelect={(label) => {
+          if (label === "Every type") {
+            setTypeFilter("allTypes");
+            return;
+          }
+          const match = TYPE_FILTERS.find(
+            (value) => value !== "allTypes" && formatNudgeTypeLabel(value) === label
+          );
+          if (match) {
+            setTypeFilter(match);
+          }
+        }}
+      />
+
+      <View style={styles.list}>
+        {visible.map((item) => (
+          <NudgeListRow
+            key={item.id}
+            title={item.title}
+            type={item.type}
+            meta={nudgeRowMeta(item)}
+            isDone={item.status === "done"}
+            onPress={() => navigation.navigate("ItemDetails", { draft: item })}
+            onToggleDone={() => setItemStatus(item.id, item.status === "done" ? "open" : "done")}
+            onDelete={() => deleteNudgeItem(item.id)}
+          />
+        ))}
+      </View>
+
+      {!visible.length ? (
+        <View style={styles.empty}>
+          <AppText variant="heading">
+            {statusFilter === "open" ? "No open nudges" : "Nothing in this filter"}
+          </AppText>
+          <AppText variant="muted">
+            {statusFilter === "open"
+              ? "Completed ones are hidden. Tap All or Completed to see them."
+              : "Try another filter, or add a nudge."}
+          </AppText>
+          {statusFilter === "open" ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setStatusFilter("all")}
+              style={styles.emptyAction}
+            >
+              <AppText style={styles.emptyActionLabel}>Show all</AppText>
+            </Pressable>
+          ) : null}
+        </View>
       ) : null}
 
-      {visibleSections.map((section) => (
-        <View key={section.title} style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIcon, { backgroundColor: `${section.accent}18` }]}>
-              <Ionicons name={section.icon} size={18} color={section.accent} />
-            </View>
-            <View style={styles.sectionTitleWrap}>
-              <AppText variant="heading">{section.title}</AppText>
-              <AppText variant="caption">{section.items.length} nudge{section.items.length === 1 ? "" : "s"}</AppText>
-            </View>
-            <View style={[styles.sectionBadge, { backgroundColor: `${section.accent}14` }]}>
-              <AppText variant="caption" style={{ color: section.accent, fontWeight: "700" }}>
-                {section.items.filter((item) => item.status === "done").length}/{section.items.length}
-              </AppText>
-            </View>
-          </View>
-          <View style={styles.list}>
-            {section.items.map((item) => (
-              <NudgeListRow
-                key={item.id}
-                title={item.title}
-                type={item.type}
-                meta={nudgeRowMeta(item)}
-                isDone={item.status === "done"}
-                onPress={() => navigation.navigate("ItemDetails", { draft: item })}
-                onToggleDone={() => setItemStatus(item.id, item.status === "done" ? "open" : "done")}
-              />
-            ))}
-          </View>
-        </View>
-      ))}
-
-      {!hasItems ? (
-        <View style={styles.emptyCard}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="sunny-outline" size={32} color={colors.primaryDark} />
-          </View>
-          <AppText variant="heading" style={styles.emptyTitle}>
-            Nothing planned today
-          </AppText>
-          <AppText variant="muted" style={styles.emptyMessage}>
-            Enjoy the space — or add a gentle nudge when you're ready.
-          </AppText>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => navigation.navigate("Capture")}
-            style={({ pressed }) => [styles.emptyAction, pressed && styles.emptyActionPressed]}
-          >
-            <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-            <AppText style={styles.emptyActionLabel}>Add a nudge</AppText>
-          </Pressable>
-        </View>
-      ) : null}
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => navigation.navigate("Capture")}
+        style={styles.addRow}
+      >
+        <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
+        <AppText style={styles.addLabel}>Add a nudge</AppText>
+      </Pressable>
     </Screen>
   );
 }
 
-function getSuggestedProjectSteps(allItems: NudgeItem[], todayItems: NudgeItemWithParent[]): NudgeItemWithParent[] {
-  const todayStepIds = new Set(todayItems.filter((item) => item.type === "subtask").map((item) => item.id));
-  const datedSteps = todayItems.filter((item) => item.type === "subtask");
-  const nextSteps = allItems
-    .filter((item) => item.type === "subtask" && item.status !== "done" && !todayStepIds.has(item.id))
-    .slice(0, 2)
-    .map((item) => ({
+function withParents(allItems: NudgeItem[], items: NudgeItem[]): NudgeItemWithParent[] {
+  return items.map((item) => {
+    if (!item.parentId) {
+      return item;
+    }
+    const parent = allItems.find(
+      (candidate) => candidate.id === item.parentId && candidate.type === "project"
+    );
+    return {
       ...item,
-      parentProjectName: allItems.find((candidate) => candidate.id === item.parentId)?.title
-    }));
-  return [...datedSteps, ...nextSteps];
-}
-
-function isSmallWin(item: NudgeItem) {
-  return (
-    (item.type === "task" || item.type === "subtask") &&
-    (item.estimatedEffort === "tiny" || item.estimatedEffort === "small")
-  );
+      parentProjectName: parent?.title
+    };
+  });
 }
 
 function formatTodayLabel() {
@@ -201,24 +219,7 @@ function formatTodayLabel() {
 
 const styles = StyleSheet.create({
   hero: {
-    backgroundColor: colors.card,
-    borderRadius: radii.xl,
-    padding: spacing.lg,
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    overflow: "hidden",
-    ...shadows.md
-  },
-  heroGlow: {
-    position: "absolute",
-    top: -48,
-    right: -32,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: colors.primarySoft,
-    opacity: 0.7
+    gap: spacing.sm
   },
   heroTop: {
     flexDirection: "row",
@@ -228,7 +229,7 @@ const styles = StyleSheet.create({
   },
   heroCopy: {
     flex: 1,
-    gap: spacing.xs
+    gap: 4
   },
   dateLine: {
     color: colors.accent,
@@ -236,122 +237,34 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.6
   },
-  heroTitle: {
-    color: colors.text
-  },
-  heroSubtitle: {
-    lineHeight: 22
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: spacing.sm
-  },
-  progressBlock: {
-    gap: spacing.xs
-  },
-  progressMeta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-  progressLabel: {
-    color: colors.mutedText,
-    fontWeight: "600"
-  },
-  progressValue: {
-    color: colors.accent,
-    fontWeight: "700"
-  },
-  progressTrack: {
-    height: 8,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceMuted,
-    overflow: "hidden"
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: radii.pill,
-    backgroundColor: colors.progress
-  },
-  sectionCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.xl,
-    padding: spacing.md,
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    ...shadows.sm
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingBottom: spacing.xs
-  },
-  sectionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.md,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  sectionTitleWrap: {
-    flex: 1,
-    gap: 2
-  },
-  sectionBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill
-  },
   list: {
     gap: spacing.sm
   },
-  emptyCard: {
+  empty: {
     alignItems: "center",
-    backgroundColor: colors.card,
-    borderRadius: radii.xl,
-    padding: spacing.xl,
     gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    ...shadows.sm
-  },
-  emptyIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.xs
-  },
-  emptyTitle: {
-    textAlign: "center"
-  },
-  emptyMessage: {
-    textAlign: "center",
-    lineHeight: 22,
-    maxWidth: 280
+    paddingVertical: spacing.xl
   },
   emptyAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
     marginTop: spacing.sm,
-    ...shadows.sm
-  },
-  emptyActionPressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.99 }]
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primarySoft
   },
   emptyActionLabel: {
-    color: colors.onPrimary,
-    fontWeight: "700",
-    fontSize: 16
+    color: colors.primaryDark,
+    fontWeight: "700"
+  },
+  addRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.md
+  },
+  addLabel: {
+    color: colors.accent,
+    fontWeight: "700"
   }
 });

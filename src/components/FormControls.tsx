@@ -1,10 +1,9 @@
 import { StyleSheet, Switch, TextInput, View, type TextInputProps } from "react-native";
 
-import { SpeakButton } from "./SpeakButton";
 import { useOptionalItemEdit } from "../hooks/useItemEdit";
-import { appendSpokenText } from "../services/voiceCaptureStorage";
 import { colors, radii, spacing } from "../theme/theme";
 import { AppText } from "./Text";
+import { VoiceFieldActions } from "./VoiceFieldActions";
 
 function useFieldEditable(editable?: boolean) {
   const edit = useOptionalItemEdit();
@@ -24,7 +23,9 @@ export function Field({
   onSubmitEditing,
   returnKeyType,
   blurOnSubmit,
-  editable
+  editable,
+  voiceEnabled = true,
+  secureTextEntry = false
 }: {
   label: string;
   value: string;
@@ -34,19 +35,22 @@ export function Field({
   multiline?: boolean;
   onSubmitEditing?: TextInputProps["onSubmitEditing"];
   returnKeyType?: TextInputProps["returnKeyType"];
-  blurOnSubmit?: boolean;
+  blurOnSubmit?: TextInputProps["blurOnSubmit"];
   editable?: boolean;
+  /** Show mic (speech-to-text) and speaker (text-to-speech) controls */
+  voiceEnabled?: boolean;
+  secureTextEntry?: boolean;
 }) {
   const isEditable = useFieldEditable(editable);
 
   return (
     <View style={styles.group}>
       <View style={styles.labelRow}>
-        <AppText variant="caption" style={styles.fieldLabel}>{label}</AppText>
-        {isEditable ? (
-          <SpeakButton
-            onTranscript={(spoken) => onChangeText(appendSpokenText(value, spoken))}
-          />
+        <AppText variant="caption" style={styles.fieldLabel}>
+          {label}
+        </AppText>
+        {voiceEnabled ? (
+          <VoiceFieldActions value={value} onChangeText={onChangeText} editable={isEditable} />
         ) : null}
       </View>
       <TextInput
@@ -61,6 +65,9 @@ export function Field({
         returnKeyType={returnKeyType}
         blurOnSubmit={blurOnSubmit}
         editable={isEditable}
+        secureTextEntry={secureTextEntry}
+        autoCapitalize={secureTextEntry ? "none" : undefined}
+        autoCorrect={secureTextEntry ? false : undefined}
       />
     </View>
   );
@@ -137,6 +144,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: 0.4
+    letterSpacing: 0.4,
+    flexShrink: 1
   }
 });

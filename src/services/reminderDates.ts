@@ -72,6 +72,108 @@ export function formatTimeInput(date: Date) {
   return `${hour}:${minute}`;
 }
 
+const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function hasExplicitTime(value?: string) {
+  if (!value) {
+    return false;
+  }
+  return /T\d{1,2}:\d{2}/.test(value) || /\bat\s+\d{1,2}:\d{2}/i.test(value) || /^\d{1,2}:\d{2}$/.test(value.trim());
+}
+
+function parseFlexibleDate(value?: string) {
+  if (!value?.trim()) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(trimmed) || /^\d{4}-\d{1,2}-\d{1,2}$/.test(trimmed)) {
+    const fromInput = getDateFromInput(trimmed);
+    if (fromInput) {
+      return fromInput;
+    }
+  }
+  const atMatch = trimmed.match(/^(.+?)\s+at\s+(\d{1,2}:\d{2})$/i);
+  if (atMatch) {
+    const datePart = getDateFromInput(atMatch[1]) ?? new Date(atMatch[1]);
+    if (!Number.isNaN(datePart.getTime())) {
+      const [hour, minute] = atMatch[2].split(":").map(Number);
+      return new Date(datePart.getFullYear(), datePart.getMonth(), datePart.getDate(), hour, minute, 0);
+    }
+  }
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
+  }
+  return parsed;
+}
+
+/** Display date: 21 Jul 2026 */
+export function formatDisplayDate(value?: string) {
+  const date = parseFlexibleDate(value);
+  if (!date) {
+    return value?.trim() || "";
+  }
+  return `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+/** Compact date: 21 Jul */
+export function formatDisplayDateShort(value?: string) {
+  const date = parseFlexibleDate(value);
+  if (!date) {
+    return value?.trim() || "";
+  }
+  return `${date.getDate()} ${monthNames[date.getMonth()]}`;
+}
+
+/** Display time: 09:00 */
+export function formatDisplayTime(value?: string) {
+  if (!value?.trim()) {
+    return "";
+  }
+  const pureTime = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (pureTime) {
+    return `${pureTime[1].padStart(2, "0")}:${pureTime[2]}`;
+  }
+  const date = parseFlexibleDate(value);
+  if (!date || !hasExplicitTime(value)) {
+    return "";
+  }
+  return formatTimeInput(date);
+}
+
+/** Date + time: 21 Jul 2026 · 09:00 */
+export function formatDisplayDateTime(value?: string) {
+  const date = parseFlexibleDate(value);
+  if (!date) {
+    return value?.trim() || "";
+  }
+  const time = formatDisplayTime(value);
+  return time ? `${formatDisplayDate(value)} · ${time}` : formatDisplayDate(value);
+}
+
+/** Friendly when label for lists: Today · 09:00 / 21 Jul · 09:00 */
+export function formatWhenLabel(value?: string) {
+  const date = parseFlexibleDate(value);
+  if (!date) {
+    return value?.trim() || "";
+  }
+  const time = formatDisplayTime(value);
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((startOfDay.getTime() - startOfToday.getTime()) / (24 * 60 * 60 * 1000));
+  if (diffDays === 0) {
+    return time ? `Today · ${time}` : "Today";
+  }
+  if (diffDays === 1) {
+    return time ? `Tomorrow · ${time}` : "Tomorrow";
+  }
+  if (diffDays === -1) {
+    return time ? `Yesterday · ${time}` : "Yesterday";
+  }
+  return time ? `${formatDisplayDateShort(value)} · ${time}` : formatDisplayDateShort(value);
+}
+
 function parseDateInput(dateText: string) {
   const parts = dateText.split("-").map(Number);
   if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {

@@ -99,6 +99,10 @@ export type CrewInvitation = {
   targetCrewId: string;
   targetProfileId: string;
   targetProfileName: string;
+  /** Membership created for this invite — accept updates this row only */
+  membershipId: string;
+  /** When known, the invitee already has an account (shows on their Crews I Support) */
+  inviteeUserId?: string;
   proposedRoles: CrewRole[];
   proposedPermissions: CrewPermissionSet;
   proposedConsents: ConsentType[];
@@ -158,6 +162,7 @@ export type CrewRequest = {
   message: string;
   status: CrewRequestStatus;
   createdAt: string;
+  kind?: "suggestion" | "nudge_deleted";
 };
 
 /** UI-facing member card */

@@ -13,6 +13,7 @@ import { getListSuggestions } from "../services/listSuggestions";
 import { filterVisibleLists, formatSharedLabel } from "../services/listSharing";
 import { colors, radii, shadows, spacing } from "../theme/theme";
 import type { NudgeItem } from "../types/nudge";
+import { VoiceFieldActions } from "../components/VoiceFieldActions";
 
 export function ListsScreen() {
   const navigation = useNavigation<any>();
@@ -59,6 +60,7 @@ export function ListsScreen() {
           blurOnSubmit={false}
           onSubmitEditing={quickCreate}
         />
+        <VoiceFieldActions value={newName} onChangeText={setNewName} size={28} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Create list"

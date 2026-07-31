@@ -14,46 +14,55 @@ export function useSpeechToText() {
   const recordingUriRef = useRef("");
 
   useEffect(() => {
-    const module = getSpeechRecognitionModule();
-    setIsAvailable(isSpeechRecognitionSupported());
+    try {
+      if (!isSpeechRecognitionSupported()) {
+        setIsAvailable(false);
+        return;
+      }
 
-    if (!module) {
-      return;
+      const module = getSpeechRecognitionModule();
+      setIsAvailable(Boolean(module));
+
+      if (!module) {
+        return;
+      }
+
+      const listeners = [
+        module.addListener("start", () => {
+          setIsListening(true);
+          setError(null);
+        }),
+        module.addListener("end", () => {
+          setIsListening(false);
+        }),
+        module.addListener("result", (event) => {
+          const text = event.results
+            .map((result) => result.transcript)
+            .join(" ")
+            .trim();
+          if (!text) {
+            return;
+          }
+          transcriptRef.current = text;
+          setTranscript(text);
+        }),
+        module.addListener("audioend", (event) => {
+          if (event.uri) {
+            recordingUriRef.current = event.uri;
+          }
+        }),
+        module.addListener("error", (event) => {
+          setError(event.message ?? event.error);
+          setIsListening(false);
+        })
+      ];
+
+      return () => {
+        listeners.forEach((listener) => listener.remove());
+      };
+    } catch {
+      setIsAvailable(false);
     }
-
-    const listeners = [
-      module.addListener("start", () => {
-        setIsListening(true);
-        setError(null);
-      }),
-      module.addListener("end", () => {
-        setIsListening(false);
-      }),
-      module.addListener("result", (event) => {
-        const text = event.results
-          .map((result) => result.transcript)
-          .join(" ")
-          .trim();
-        if (!text) {
-          return;
-        }
-        transcriptRef.current = text;
-        setTranscript(text);
-      }),
-      module.addListener("audioend", (event) => {
-        if (event.uri) {
-          recordingUriRef.current = event.uri;
-        }
-      }),
-      module.addListener("error", (event) => {
-        setError(event.message ?? event.error);
-        setIsListening(false);
-      })
-    ];
-
-    return () => {
-      listeners.forEach((listener) => listener.remove());
-    };
   }, []);
 
   const reset = useCallback(() => {

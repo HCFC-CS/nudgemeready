@@ -1,7 +1,7 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { scheduleTaskReminder } from "../services/notifications";
+import { getEncryptedItem, setEncryptedItem } from "../services/encryptedStorage";
+import { cancelTaskReminderNotifications, scheduleTaskReminder } from "../services/notifications";
 import type { TaskClassification, TaskItem, TaskType } from "../types/models";
 
 const TASKS_KEY = "do-enough-done:tasks";
@@ -35,7 +35,7 @@ function useProvideTasks() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(TASKS_KEY)
+    getEncryptedItem(TASKS_KEY)
       .then((raw) => {
         setTasks(raw ? JSON.parse(raw).map(normalizeTask) : starterTasks);
       })
@@ -44,7 +44,7 @@ function useProvideTasks() {
 
   useEffect(() => {
     if (isReady) {
-      AsyncStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+      void setEncryptedItem(TASKS_KEY, JSON.stringify(tasks));
     }
   }, [isReady, tasks]);
 
@@ -66,6 +66,7 @@ function useProvideTasks() {
   }, []);
 
   const completeTask = useCallback((taskId: string) => {
+    void cancelTaskReminderNotifications(taskId);
     setTasks((current) =>
       current.map((item) => (item.id === taskId ? { ...item, isCompleted: true } : item))
     );

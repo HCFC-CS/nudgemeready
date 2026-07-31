@@ -3,64 +3,130 @@ import { useNavigation } from "@react-navigation/native";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { CrewSwitcher } from "../components/CrewSwitcher";
-import { PageHeader } from "../components/NudgeComponents";
+import { PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useCrew } from "../hooks/useCrew";
+import { useProfile } from "../hooks/useProfile";
+import { crewRoleCopy } from "../types/crew";
 import { colors, radii, shadows, spacing } from "../theme/theme";
 
 export function CrewsISupportScreen() {
   const navigation = useNavigation<any>();
-  const { crewsISupport, switchProfile } = useCrew();
+  const { profile } = useProfile();
+  const {
+    supportedCrewLinks,
+    pendingInvitesForMe,
+    switchProfile,
+    acceptInvitation,
+    declineInvitation
+  } = useCrew();
 
   return (
     <Screen>
       <CrewSwitcher />
       <PageHeader
         title="Crews I Support"
-        subtitle="All the people you support, in one place."
+        subtitle="Only crews you’ve joined by invite."
         showBack
       />
 
-      <View style={styles.list}>
-        {crewsISupport.map((profile) => (
-          <Pressable
-            key={profile.id}
-            onPress={() => {
-              switchProfile(profile.id);
-              navigation.navigate("Tabs", { screen: "Today" });
-            }}
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-          >
-            <View style={styles.avatar}>
-              <AppText variant="heading">{profile.avatarSymbol ?? profile.name.charAt(0)}</AppText>
-            </View>
-            <View style={styles.copy}>
-              <AppText variant="heading">{profile.name}</AppText>
-              <AppText variant="muted">{profile.name}'s Crew</AppText>
-              {profile.organisationId ? (
-                <AppText variant="caption" style={styles.orgTag}>
-                  Organisation client
+      {pendingInvitesForMe.length ? (
+        <View style={styles.block}>
+          <AppText variant="section">Invites for you</AppText>
+          {pendingInvitesForMe.map((invite) => (
+            <SoftCard key={invite.id} style={styles.inviteCard}>
+              <AppText variant="heading">Support {invite.targetProfileName}</AppText>
+              <AppText variant="small" style={styles.meta}>
+                From {invite.invitedByName} ·{" "}
+                {invite.proposedRoles.map((role) => crewRoleCopy[role].title).join(", ")}
+              </AppText>
+              {invite.personalMessage ? (
+                <AppText variant="muted" numberOfLines={2}>
+                  {invite.personalMessage}
                 </AppText>
               ) : null}
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.mutedText} />
-          </Pressable>
-        ))}
-      </View>
-
-      {!crewsISupport.length ? (
-        <View style={styles.empty}>
-          <AppText variant="heading">No supported profiles yet</AppText>
-          <AppText variant="muted">When you accept a Crew invite to support someone, they will appear here.</AppText>
+              <View style={styles.row}>
+                <PrimaryButton
+                  size="compact"
+                  onPress={() => {
+                    acceptInvitation(invite.id, profile.name.trim() || "Helen");
+                    switchProfile(invite.targetProfileId);
+                  }}
+                >
+                  Accept
+                </PrimaryButton>
+                <SecondaryButton size="compact" onPress={() => navigation.navigate("AcceptInvite", { inviteId: invite.id })}>
+                  Details
+                </SecondaryButton>
+                <SecondaryButton size="compact" onPress={() => declineInvitation(invite.id)}>
+                  Decline
+                </SecondaryButton>
+              </View>
+            </SoftCard>
+          ))}
         </View>
       ) : null}
+
+      <View style={styles.block}>
+        <AppText variant="section">Attached crews</AppText>
+        <View style={styles.list}>
+          {supportedCrewLinks.map(({ profile: supported, membership, invitation }) => (
+            <Pressable
+              key={supported.id}
+              onPress={() => {
+                switchProfile(supported.id);
+                navigation.navigate("Tabs", { screen: "Today" });
+              }}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            >
+              <View style={styles.avatar}>
+                <AppText variant="heading">{supported.avatarSymbol ?? supported.name.charAt(0)}</AppText>
+              </View>
+              <View style={styles.copy}>
+                <AppText variant="heading">{supported.name}</AppText>
+                <AppText variant="caption" style={styles.meta}>
+                  {membership.roles.map((role) => crewRoleCopy[role].title).join(" · ")}
+                  {invitation ? ` · Invited by ${invitation.invitedByName}` : ""}
+                </AppText>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.mutedText} />
+            </Pressable>
+          ))}
+        </View>
+
+        {!supportedCrewLinks.length && !pendingInvitesForMe.length ? (
+          <View style={styles.empty}>
+            <AppText variant="heading">No crews yet</AppText>
+            <AppText variant="muted" style={styles.emptyCopy}>
+              You’ll appear here after the nudgee or their Crew Captain invites you, and you accept.
+            </AppText>
+          </View>
+        ) : null}
+
+        {!supportedCrewLinks.length && pendingInvitesForMe.length ? (
+          <AppText variant="muted" style={styles.emptyCopy}>
+            Accept an invite above to attach to that person’s crew.
+          </AppText>
+        ) : null}
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  block: {
+    gap: spacing.sm
+  },
   list: {
+    gap: spacing.sm
+  },
+  inviteCard: {
+    gap: spacing.sm
+  },
+  row: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm
   },
   card: {
@@ -78,9 +144,9 @@ const styles = StyleSheet.create({
     opacity: 0.92
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center"
@@ -89,13 +155,16 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2
   },
-  orgTag: {
-    color: colors.softGold,
-    fontWeight: "700"
+  meta: {
+    color: colors.mutedText
   },
   empty: {
     gap: spacing.sm,
     paddingVertical: spacing.xl,
     alignItems: "center"
+  },
+  emptyCopy: {
+    textAlign: "center",
+    lineHeight: 20
   }
 });

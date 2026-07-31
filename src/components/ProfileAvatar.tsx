@@ -1,29 +1,39 @@
 import { Image, StyleSheet, View } from "react-native";
 
-import { profileIcons, useProfile } from "../hooks/useProfile";
-import { colors, radii, shadows } from "../theme/theme";
+import { profileIcons, type ProfileIcon, useProfile } from "../hooks/useProfile";
+import { colors, shadows } from "../theme/theme";
 import { AppText } from "./Text";
 
-export function ProfileAvatar({ size = 72 }: { size?: number }) {
+export function ProfileAvatar({
+  size = 72,
+  icon: iconOverride,
+  avatarUri: avatarUriOverride,
+  name
+}: {
+  size?: number;
+  icon?: ProfileIcon;
+  avatarUri?: string;
+  name?: string;
+}) {
   const { profile } = useProfile();
-  const icon = profileIcons.find((entry) => entry.id === profile.icon) ?? profileIcons[0];
+  const iconId = iconOverride ?? profile.icon;
+  const avatarUri = avatarUriOverride !== undefined ? avatarUriOverride : profile.avatarUri;
+  const icon = profileIcons.find((entry) => entry.id === iconId) ?? profileIcons[0];
   const radius = size / 2;
 
-  if (profile.avatarUri) {
+  if (avatarUri) {
     return (
       <Image
-        source={{ uri: profile.avatarUri }}
+        source={{ uri: avatarUri }}
         style={[styles.photo, { width: size, height: size, borderRadius: radius }]}
-        accessibilityLabel="Profile photo"
+        accessibilityLabel={name ? `${name} profile photo` : "Profile photo"}
       />
     );
   }
 
   return (
     <View style={[styles.symbolWrap, { width: size, height: size, borderRadius: radius }]}>
-      <AppText variant="title" style={[styles.symbol, { fontSize: size * 0.42 }]}>
-        {icon.symbol}
-      </AppText>
+      <AppText style={[styles.symbol, { fontSize: size * 0.48 }]}>{icon.symbol}</AppText>
     </View>
   );
 }
@@ -39,6 +49,6 @@ const styles = StyleSheet.create({
     ...shadows.sm
   },
   symbol: {
-    color: colors.card
+    textAlign: "center"
   }
 });

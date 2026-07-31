@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { DatePickerField } from "../components/DatePickerField";
+import { DateTimeFields } from "../components/DateTimeFields";
 import { Field, ToggleRow } from "../components/FormControls";
 import { BackButton } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
@@ -13,8 +14,8 @@ import { TimePickerField } from "../components/TimePickerField";
 import { useTasks } from "../hooks/useTasks";
 import {
   applyReminderOffset,
-  formatDateInput,
-  formatTimeInput,
+  formatDisplayDate,
+  formatDisplayDateTime,
   getReminderAt,
   getReminderParts
 } from "../services/reminderDates";
@@ -43,7 +44,6 @@ const taskTypeOptions: Array<{ value: TaskType; label: string }> = [
   { value: "taskJob", label: "Task" },
   { value: "chore", label: "Chore" },
   { value: "project", label: "Project" },
-  { value: "appointment", label: "Appointment" },
   { value: "event", label: "Event" },
   { value: "occasion", label: "Occasion" },
   { value: "list", label: "List" },
@@ -293,17 +293,15 @@ export function AddTaskScreen({ navigation, route }: Props) {
         ) : null}
         {taskType === "appointment" || taskType === "event" ? (
           <>
-            <DatePickerField
-              label={taskType === "event" ? "Event date" : "Appointment date"}
-              value={appointmentDate}
-              onChangeText={setAppointmentDate}
-              placeholder="04-05-2026"
-            />
-            <TimePickerField
-              label={taskType === "event" ? "Event time" : "Appointment time"}
-              value={appointmentTime}
-              onChangeText={setAppointmentTime}
-              placeholder="14:30"
+            <DateTimeFields
+              dateLabel={taskType === "event" ? "Event date" : "Appointment date"}
+              timeLabel={taskType === "event" ? "Event time" : "Appointment time"}
+              date={appointmentDate}
+              onDateChange={setAppointmentDate}
+              time={appointmentTime}
+              onTimeChange={setAppointmentTime}
+              datePlaceholder="04-05-2026"
+              timePlaceholder="14:30"
             />
             <RemindBeforeOptions
               selectedId={selectedReminderOffset}
@@ -362,17 +360,34 @@ export function AddTaskScreen({ navigation, route }: Props) {
             <Field
               label="New item"
               value={newListItem}
-              onChangeText={setNewListItem}
-              placeholder="Milk"
+              onChangeText={(text) => {
+                if (/\r?\n/.test(text)) {
+                  const lines = text
+                    .split(/\r?\n/)
+                    .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
+                    .filter(Boolean);
+                  if (lines.length) {
+                    setListItems((current) => [...current, ...lines]);
+                  }
+                  setNewListItem("");
+                  return;
+                }
+                setNewListItem(text);
+              }}
+              placeholder="Milk — or paste several lines"
+              multiline
             />
             <Button
               tone="secondary"
               onPress={() => {
-                const nextItem = newListItem.trim();
-                if (!nextItem) {
+                const lines = newListItem
+                  .split(/\r?\n/)
+                  .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
+                  .filter(Boolean);
+                if (!lines.length) {
                   return;
                 }
-                setListItems((current) => [...current, nextItem]);
+                setListItems((current) => [...current, ...lines]);
                 setNewListItem("");
               }}
             >
@@ -592,13 +607,11 @@ function isOccasionLike(taskType: TaskType) {
 }
 
 function formatReminderLabel(reminderAt: string) {
-  const date = new Date(reminderAt);
-  return `${formatDateInput(date)} at ${formatTimeInput(date)}`;
+  return formatDisplayDateTime(reminderAt);
 }
 
 function formatDateOnlyLabel(reminderAt: string) {
-  const date = new Date(reminderAt);
-  return formatDateInput(date);
+  return formatDisplayDate(reminderAt);
 }
 
 const styles = StyleSheet.create({

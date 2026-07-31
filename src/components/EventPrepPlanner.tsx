@@ -14,6 +14,7 @@ import { brand, colors, radii, spacing } from "../theme/theme";
 import type { EventPrepStep, NudgeLocation } from "../types/nudge";
 import { LocationFinderField } from "./LocationFinderField";
 import { AppText } from "./Text";
+import { VoiceFieldActions } from "./VoiceFieldActions";
 
 const durationOptions = [15, 30, 45, 60];
 const travelOptions = [30, 45, 60, 90];
@@ -168,6 +169,12 @@ export function EventPrepPlanner({
                   placeholderTextColor={colors.mutedText}
                   editable={editable}
                 />
+                <VoiceFieldActions
+                  value={step.title}
+                  onChangeText={(value) => updateStep(step.id, { title: value })}
+                  editable={editable}
+                  size={26}
+                />
                 {editable ? (
                   <Pressable
                     accessibilityRole="button"
@@ -202,6 +209,7 @@ export function EventPrepPlanner({
                 returnKeyType="done"
                 onSubmitEditing={addStep}
               />
+              <VoiceFieldActions value={newStepTitle} onChangeText={setNewStepTitle} size={26} />
               {newStepTitle.trim() ? (
                 <Pressable accessibilityRole="button" onPress={addStep} style={styles.addConfirm}>
                   <AppText variant="caption" style={styles.addConfirmLabel}>

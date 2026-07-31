@@ -9,18 +9,33 @@ import {
 
 import {
   defaultHomeSettings,
+  type HomeLocationSource,
   type HomeSettings,
-  type HomeThresholdMeters
+  type HomeThresholdMeters,
+  type PlaceKind,
+  type SavedPlace
 } from "../services/homeSettingsStorage";
 import { loadHomeSettings, saveHomeSettings } from "../services/homeSettingsStorage";
+
+type PlaceInput = {
+  label: string;
+  address?: string;
+  postcode?: string;
+  houseNumber?: string;
+  latitude: number;
+  longitude: number;
+  locationSource: HomeLocationSource;
+  reminderEnabled?: boolean;
+};
 
 type HomeSettingsContextValue = {
   homeSettings: HomeSettings;
   isReady: boolean;
   setEnabled: (enabled: boolean) => void;
-  setLabel: (label: string) => void;
-  setCoordinates: (latitude: number, longitude: number) => void;
-  clearCoordinates: () => void;
+  setPlace: (kind: PlaceKind, place: PlaceInput) => void;
+  clearPlace: (kind: PlaceKind) => void;
+  setPlaceReminder: (kind: PlaceKind, reminderEnabled: boolean) => void;
+  setAllPlaceReminders: (reminderEnabled: boolean) => void;
   setThresholdMeters: (thresholdMeters: HomeThresholdMeters) => void;
   setChecklistItems: (checklistItems: string[]) => void;
   updateChecklistItem: (index: number, value: string) => void;
@@ -50,20 +65,73 @@ export function HomeSettingsProvider({ children }: PropsWithChildren) {
     setHomeSettings((current) => ({ ...current, ...patch }));
   }, []);
 
+  const patchPlace = useCallback((kind: PlaceKind, patch: Partial<SavedPlace>) => {
+    setHomeSettings((current) => ({
+      ...current,
+      places: {
+        ...current.places,
+        [kind]: {
+          ...current.places[kind],
+          ...patch,
+          kind
+        }
+      }
+    }));
+  }, []);
+
   const setEnabled = useCallback((enabled: boolean) => patchSettings({ enabled }), [patchSettings]);
-  const setLabel = useCallback((label: string) => patchSettings({ label }), [patchSettings]);
-  const setCoordinates = useCallback(
-    (latitude: number, longitude: number) => patchSettings({ latitude, longitude }),
-    [patchSettings]
+
+  const setPlace = useCallback(
+    (kind: PlaceKind, place: PlaceInput) =>
+      patchPlace(kind, {
+        label: place.label,
+        address: place.address ?? "",
+        postcode: place.postcode ?? "",
+        houseNumber: place.houseNumber ?? "",
+        latitude: place.latitude,
+        longitude: place.longitude,
+        locationSource: place.locationSource,
+        ...(typeof place.reminderEnabled === "boolean" ? { reminderEnabled: place.reminderEnabled } : {})
+      }),
+    [patchPlace]
   );
-  const clearCoordinates = useCallback(
-    () => patchSettings({ latitude: null, longitude: null }),
-    [patchSettings]
+
+  const clearPlace = useCallback(
+    (kind: PlaceKind) =>
+      patchPlace(kind, {
+        label: "",
+        address: "",
+        postcode: "",
+        houseNumber: "",
+        latitude: null,
+        longitude: null,
+        locationSource: null
+      }),
+    [patchPlace]
   );
+
+  const setPlaceReminder = useCallback(
+    (kind: PlaceKind, reminderEnabled: boolean) => patchPlace(kind, { reminderEnabled }),
+    [patchPlace]
+  );
+
+  const setAllPlaceReminders = useCallback((reminderEnabled: boolean) => {
+    setHomeSettings((current) => ({
+      ...current,
+      places: {
+        home: { ...current.places.home, reminderEnabled },
+        work: { ...current.places.work, reminderEnabled },
+        school: { ...current.places.school, reminderEnabled },
+        safe: { ...current.places.safe, reminderEnabled }
+      }
+    }));
+  }, []);
+
   const setThresholdMeters = useCallback(
     (thresholdMeters: HomeThresholdMeters) => patchSettings({ thresholdMeters }),
     [patchSettings]
   );
+
   const setChecklistItems = useCallback(
     (checklistItems: string[]) => patchSettings({ checklistItems }),
     [patchSettings]
@@ -101,9 +169,10 @@ export function HomeSettingsProvider({ children }: PropsWithChildren) {
         homeSettings,
         isReady,
         setEnabled,
-        setLabel,
-        setCoordinates,
-        clearCoordinates,
+        setPlace,
+        clearPlace,
+        setPlaceReminder,
+        setAllPlaceReminders,
         setThresholdMeters,
         setChecklistItems,
         updateChecklistItem,

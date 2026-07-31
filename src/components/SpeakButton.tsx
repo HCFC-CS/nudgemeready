@@ -1,8 +1,9 @@
-import { Pressable, StyleSheet, Vibration } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { Alert, Pressable, StyleSheet, Vibration } from "react-native";
 
 import { useSpeechToText } from "../hooks/useSpeechToText";
 import { useOptionalVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
+import { isSpeechRecognitionSupported } from "../services/speechRecognition";
 import { colors } from "../theme/theme";
 
 export function SpeakButton({
@@ -17,13 +18,22 @@ export function SpeakButton({
   const settings = useOptionalVoiceCaptureSettings();
   const speech = useSpeechToText();
   const enabled = settings?.enabled ?? true;
+  const supported = isSpeechRecognitionSupported();
   const iconSize = size <= 28 ? 16 : 18;
 
-  if (!enabled || !speech.isAvailable || disabled) {
+  if (!enabled || disabled) {
     return null;
   }
 
   async function handlePress() {
+    if (!supported) {
+      Alert.alert(
+        "Voice to text",
+        "Speech input needs a development or TestFlight build. It is not available in Expo Go."
+      );
+      return;
+    }
+
     if (speech.isListening) {
       const { capturedText } = speech.finish();
       if (capturedText) {
@@ -43,11 +53,12 @@ export function SpeakButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={speech.isListening ? "Done speaking" : "Tap to speak"}
-      onPress={handlePress}
+      onPress={() => void handlePress()}
       style={({ pressed }) => [
         styles.button,
         { width: size, height: size, borderRadius: size / 2 },
         speech.isListening && styles.buttonActive,
+        !supported && styles.buttonMuted,
         pressed && styles.buttonPressed
       ]}
     >
@@ -68,6 +79,9 @@ const styles = StyleSheet.create({
   },
   buttonActive: {
     backgroundColor: colors.accent
+  },
+  buttonMuted: {
+    opacity: 0.7
   },
   buttonPressed: {
     opacity: 0.85

@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Linking, Pressable, ScrollView, Share, StyleSheet, View } from "react-native";
 
 import { MultiRoleSelector, PermissionEditor } from "../components/CrewComponents";
@@ -35,27 +35,22 @@ const inviteMethods: InviteMethod[] = ["email", "sms", "whatsapp", "link"];
 export function InviteCrewScreen() {
   const navigation = useNavigation();
   const { profile } = useProfile();
-  const { profiles, activeProfile, sendInvitation } = useCrew();
+  const { activeProfile, sendInvitation, inviteableProfiles, canInviteToProfile } = useCrew();
   const [step, setStep] = useState<Step>("method");
   const [method, setMethod] = useState<InviteMethod>("email");
   const [contact, setContact] = useState("");
   const [memberName, setMemberName] = useState("");
   const [relationship, setRelationship] = useState("");
-  const [targetProfileId, setTargetProfileId] = useState(activeProfile.id);
+  const [targetProfileId, setTargetProfileId] = useState(
+    canInviteToProfile(activeProfile.id) ? activeProfile.id : inviteableProfiles[0]?.id ?? activeProfile.id
+  );
   const [roles, setRoles] = useState<CrewRole[]>(["anchor"]);
   const [permissions, setPermissions] = useState<CrewPermissionSet>(mergeRolePermissions(["anchor"]));
   const [consents, setConsents] = useState<ConsentType[]>([]);
   const [notice, setNotice] = useState("");
   const [sentInviteLink, setSentInviteLink] = useState("");
 
-  const selfProfiles = profiles.filter((entry) => entry.isSelf || entry.id === activeProfile.id);
-  const supportableProfiles = useMemo(() => {
-    const unique = new Map<string, (typeof profiles)[number]>();
-    for (const entry of profiles) {
-      unique.set(entry.id, entry);
-    }
-    return Array.from(unique.values());
-  }, [profiles]);
+  const supportableProfiles = inviteableProfiles;
 
   function toggleRole(role: CrewRole) {
     setRoles((current) => {
@@ -108,6 +103,7 @@ export function InviteCrewScreen() {
       targetCrewId: "",
       targetProfileId: "",
       targetProfileName: "",
+      membershipId: "preview-membership",
       proposedRoles: roles,
       proposedPermissions: permissions,
       proposedConsents: consents,
@@ -184,7 +180,8 @@ export function InviteCrewScreen() {
 
       {step === "profile" ? (
         <View style={styles.section}>
-          <AppText variant="heading">Who are they supporting?</AppText>
+          <AppText variant="heading">Whose Crew is this for?</AppText>
+          <AppText variant="muted">Only you (the nudgee) or a Crew Captain can invite people into a crew.</AppText>
           <View style={styles.chips}>
             {supportableProfiles.map((entry) => (
               <CategoryChip
@@ -195,7 +192,12 @@ export function InviteCrewScreen() {
               />
             ))}
           </View>
-          <PrimaryButton onPress={() => setStep("roles")}>Continue</PrimaryButton>
+          {!supportableProfiles.length ? (
+            <AppText variant="muted">You can only invite for your own crew, or a crew where you are Captain.</AppText>
+          ) : null}
+          <PrimaryButton onPress={() => setStep("roles")} disabled={!supportableProfiles.length}>
+            Continue
+          </PrimaryButton>
         </View>
       ) : null}
 

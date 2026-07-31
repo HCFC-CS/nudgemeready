@@ -7,11 +7,13 @@ import { PageHeader, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useCrew } from "../hooks/useCrew";
+import { useNudgeItems } from "../hooks/useNudgeItems";
 import { organisationTypeLabels, SAFEGUARDING_MESSAGE } from "../types/crew";
 import { colors, radii, spacing } from "../theme/theme";
 
 export function OrganisationDashboardScreen() {
   const { organisation, getOrganisationProfiles, getCrewForProfile, invitations } = useCrew();
+  const { items } = useNudgeItems();
   const profiles = getOrganisationProfiles();
 
   const stats = useMemo(() => {
@@ -21,8 +23,8 @@ export function OrganisationDashboardScreen() {
       individuals: profiles.length,
       crewMembers: allMembers.length,
       openInvites,
-      escalations: 1,
-      safeguarding: 1
+      escalations: allMembers.filter((member) => member.status === "expired" || member.status === "revoked").length,
+      safeguarding: 0
     };
   }, [profiles, getCrewForProfile, invitations]);
 
@@ -63,17 +65,21 @@ export function OrganisationDashboardScreen() {
 
       <View style={styles.section}>
         <AppText variant="heading">Supported individuals</AppText>
+        {profiles.length === 0 ? (
+          <AppText variant="muted">No supported individuals yet.</AppText>
+        ) : null}
         {profiles.map((profile) => {
           const crew = getCrewForProfile(profile.id);
+          const open = items.filter((item) => item.status === "open").length;
+          const done = items.filter((item) => item.status === "done").length;
           return (
             <SoftCard key={profile.id}>
               <AppText variant="heading">{profile.name}</AppText>
               <AppText variant="muted">{crew.length} Crew members assigned</AppText>
               <View style={styles.metaRow}>
-                <MetaTag label="Open nudges" value="3" />
-                <MetaTag label="Missed" value="1" />
-                <MetaTag label="Completed" value="12" />
-                <MetaTag label="Consent" value="Review" />
+                <MetaTag label="Open nudges" value={String(open)} />
+                <MetaTag label="Completed" value={String(done)} />
+                <MetaTag label="Crew" value={String(crew.length)} />
               </View>
             </SoftCard>
           );

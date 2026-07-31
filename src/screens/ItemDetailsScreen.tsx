@@ -3,9 +3,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
+import { DocumentAttachmentsPanel } from "../components/DocumentAttachmentsPanel";
 import { Field, ToggleRow } from "../components/FormControls";
+import { CalendarLinkCard } from "../components/CalendarLinkCard";
 import { DatePickerField } from "../components/DatePickerField";
+import { DateTimeFields } from "../components/DateTimeFields";
 import { EventPrepPlanner } from "../components/EventPrepPlanner";
+import { GuestsEditor } from "../components/GuestsEditor";
 import { LocationFinderField } from "../components/LocationFinderField";
 import { TimePickerField } from "../components/TimePickerField";
 import { OccasionShoppingPrompts } from "../components/OccasionShoppingPrompts";
@@ -24,6 +28,7 @@ import {
 import { ListShareSheet } from "../components/ListShareSheet";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
+import { VoiceFieldActions } from "../components/VoiceFieldActions";
 import type { MockContact } from "../data/mockData";
 import { ItemEditProvider, useItemEdit } from "../hooks/useItemEdit";
 import { useCrew } from "../hooks/useCrew";
@@ -34,9 +39,22 @@ import { getListSuggestions } from "../services/listSuggestions";
 import { getUnsharedMembers, shareListWithMember, unshareListWithMember } from "../services/listSharing";
 import { defaultEventPrepSteps } from "../services/eventPrepTimeline";
 import { getLocationLabel } from "../services/placeSearch";
-import { getReminderAt, getReminderParts } from "../services/reminderDates";
-import { colors, radii, shadows, spacing } from "../theme/theme";
-import type { ListShare, NudgeItem, NudgeItemStatus, NudgeItemType, NudgeLocation, NudgeRepeatRule, EventPrepStep } from "../types/nudge";
+import { formatDateInput, formatTimeInput, getReminderAt, getReminderParts } from "../services/reminderDates";
+import { createItem, getChildrenForParent } from "../services/nudgeItems";
+import { removeItemFromPhoneCalendar, syncItemToPhoneCalendar } from "../services/calendarSync";
+import { formatNudgeTypeLabel } from "../services/typeAccent";
+import { colors, radii, shadows, spacing, taskTypeAccentColors } from "../theme/theme";
+import type {
+  AppointmentGuest,
+  ListShare,
+  NudgeAttachment,
+  NudgeItem,
+  NudgeItemStatus,
+  NudgeItemType,
+  NudgeLocation,
+  NudgeRepeatRule,
+  EventPrepStep
+} from "../types/nudge";
 import type { RootStackParamList } from "../types/navigation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ItemDetails">;
@@ -52,7 +70,7 @@ export function ItemDetailsScreen(props: Props) {
 
 function ItemDetailsScreenContent({ navigation, route }: Props) {
   const draft = route.params.draft;
-  const { saveItem } = useNudgeItems();
+  const { saveItem, items } = useNudgeItems();
   const { myCrewMembers, activeProfile } = useCrew();
   const { editable, isLocked } = useItemEdit();
   const [title, setTitle] = useState(draft.title);
@@ -123,6 +141,13 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
   const [eventPrepSteps, setEventPrepSteps] = useState<EventPrepStep[]>(
     draft.eventPrepSteps?.length ? draft.eventPrepSteps : defaultEventPrepSteps
   );
+  const [attachments, setAttachments] = useState<NudgeAttachment[]>(draft.attachments ?? []);
+  const [guests, setGuests] = useState<AppointmentGuest[]>(draft.guests ?? []);
+  const [syncToCalendar, setSyncToCalendar] = useState(
+    draft.syncToCalendar ?? (draft.type === "appointment" || draft.type === "event")
+  );
+  const [calendarId, setCalendarId] = useState(draft.calendarId);
+  const [calendarEventId, setCalendarEventId] = useState(draft.calendarEventId);
   const [notice, setNotice] = useState("");
   const listSuggestions = useMemo(
     () => (draft.type === "list" ? getListSuggestions(title, listItems) : null),
@@ -173,16 +198,85 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
       cardReminderAt:
         isOccasionLike(draft.type) && needsCard ? getReminderAt(cardReminderDate, cardReminderTime) : undefined,
       giftReminderAt:
-        isOccasionLike(draft.type) && needsPresent ? getReminderAt(giftReminderDate, giftReminderTime) : undefined
+        isOccasionLike(draft.type) && needsPresent ? getReminderAt(giftReminderDate, giftReminderTime) : undefined,
+      attachments,
+      guests: draft.type === "appointment" || draft.type === "event" ? guests : draft.guests,
+      syncToCalendar:
+        draft.type === "appointment" || draft.type === "event" ? syncToCalendar : draft.syncToCalendar,
+      calendarId: draft.type === "appointment" || draft.type === "event" ? calendarId : draft.calendarId,
+      calendarEventId:
+        draft.type === "appointment" || draft.type === "event" ? calendarEventId : draft.calendarEventId
     };
   }
 
-  function saveAndOpenWorld(status = draft.status) {
+  function renderDocumentsSection() {
+    return (
+      <DocumentAttachmentsPanel
+        itemId={draft.id}
+        attachments={attachments}
+        onChange={setAttachments}
+        editable={editable}
+      />
+    );
+  }
+
+  async function saveAndOpenWorld(status = draft.status) {
     if (!editable) {
       return;
     }
-    saveItem(buildSavedItem(status));
-    navigation.navigate("MyWorld");
+    let saved = buildSavedItem(status);
+
+    if (draft.type === "note" && noteFollowUp === "Turn into task") {
+      saved = { ...saved, type: "task" };
+    } else if (draft.type === "note" && noteFollowUp === "Add reminder") {
+      const reminder = createItem({
+        type: "reminder",
+        title: saved.title,
+        notes: saved.notes,
+        createdBy: saved.createdBy,
+        parentId: saved.id,
+        speakingReminderText: saved.notes || saved.title,
+        nudgeEveryTenMinutesUntilDone: true
+      });
+      saveItem(saved);
+      saveItem(reminder);
+      navigation.navigate("ItemDetails", { draft: reminder });
+      return;
+    }
+
+    if ((saved.type === "appointment" || saved.type === "event") && saved.syncToCalendar) {
+      const result = await syncItemToPhoneCalendar(saved, calendarId);
+      if (result.ok) {
+        saved = {
+          ...saved,
+          calendarEventId: result.calendarEventId,
+          calendarId: result.calendarId || calendarId,
+          syncToCalendar: true
+        };
+        setCalendarEventId(result.calendarEventId);
+        if (result.calendarId) {
+          setCalendarId(result.calendarId);
+        }
+        setNotice(
+          result.method === "calendar"
+            ? `Linked to ${result.calendarLabel}.`
+            : "Calendar file ready to save into your email calendar."
+        );
+      } else {
+        setNotice(result.message);
+      }
+    } else if (
+      (saved.type === "appointment" || saved.type === "event") &&
+      !saved.syncToCalendar &&
+      calendarEventId
+    ) {
+      await removeItemFromPhoneCalendar(calendarEventId);
+      saved = { ...saved, calendarEventId: undefined };
+      setCalendarEventId(undefined);
+    }
+
+    saveItem(saved);
+    navigation.navigate("Tabs", { screen: "Today" });
   }
 
   function finishItem(goToDoneScreen: boolean) {
@@ -296,7 +390,6 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
         </SoftCard>
         <SoftCard>
           <AppText variant="heading">Useful extras</AppText>
-          <SecondaryButton onPress={() => setNotice("Attachment noted for this item.")}>Add attachment</SecondaryButton>
           <VoiceCaptureButton
             placeholder="Say a note..."
             onCaptured={(capturedText, capturedVoiceNoteUrl) => appendToNotes(capturedText, setNotes, setVoiceNoteUrl, capturedVoiceNoteUrl)}
@@ -304,6 +397,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           {voiceNoteUrl ? <AppText variant="small">Voice note saved.</AppText> : null}
           {notice ? <AppText variant="small">{notice}</AppText> : null}
         </SoftCard>
+        {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
       </Screen>
     );
@@ -315,8 +409,14 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
         <PageHeaderWithEdit title="Appointment" subtitle="A time and place, held gently." />
         <SoftCard>
           <Field label="What?" value={title} onChangeText={setTitle} placeholder="Dentist" />
-          <DatePickerField label="When?" value={when} onChangeText={setWhen} placeholder="DD-MM-YYYY" />
-          <TimePickerField label="Time?" value={appointmentTime} onChangeText={setAppointmentTime} placeholder="09:00" />
+          <DateTimeFields
+            dateLabel="When?"
+            timeLabel="Time?"
+            date={when}
+            onDateChange={setWhen}
+            time={appointmentTime}
+            onTimeChange={setAppointmentTime}
+          />
           <Field label="Where?" value={where} onChangeText={setWhere} placeholder="Search place or enter manually" />
           <View style={styles.section}>
             <AppText variant="small">Contact</AppText>
@@ -330,6 +430,19 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
               onRemove={() => setLinkedContact(undefined)}
             />
           </View>
+          <GuestsEditor
+            guests={guests}
+            onChange={setGuests}
+            editable={editable}
+            appointmentTitle={title || draft.title}
+          />
+          <CalendarLinkCard
+            enabled={syncToCalendar}
+            onEnabledChange={setSyncToCalendar}
+            selectedCalendarId={calendarId}
+            onSelectCalendar={setCalendarId}
+            editable={editable}
+          />
           <Field label="Travel time" value={travelTime} onChangeText={setTravelTime} placeholder="Optional" />
           <View style={styles.section}>
             <AppText variant="small">Reminder</AppText>
@@ -355,16 +468,49 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             placeholder="Say an appointment note..."
             onCaptured={(capturedText, capturedVoiceNoteUrl) => appendToNotes(capturedText, setNotes, setVoiceNoteUrl, capturedVoiceNoteUrl)}
           />
+          {notice ? <AppText variant="small">{notice}</AppText> : null}
         </SoftCard>
-        {renderItemOptions(() => saveAndOpenWorld())}
+        {renderDocumentsSection()}
+        {renderItemOptions(() => void saveAndOpenWorld())}
         <View style={styles.actions}>
-          <SecondaryButton onPress={() => saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
+          <SecondaryButton onPress={() => void saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
         </View>
       </Screen>
     );
   }
 
   if (draft.type === "project") {
+    const projectChildren = getChildrenForParent(items, draft.id);
+    const projectChildTypes: NudgeItemType[] = [
+      "subtask",
+      "task",
+      "reminder",
+      "routine",
+      "chore",
+      "list",
+      "event",
+      "occasion",
+      "note"
+    ];
+
+    function buildProjectChildDraft(type: NudgeItemType): NudgeItem {
+      const now = new Date().toISOString();
+      return {
+        id: `draft-${type}-${Date.now()}`,
+        title: "",
+        type,
+        status: "open",
+        parentId: draft.id,
+        children: [],
+        createdAt: now,
+        updatedAt: now,
+        attachments: [],
+        listItems: [],
+        progress: 0,
+        notes: `For project: ${title || draft.title}`
+      };
+    }
+
     return (
       <Screen>
         <PageHeaderWithEdit title="Project" subtitle="Big things, broken down." />
@@ -384,13 +530,61 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           <Field label="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Anything useful" />
           <VoiceCaptureButton
             placeholder="Say a project note..."
-            onCaptured={(capturedText, capturedVoiceNoteUrl) => appendToNotes(capturedText, setNotes, setVoiceNoteUrl, capturedVoiceNoteUrl)}
+            onCaptured={(capturedText, capturedVoiceNoteUrl) =>
+              appendToNotes(capturedText, setNotes, setVoiceNoteUrl, capturedVoiceNoteUrl)
+            }
           />
         </SoftCard>
         <SoftCard>
-          <AppText variant="heading">Next small steps</AppText>
-          <AppText variant="muted">You can add small steps from the Projects page after saving.</AppText>
+          <AppText variant="heading">Add to this project</AppText>
+          <AppText variant="muted">Any nudge type can be a step under this project.</AppText>
+          <View style={styles.projectAddRow}>
+            {projectChildTypes.map((type) => (
+              <Pressable
+                key={type}
+                accessibilityRole="button"
+                disabled={!editable}
+                onPress={() => navigation.navigate("ItemDetails", { draft: buildProjectChildDraft(type) })}
+                style={({ pressed }) => [
+                  styles.projectTypeChip,
+                  {
+                    borderColor: `${taskTypeAccentColors[type] ?? colors.accent}55`,
+                    backgroundColor: `${taskTypeAccentColors[type] ?? colors.accent}14`
+                  },
+                  pressed && styles.pressed
+                ]}
+              >
+                <AppText
+                  style={{
+                    color: taskTypeAccentColors[type] ?? colors.accent,
+                    fontWeight: "700",
+                    fontSize: 13
+                  }}
+                >
+                  {formatNudgeTypeLabel(type)}
+                </AppText>
+              </Pressable>
+            ))}
+          </View>
+          {projectChildren.length ? (
+            <View style={styles.section}>
+              <AppText variant="small">Linked nudges ({projectChildren.length})</AppText>
+              {projectChildren.map((child) => (
+                <Pressable
+                  key={child.id}
+                  onPress={() => navigation.navigate("ItemDetails", { draft: child })}
+                  style={styles.projectChildRow}
+                >
+                  <AppText style={{ flex: 1 }}>{child.title || "Untitled"}</AppText>
+                  <AppText variant="caption">{formatNudgeTypeLabel(child.type)}</AppText>
+                </Pressable>
+              ))}
+            </View>
+          ) : (
+            <AppText variant="muted">Nothing linked yet — pick a type above.</AppText>
+          )}
         </SoftCard>
+        {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
         <SecondaryButton onPress={() => saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
       </Screen>
@@ -437,6 +631,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             placeholder="List name"
             placeholderTextColor={colors.mutedText}
           />
+          <VoiceFieldActions value={title} onChangeText={setTitle} size={28} />
           {activeProfile.isSelf ? (
             <Pressable accessibilityRole="button" onPress={() => setShareOpen(true)} style={ls.shareBtn}>
               <Ionicons name={sharedWith.length ? "people" : "people-outline"} size={20} color={colors.accent} />
@@ -460,20 +655,32 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           </View>
         )}
 
-        {/* Add bar: text + voice */}
+        {/* Add bar: text + voice — paste multi-line to add many items */}
         <View style={ls.addBar}>
           <TextInput
             style={ls.addInput}
             value={newListItem}
-            onChangeText={setNewListItem}
-            placeholder="Add item..."
+            onChangeText={(text) => {
+              if (/\r?\n/.test(text)) {
+                addListItem(text, setListItems, setNewListItem);
+                return;
+              }
+              setNewListItem(text);
+            }}
+            placeholder="Add item… or paste a list"
             placeholderTextColor={colors.mutedText}
             returnKeyType="done"
             blurOnSubmit={false}
+            multiline
             onSubmitEditing={() => addListItem(newListItem, setListItems, setNewListItem)}
           />
+          <VoiceFieldActions value={newListItem} onChangeText={setNewListItem} size={28} />
           {newListItem.trim() ? (
-            <Pressable accessibilityRole="button" onPress={() => addListItem(newListItem, setListItems, setNewListItem)} style={ls.iconBtn}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => addListItem(newListItem, setListItems, setNewListItem)}
+              style={ls.iconBtn}
+            >
               <Ionicons name="add-circle" size={26} color={colors.accent} />
             </Pressable>
           ) : null}
@@ -481,8 +688,14 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             idleLabel=""
             placeholder="milk, eggs, bread"
             onCaptured={(capturedText, capturedVoiceNoteUrl) => {
-              const spoken = capturedText.split(/,|and|\n/).map((s) => s.trim()).filter(Boolean);
-              for (const word of spoken) addListItem(parseVoiceListItem(word), setListItems, setVoiceListInput);
+              addListItem(
+                capturedText
+                  .split(/,|\band\b|\n/i)
+                  .map((part) => parseVoiceListItem(part))
+                  .join("\n"),
+                setListItems,
+                setVoiceListInput
+              );
               setVoiceNoteUrl(capturedVoiceNoteUrl);
             }}
           />
@@ -556,6 +769,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           </Pressable>
         )}
 
+        {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
 
         {activeProfile.isSelf ? (
@@ -606,8 +820,9 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             </View>
           </View>
         </SoftCard>
-        {renderItemOptions(() => saveAndOpenWorld())}
-        <SecondaryButton onPress={() => saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
+        {renderDocumentsSection()}
+        {renderItemOptions(() => void saveAndOpenWorld())}
+        <SecondaryButton onPress={() => void saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
       </Screen>
     );
   }
@@ -642,20 +857,28 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           <View style={rs.heroIcon}>
             <Ionicons name="notifications" size={28} color={colors.accent} />
           </View>
-          <TextInput
-            style={rs.heroTitle}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Reminder"
-            placeholderTextColor={colors.mutedText}
-            multiline
-          />
+          <View style={rs.heroTitleRow}>
+            <TextInput
+              style={rs.heroTitle}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Reminder"
+              placeholderTextColor={colors.mutedText}
+              multiline
+            />
+            <VoiceFieldActions value={title} onChangeText={setTitle} size={28} />
+          </View>
         </View>
 
-        <View style={rs.whenRow}>
-          <DatePickerField variant="tile" value={reminderDate} onChangeText={setReminderDate} placeholder="Date" />
-          <TimePickerField variant="tile" value={reminderTime} onChangeText={setReminderTime} placeholder="Time" />
-        </View>
+        <DateTimeFields
+          layout="row"
+          date={reminderDate}
+          onDateChange={setReminderDate}
+          time={reminderTime}
+          onTimeChange={setReminderTime}
+          datePlaceholder="DD-MM-YYYY"
+          timePlaceholder="09:00"
+        />
 
         <View style={rs.speakCard}>
           <View style={rs.speakQuote}>
@@ -667,6 +890,11 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
               placeholder="..."
               placeholderTextColor={colors.mutedText}
               multiline
+            />
+            <VoiceFieldActions
+              value={speakingReminderText}
+              onChangeText={setSpeakingReminderText}
+              size={28}
             />
           </View>
           <View style={rs.speakActions}>
@@ -741,16 +969,22 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
         ) : null}
 
         {showReminderNotes ? (
-          <TextInput
-            style={rs.notesInput}
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="..."
-            placeholderTextColor={colors.mutedText}
-            multiline
-          />
+          <View style={rs.notesWrap}>
+            <View style={rs.notesHeader}>
+              <VoiceFieldActions value={notes} onChangeText={setNotes} size={28} />
+            </View>
+            <TextInput
+              style={rs.notesInput}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="..."
+              placeholderTextColor={colors.mutedText}
+              multiline
+            />
+          </View>
         ) : null}
 
+        {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
       </Screen>
     );
@@ -807,6 +1041,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           <AppText variant="muted">Last completed yesterday</AppText>
           <AppText variant="muted">Pick this up again</AppText>
         </SoftCard>
+        {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
         <View style={styles.actions}>
           <SecondaryButton onPress={() => saveAndOpenWorld("paused")}>Pause Routine</SecondaryButton>
@@ -841,6 +1076,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             onCaptured={(capturedText, capturedVoiceNoteUrl) => appendToNotes(capturedText, setNotes, setVoiceNoteUrl, capturedVoiceNoteUrl)}
           />
         </SoftCard>
+        {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
       </Screen>
     );
@@ -852,8 +1088,13 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
         <PageHeaderWithEdit title="Event" subtitle="Plan the journey and getting ready." />
         <SoftCard>
           <Field label="Event" value={title} onChangeText={setTitle} placeholder="Concert" />
-          <DatePickerField label="Date" value={when} onChangeText={setWhen} placeholder="DD-MM-YYYY" />
-          <TimePickerField label="Time" value={appointmentTime} onChangeText={setAppointmentTime} placeholder="19:30" />
+          <DateTimeFields
+            date={when}
+            onDateChange={setWhen}
+            time={appointmentTime}
+            onTimeChange={setAppointmentTime}
+            timePlaceholder="19:30"
+          />
           <LocationFinderField
             label="Venue"
             value={venueLocation}
@@ -887,13 +1128,28 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
               onRemove={() => setLinkedContact(undefined)}
             />
           </View>
+          <GuestsEditor
+            guests={guests}
+            onChange={setGuests}
+            editable={editable}
+            appointmentTitle={title || draft.title}
+          />
+          <CalendarLinkCard
+            enabled={syncToCalendar}
+            onEnabledChange={setSyncToCalendar}
+            selectedCalendarId={calendarId}
+            onSelectCalendar={setCalendarId}
+            editable={editable}
+          />
           <Field label="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Optional" />
           <VoiceCaptureButton
             placeholder="Say a note..."
             onCaptured={(capturedText, capturedVoiceNoteUrl) => appendToNotes(capturedText, setNotes, setVoiceNoteUrl, capturedVoiceNoteUrl)}
           />
+          {notice ? <AppText variant="small">{notice}</AppText> : null}
         </SoftCard>
-        {renderItemOptions(() => saveAndOpenWorld())}
+        {renderDocumentsSection()}
+        {renderItemOptions(() => void saveAndOpenWorld())}
       </Screen>
     );
   }
@@ -979,6 +1235,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             onCaptured={(capturedText, capturedVoiceNoteUrl) => appendToNotes(capturedText, setNotes, setVoiceNoteUrl, capturedVoiceNoteUrl)}
           />
         </SoftCard>
+        {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
         <SecondaryButton onPress={() => saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
       </Screen>
@@ -1037,6 +1294,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           );
         })}
       </SoftCard>
+      {renderDocumentsSection()}
       {renderItemOptions(() => saveAndOpenWorld())}
       <SecondaryButton onPress={() => saveAndOpenWorld()}>Just Keep It Simple</SecondaryButton>
     </Screen>
@@ -1140,10 +1398,7 @@ function formatDateValue(value?: string) {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(
-    2,
-    "0"
-  )}-${date.getFullYear()}`;
+  return formatDateInput(date);
 }
 
 function formatTimeValue(value?: string) {
@@ -1154,7 +1409,7 @@ function formatTimeValue(value?: string) {
   if (Number.isNaN(date.getTime())) {
     return "";
   }
-  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  return formatTimeInput(date);
 }
 
 function formatRepeatValue(value?: string) {
@@ -1270,18 +1525,33 @@ function parseVoiceListItem(input: string) {
   return input.replace(/^add\s+/i, "").trim();
 }
 
+function splitListLines(input: string) {
+  return input
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
+    .filter(Boolean);
+}
+
 function addListItem(
   title: string,
-  setListItems: React.Dispatch<React.SetStateAction<Array<{ id: string; title: string; status: "open" | "done" | "paused" | "waiting" | "cancelled" }>>>,
+  setListItems: React.Dispatch<
+    React.SetStateAction<
+      Array<{ id: string; title: string; status: "open" | "done" | "paused" | "waiting" | "cancelled" }>
+    >
+  >,
   clearInput: (value: string) => void
 ) {
-  const trimmedTitle = title.trim();
-  if (!trimmedTitle) {
+  const lines = splitListLines(title);
+  if (!lines.length) {
     return;
   }
   setListItems((current) => [
     ...current,
-    { id: `${Date.now()}-${current.length}`, title: capitalise(trimmedTitle), status: "open" }
+    ...lines.map((line, index) => ({
+      id: `${Date.now()}-${current.length + index}`,
+      title: capitalise(line),
+      status: "open" as const
+    }))
   ]);
   clearInput("");
 }
@@ -1388,6 +1658,26 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.xs
   },
+  projectAddRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    paddingTop: spacing.sm
+  },
+  projectTypeChip: {
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm
+  },
+  projectChildRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight
+  },
   chips: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1444,6 +1734,10 @@ const styles = StyleSheet.create({
   doneText: {
     opacity: 0.58,
     textDecorationLine: "line-through"
+  },
+  pressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }]
   }
 });
 
@@ -1532,7 +1826,9 @@ const ls = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: colors.text,
-    paddingVertical: spacing.sm
+    paddingVertical: spacing.sm,
+    maxHeight: 96,
+    textAlignVertical: "center"
   },
   iconBtn: {
     padding: 4
@@ -1668,8 +1964,14 @@ const rs = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
-  heroTitle: {
+  heroTitleRow: {
     width: "100%",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm
+  },
+  heroTitle: {
+    flex: 1,
     fontSize: 24,
     fontWeight: "700",
     color: colors.text,
@@ -1814,6 +2116,12 @@ const rs = StyleSheet.create({
   optionTileActive: {
     borderColor: colors.accent,
     backgroundColor: `${colors.accent}12`
+  },
+  notesWrap: {
+    gap: spacing.xs
+  },
+  notesHeader: {
+    alignItems: "flex-end"
   },
   notesInput: {
     backgroundColor: colors.card,

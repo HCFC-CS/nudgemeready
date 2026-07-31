@@ -8,14 +8,18 @@ import {
 } from "react";
 
 import {
+  loadReadAloudEnabled,
   loadVoiceCaptureEnabled,
+  saveReadAloudEnabled,
   saveVoiceCaptureEnabled
 } from "../services/voiceCaptureStorage";
 
 type VoiceCaptureSettingsContextValue = {
   enabled: boolean;
+  readAloudEnabled: boolean;
   isReady: boolean;
   setEnabled: (enabled: boolean) => void;
+  setReadAloudEnabled: (enabled: boolean) => void;
 };
 
 const VoiceCaptureSettingsContext = createContext<VoiceCaptureSettingsContextValue | undefined>(
@@ -24,11 +28,15 @@ const VoiceCaptureSettingsContext = createContext<VoiceCaptureSettingsContextVal
 
 export function VoiceCaptureSettingsProvider({ children }: PropsWithChildren) {
   const [enabled, setEnabledState] = useState(true);
+  const [readAloudEnabled, setReadAloudEnabledState] = useState(true);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    loadVoiceCaptureEnabled()
-      .then(setEnabledState)
+    Promise.all([loadVoiceCaptureEnabled(), loadReadAloudEnabled()])
+      .then(([capture, readAloud]) => {
+        setEnabledState(capture);
+        setReadAloudEnabledState(readAloud);
+      })
       .finally(() => setIsReady(true));
   }, []);
 
@@ -38,12 +46,24 @@ export function VoiceCaptureSettingsProvider({ children }: PropsWithChildren) {
     }
   }, [enabled, isReady]);
 
+  useEffect(() => {
+    if (isReady) {
+      void saveReadAloudEnabled(readAloudEnabled);
+    }
+  }, [readAloudEnabled, isReady]);
+
   const setEnabled = useCallback((next: boolean) => {
     setEnabledState(next);
   }, []);
 
+  const setReadAloudEnabled = useCallback((next: boolean) => {
+    setReadAloudEnabledState(next);
+  }, []);
+
   return (
-    <VoiceCaptureSettingsContext.Provider value={{ enabled, isReady, setEnabled }}>
+    <VoiceCaptureSettingsContext.Provider
+      value={{ enabled, readAloudEnabled, isReady, setEnabled, setReadAloudEnabled }}
+    >
       {children}
     </VoiceCaptureSettingsContext.Provider>
   );

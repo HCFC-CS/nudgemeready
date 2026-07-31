@@ -5,6 +5,7 @@ import { EmptyStateLight, NudgeListRow } from "../components/NudgeListRow";
 import { PageHeader, PrimaryButton } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { useNudgeItems } from "../hooks/useNudgeItems";
+import { formatDisplayDate } from "../services/reminderDates";
 import { spacing } from "../theme/theme";
 
 export function RoutinesScreen() {
@@ -25,7 +26,7 @@ export function RoutinesScreen() {
               routine.repeatRule?.frequency && routine.repeatRule.frequency !== "none"
                 ? formatRepeat(routine.repeatRule.frequency)
                 : "Repeating",
-              routine.reminderDate ? formatDate(routine.reminderDate) : ""
+              routine.reminderDate ? formatDisplayDate(routine.reminderDate) : ""
             ].filter(Boolean)}
             onPress={() => navigation.navigate("ItemDetails", { draft: routine })}
           />
@@ -41,14 +42,6 @@ export function RoutinesScreen() {
 
 function formatRepeat(value: string) {
   return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
 }
 
 const styles = StyleSheet.create({

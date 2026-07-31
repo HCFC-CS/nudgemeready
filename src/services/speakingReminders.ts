@@ -24,8 +24,23 @@ export function playSpeakingReminder(item: NudgeItem) {
 }
 
 export async function cancelSpeakingReminderNotifications(item: NudgeItem) {
-  const ids = item.reminderNotificationIds ?? [];
-  await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id).catch(() => undefined)));
+  const ids = new Set(item.reminderNotificationIds ?? []);
+
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const entry of scheduled) {
+      const data = entry.content.data as { itemId?: string } | undefined;
+      if (data?.itemId === item.id) {
+        ids.add(entry.identifier);
+      }
+    }
+  } catch {
+    // Fall back to stored ids only.
+  }
+
+  await Promise.all(
+    [...ids].map((id) => Notifications.cancelScheduledNotificationAsync(id).catch(() => undefined))
+  );
 }
 
 export async function syncSpeakingReminderNotifications(item: NudgeItem): Promise<string[]> {
@@ -98,7 +113,7 @@ export function handleSpeakingReminderNotification(
   notification: Notifications.Notification,
   items: NudgeItem[],
   actorId: string
-) {
+): NudgeItem | undefined {
   const data = notification.request.content.data as {
     itemId?: string;
     role?: "nudgee" | "nudger";
@@ -108,19 +123,23 @@ export function handleSpeakingReminderNotification(
 
   if (data.role === "nudger") {
     if (data.nudgerId && data.nudgerId !== actorId) {
-      return;
+      return undefined;
     }
-    return;
+    if (data.itemId) {
+      return items.find((candidate) => candidate.id === data.itemId);
+    }
+    return undefined;
   }
 
   if (data.itemId) {
     const item = items.find((candidate) => candidate.id === data.itemId);
-    if (item && item.status === "done") {
-      return;
+    if (item && (item.status === "done" || item.status === "cancelled")) {
+      void cancelSpeakingReminderNotifications(item);
+      return undefined;
     }
     if (item) {
       playSpeakingReminder(item);
-      return;
+      return item;
     }
   }
 
@@ -129,6 +148,7 @@ export function handleSpeakingReminderNotification(
     Speech.stop();
     Speech.speak(String(speakText));
   }
+  return undefined;
 }
 
 function buildNudgeeNotificationContent(

@@ -10,6 +10,7 @@ import { useNudgeActor } from "../hooks/useNudgeActor";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { createItem } from "../services/nudgeItems";
 import { formatTimelineTime, getPrepStartTime } from "../services/eventPrepTimeline";
+import { formatDisplayDateTime } from "../services/reminderDates";
 import { spacing } from "../theme/theme";
 import type { NudgeItem } from "../types/nudge";
 
@@ -88,7 +89,7 @@ function getEventMeta(event: NudgeItem) {
   if (eventAt) {
     const date = new Date(eventAt);
     if (!Number.isNaN(date.getTime())) {
-      parts.push(`${formatDate(eventAt)} at ${formatTimelineTime(date)}`);
+      parts.push(formatDisplayDateTime(eventAt));
     }
   }
   if (event.location?.label) {
@@ -106,14 +107,6 @@ function getEventMeta(event: NudgeItem) {
     }
   }
   return parts;
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
 }
 
 const styles = StyleSheet.create({

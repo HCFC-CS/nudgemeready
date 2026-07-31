@@ -18,7 +18,7 @@ export function Button({
     tone === "primary"
       ? styles.onPrimaryLabel
       : tone === "warning"
-        ? styles.label
+        ? styles.warningLabel
         : tone === "quiet"
           ? styles.quietLabel
           : styles.label;
@@ -66,9 +66,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border
   },
   warning: {
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.dangerSoft,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: colors.danger
   },
   pressed: {
     opacity: 0.88,
@@ -97,5 +97,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: "center",
     color: colors.text
+  },
+  warningLabel: {
+    fontWeight: "600",
+    fontSize: 15,
+    textAlign: "center",
+    color: colors.danger
   }
 });

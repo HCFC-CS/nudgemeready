@@ -9,6 +9,7 @@ import { Screen } from "../components/Screen";
 import { useNudgeActor } from "../hooks/useNudgeActor";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { createItem } from "../services/nudgeItems";
+import { formatDisplayDate } from "../services/reminderDates";
 import { spacing } from "../theme/theme";
 import type { NudgeItem } from "../types/nudge";
 
@@ -106,12 +107,7 @@ function countdownText(value: string) {
   if (diff === 0) {
     return "Today";
   }
-  return formatDate(value);
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
+  return formatDisplayDate(value);
 }
 
 const styles = StyleSheet.create({

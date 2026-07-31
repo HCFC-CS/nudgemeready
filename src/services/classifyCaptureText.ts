@@ -48,6 +48,18 @@ export function classifyCaptureText(input: string): CaptureClassification {
   } else if (repeatRule.frequency !== "none") {
     type = "routine";
     confidence = 0.88;
+  } else if (
+    text.includes("appointment") ||
+    text.includes("dentist") ||
+    text.includes("doctor") ||
+    text.includes("gp ") ||
+    text.startsWith("gp ") ||
+    text.includes("check-up") ||
+    text.includes("checkup") ||
+    text.includes("haircut")
+  ) {
+    type = "appointment";
+    confidence = 0.9;
   } else if (text.includes("birthday") || text.includes("anniversary")) {
     type = "occasion";
     confidence = 0.9;
@@ -65,7 +77,7 @@ export function classifyCaptureText(input: string): CaptureClassification {
     confidence = 0.86;
   } else if (extractedDate && extractedTime) {
     type = "appointment";
-    confidence = 0.86;
+    confidence = 0.84;
   } else if (taskVerbs.some((verb) => startsWithVerb(text, verb))) {
     type = "task";
     confidence = 0.82;
@@ -110,10 +122,6 @@ function buildSuggestedFields(
     notes: context.rawText
   };
 
-  if (type === "appointment") {
-    suggestedFields.startDate = dateTime;
-    suggestedFields.reminderDate = dateTime;
-  }
   if (type === "reminder") {
     suggestedFields.reminderDate = dateTime ?? context.extractedDate;
     suggestedFields.contactName = context.contactName;
@@ -125,7 +133,7 @@ function buildSuggestedFields(
     suggestedFields.dueDate = context.extractedDate;
     suggestedFields.repeatRule = { frequency: "yearly" };
   }
-  if (type === "event") {
+  if (type === "event" || type === "appointment") {
     suggestedFields.startDate = dateTime;
     suggestedFields.dueDate = context.extractedDate ?? dateTime;
   }

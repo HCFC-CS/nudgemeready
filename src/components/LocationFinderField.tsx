@@ -7,6 +7,7 @@ import { getLocationLabel, openInMaps, searchPlaces, toNudgeLocation } from "../
 import { colors, radii, spacing } from "../theme/theme";
 import type { NudgeLocation } from "../types/nudge";
 import { AppText } from "./Text";
+import { VoiceFieldActions } from "./VoiceFieldActions";
 
 type LocationFinderFieldProps = {
   label: string;
@@ -95,9 +96,12 @@ export function LocationFinderField({
 
   return (
     <View style={styles.wrap}>
-      <AppText variant="caption" style={styles.fieldLabel}>
-        {label}
-      </AppText>
+      <View style={styles.labelRow}>
+        <AppText variant="caption" style={styles.fieldLabel}>
+          {label}
+        </AppText>
+        <VoiceFieldActions value={query} onChangeText={handleTextChange} editable={isEditable} />
+      </View>
       <View style={styles.inputRow}>
         <Ionicons name="location-outline" size={20} color={colors.accent} />
         <TextInput
@@ -159,9 +163,16 @@ const styles = StyleSheet.create({
   wrap: {
     gap: spacing.xs
   },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
   fieldLabel: {
     color: colors.mutedText,
-    fontWeight: "600"
+    fontWeight: "600",
+    flexShrink: 1
   },
   inputRow: {
     flexDirection: "row",

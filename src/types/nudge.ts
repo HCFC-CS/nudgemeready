@@ -30,11 +30,24 @@ export type NudgeLocation = {
   longitude?: number;
 };
 
+export type DocumentCategory =
+  | "identity"
+  | "driving"
+  | "mobility"
+  | "access"
+  | "tax"
+  | "insurance"
+  | "medical"
+  | "other";
+
 export type NudgeAttachment = {
   id: string;
   name: string;
   url: string;
   mimeType?: string;
+  category?: DocumentCategory;
+  label?: string;
+  addedAt?: string;
 };
 
 export type EventPrepStep = {
@@ -55,6 +68,14 @@ export type ListShare = {
   memberName: string;
   sharedAt: string;
   canEdit: boolean;
+};
+
+export type AppointmentGuest = {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  source: "email" | "contact";
 };
 
 export type NudgeCreatorType = "nudgee" | "supporter";
@@ -107,6 +128,10 @@ export interface NudgeItem {
   eventTravelMinutes?: number;
   eventReadyMinutes?: number;
   eventPrepSteps?: EventPrepStep[];
+  guests?: AppointmentGuest[];
+  syncToCalendar?: boolean;
+  calendarId?: string;
+  calendarEventId?: string;
 }
 
 export type NudgeItemInput = Partial<

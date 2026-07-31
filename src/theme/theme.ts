@@ -2,18 +2,20 @@ import { Platform } from "react-native";
 
 /** Nudge Me Ready brand palette */
 export const brand = {
-  warmIvory: "#F8F6F3",
-  softTaupe: "#D8D0C8",
-  babyBlue: "#AFCDEB",
-  babyBlueDark: "#8BB0D4",
-  babyBlueSoft: "#DCE9F5",
-  softGrey: "#B9BDC2",
-  charcoal: "#4A4F55",
-  softGold: "#C9A86A",
-  midnightBlue: "#1A2744",
-  midnightBlueMuted: "#5A6B82",
-  taupeLight: "#EDE8E3",
-  ivoryElevated: "#FFFDFB"
+  warmIvory: "#D9D2C9",
+  softTaupe: "#B8ADA1",
+  babyBlue: "#7BA8C9",
+  babyBlueDark: "#5A8AAF",
+  babyBlueSoft: "#B4C9DC",
+  softGrey: "#8E959E",
+  charcoal: "#3A3F45",
+  softGold: "#B8954F",
+  midnightBlue: "#152038",
+  midnightBlueMuted: "#4A5A6E",
+  taupeLight: "#C9C2B8",
+  ivoryElevated: "#E6E0D8",
+  softRose: "#A65D5D",
+  softRoseMuted: "#E8D4D4"
 } as const;
 
 export const colors = {
@@ -41,6 +43,8 @@ export const colors = {
   borderLight: brand.taupeLight,
   success: brand.softGold,
   progress: brand.softGold,
+  danger: brand.softRose,
+  dangerSoft: brand.softRoseMuted,
   fab: brand.babyBlue,
   link: brand.softGold,
   onPrimary: brand.midnightBlue,
@@ -131,7 +135,7 @@ export const shadows = {
     ios: {
       shadowColor: brand.midnightBlue,
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
+      shadowOpacity: 0.1,
       shadowRadius: 4
     },
     android: { elevation: 2 },
@@ -141,7 +145,7 @@ export const shadows = {
     ios: {
       shadowColor: brand.midnightBlue,
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
+      shadowOpacity: 0.14,
       shadowRadius: 12
     },
     android: { elevation: 4 },
@@ -151,7 +155,7 @@ export const shadows = {
     ios: {
       shadowColor: brand.midnightBlue,
       shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.18,
+      shadowOpacity: 0.24,
       shadowRadius: 10
     },
     android: { elevation: 8 },

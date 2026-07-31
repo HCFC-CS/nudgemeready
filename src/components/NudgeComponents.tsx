@@ -1,12 +1,20 @@
-import { useMemo, useState, type PropsWithChildren } from "react";
+import { useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import { Pressable, StyleSheet, TextInput, Vibration, View, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-import { mockContacts, type MockContact } from "../data/mockData";
+import { type MockContact } from "../data/mockData";
 import { useOptionalItemEdit } from "../hooks/useItemEdit";
 import { useSpeechToText } from "../hooks/useSpeechToText";
 import { useOptionalVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
+import {
+  loadDeviceContacts,
+  mergeContactSuggestions,
+  openContactCall,
+  openContactEmail,
+  openContactMaps,
+  type DeviceContact
+} from "../services/deviceContacts";
 import { colors, radii, spacing } from "../theme/theme";
 import type { TaskItem } from "../types/models";
 import { Button } from "./Button";
@@ -14,6 +22,7 @@ import { Card } from "./Card";
 import { ItemEditBanner } from "./ItemEditBanner";
 import { HeroSurface, SearchBar } from "./ModernUI";
 import { AppText } from "./Text";
+import { VoiceFieldActions } from "./VoiceFieldActions";
 
 export function BackButton({ onPress }: { onPress?: () => void }) {
   const navigation = useNavigation();
@@ -177,17 +186,38 @@ export function ContactLink({
 }) {
   const [search, setSearch] = useState(searchHint ?? "");
   const [actionNotice, setActionNotice] = useState("");
-  const suggestions = useMemo(() => findContactSuggestions(search), [search]);
+  const [deviceContacts, setDeviceContacts] = useState<DeviceContact[]>([]);
+  const [contactsMessage, setContactsMessage] = useState("Loading phone contacts…");
+
+  useEffect(() => {
+    let active = true;
+    void loadDeviceContacts().then((result) => {
+      if (!active) return;
+      setDeviceContacts(result.contacts);
+      setContactsMessage(result.message ?? "");
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const suggestions = useMemo(
+    () => mergeContactSuggestions(search, deviceContacts, true).slice(0, 8),
+    [deviceContacts, search]
+  );
 
   return (
     <View style={styles.contactLink}>
-      <TextInput
-        value={search}
-        onChangeText={setSearch}
-        placeholder="Search contacts..."
-        placeholderTextColor={colors.mutedText}
-        style={styles.input}
-      />
+      <View style={styles.contactSearchRow}>
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search phone contacts..."
+          placeholderTextColor={colors.mutedText}
+          style={[styles.input, styles.contactSearchInput]}
+        />
+        <VoiceFieldActions value={search} onChangeText={setSearch} size={28} />
+      </View>
       {selectedContact ? (
         <SoftCard>
           <AppText variant="heading">{selectedContact.name}</AppText>
@@ -197,13 +227,34 @@ export function ContactLink({
           {selectedContact.address ? <AppText variant="muted">{selectedContact.address}</AppText> : null}
           <View style={styles.contactActions}>
             {selectedContact.phone ? (
-              <SecondaryButton onPress={() => setActionNotice(`Ready to call ${selectedContact.phone}`)}>Call</SecondaryButton>
+              <SecondaryButton
+                onPress={() => {
+                  void openContactCall(selectedContact.phone);
+                  setActionNotice(`Calling ${selectedContact.phone}`);
+                }}
+              >
+                Call
+              </SecondaryButton>
             ) : null}
             {selectedContact.email ? (
-              <SecondaryButton onPress={() => setActionNotice(`Ready to email ${selectedContact.email}`)}>Email</SecondaryButton>
+              <SecondaryButton
+                onPress={() => {
+                  void openContactEmail(selectedContact.email);
+                  setActionNotice(`Emailing ${selectedContact.email}`);
+                }}
+              >
+                Email
+              </SecondaryButton>
             ) : null}
             {selectedContact.address ? (
-              <SecondaryButton onPress={() => setActionNotice(`Directions noted for ${selectedContact.address}`)}>Directions</SecondaryButton>
+              <SecondaryButton
+                onPress={() => {
+                  void openContactMaps(selectedContact.address);
+                  setActionNotice(`Opening map for ${selectedContact.address}`);
+                }}
+              >
+                Directions
+              </SecondaryButton>
             ) : null}
             <SecondaryButton onPress={onRemove}>Remove contact</SecondaryButton>
           </View>
@@ -211,12 +262,28 @@ export function ContactLink({
         </SoftCard>
       ) : (
         <View style={styles.contactSuggestions}>
-          {suggestions.map((contact) => (
-            <Pressable key={contact.id} onPress={() => onSelect(contact)} style={styles.contactSuggestion}>
-              <AppText>{contact.name}</AppText>
-              <AppText variant="small" style={{ color: colors.mutedText }}>{contact.role}</AppText>
-            </Pressable>
-          ))}
+          {suggestions.length ? (
+            suggestions.map((contact) => (
+              <Pressable key={contact.id} onPress={() => onSelect(contact)} style={styles.contactSuggestion}>
+                <AppText>{contact.name}</AppText>
+                <AppText variant="small" style={{ color: colors.mutedText }}>
+                  {contact.email || contact.phone || contact.role}
+                </AppText>
+              </Pressable>
+            ))
+          ) : (
+            <AppText variant="muted">{contactsMessage || "No matching contacts."}</AppText>
+          )}
+          <SecondaryButton
+            onPress={() => {
+              void loadDeviceContacts().then((result) => {
+                setDeviceContacts(result.contacts);
+                setContactsMessage(result.message ?? "");
+              });
+            }}
+          >
+            Refresh phone contacts
+          </SecondaryButton>
         </View>
       )}
     </View>
@@ -394,14 +461,19 @@ export function SoftTextInput({
 }) {
   if (multiline) {
     return (
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.mutedText}
-        multiline
-        style={[styles.input, styles.multiline]}
-      />
+      <View style={styles.softTextWrap}>
+        <View style={styles.softTextHeader}>
+          <VoiceFieldActions value={value} onChangeText={onChangeText} />
+        </View>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.mutedText}
+          multiline
+          style={[styles.input, styles.multiline]}
+        />
+      </View>
     );
   }
   return <SearchBar value={value} onChangeText={onChangeText} placeholder={placeholder} />;
@@ -418,29 +490,6 @@ function formatItemType(type: TaskItem["taskType"]) {
     return "Occasion";
   }
   return type.charAt(0).toUpperCase() + type.slice(1);
-}
-
-function findContactSuggestions(search: string) {
-  const query = search.trim().toLowerCase();
-  if (!query) {
-    return mockContacts;
-  }
-  const queryParts = query.split(/\s+/);
-  return mockContacts.filter((contact) => {
-    const haystack = [
-      contact.name,
-      contact.role,
-      contact.contact,
-      contact.phone,
-      contact.email,
-      contact.address,
-      ...(contact.keywords ?? [])
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    return queryParts.some((part) => haystack.includes(part));
-  });
 }
 
 const styles = StyleSheet.create({
@@ -501,6 +550,20 @@ const styles = StyleSheet.create({
   },
   contactLink: {
     gap: spacing.sm
+  },
+  contactSearchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  contactSearchInput: {
+    flex: 1
+  },
+  softTextWrap: {
+    gap: spacing.xs
+  },
+  softTextHeader: {
+    alignItems: "flex-end"
   },
   contactSuggestions: {
     gap: spacing.sm

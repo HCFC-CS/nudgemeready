@@ -6,13 +6,13 @@ import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { getNudgeRewards } from "../services/gamification";
+import { formatDisplayDate } from "../services/reminderDates";
 import type { NudgeItem, NudgeItemType } from "../types/nudge";
 
 const doneSections: Array<{ title: string; types: NudgeItemType[] }> = [
   { title: "Completed tasks", types: ["task"] },
   { title: "Completed subtasks", types: ["subtask"] },
   { title: "Completed projects", types: ["project"] },
-  { title: "Completed appointments", types: ["appointment"] },
   { title: "Completed reminders", types: ["reminder"] },
   { title: "Completed events", types: ["event"] },
   { title: "Completed routines", types: ["routine"] },
@@ -72,7 +72,7 @@ function DoneTypeSection({ title, items }: { title: string; items: NudgeItem[] }
 
 function groupByDate(items: NudgeItem[]) {
   const groups = items.reduce<Array<{ date: string; items: NudgeItem[] }>>((current, item) => {
-    const date = formatDate(item.updatedAt);
+    const date = formatDisplayDate(item.updatedAt);
     const existingGroup = current.find((group) => group.date === date);
     if (existingGroup) {
       existingGroup.items.push(item);
@@ -80,13 +80,9 @@ function groupByDate(items: NudgeItem[]) {
     }
     return [...current, { date, items: [item] }];
   }, []);
-  return groups.sort((first, second) => second.date.localeCompare(first.date));
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
+  return groups.sort((first, second) => {
+    const firstTime = new Date(first.items[0]?.updatedAt ?? 0).getTime();
+    const secondTime = new Date(second.items[0]?.updatedAt ?? 0).getTime();
+    return secondTime - firstTime;
+  });
 }

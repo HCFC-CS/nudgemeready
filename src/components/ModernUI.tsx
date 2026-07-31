@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native
 import { colors, radii, shadows, spacing } from "../theme/theme";
 import type { IoniconName } from "./iconTypes";
 import { AppText } from "./Text";
+import { VoiceFieldActions } from "./VoiceFieldActions";
 
 export function SearchBar({
   value,
@@ -25,6 +26,7 @@ export function SearchBar({
         placeholderTextColor={colors.mutedText}
         style={styles.searchInput}
       />
+      <VoiceFieldActions value={value} onChangeText={onChangeText} size={26} />
       {value ? (
         <Pressable accessibilityRole="button" onPress={() => onChangeText("")} hitSlop={8}>
           <Ionicons name="close-circle" size={18} color={colors.mutedText} />

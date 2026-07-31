@@ -14,10 +14,11 @@ type WorldFilter =
   | "All"
   | "Tasks"
   | "Projects"
-  | "Appointments"
   | "Lists"
+  | "Notes"
   | "Reminders"
   | "Routines"
+  | "Appointments"
   | "Events"
   | "Occasions"
   | "Completed";
@@ -26,10 +27,11 @@ const filters: WorldFilter[] = [
   "All",
   "Tasks",
   "Projects",
-  "Appointments",
   "Lists",
+  "Notes",
   "Reminders",
   "Routines",
+  "Appointments",
   "Events",
   "Occasions",
   "Completed"
@@ -100,10 +102,11 @@ function matchesFilter(item: NudgeItem, filter: WorldFilter) {
     All: [],
     Tasks: ["task", "subtask", "chore"],
     Projects: ["project"],
-    Appointments: ["appointment"],
     Lists: ["list"],
+    Notes: ["note"],
     Reminders: ["reminder"],
     Routines: ["routine"],
+    Appointments: ["appointment"],
     Events: ["event"],
     Occasions: ["occasion", "special_day"],
     Completed: []

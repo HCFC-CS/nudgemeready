@@ -1,10 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { useOptionalItemEdit } from "../hooks/useItemEdit";
-import { colors, radii, spacing } from "../theme/theme";
+import { formatDisplayTime } from "../services/reminderDates";
+import { colors, radii, shadows, spacing } from "../theme/theme";
 import { AppText } from "./Text";
+import { VoiceFieldActions } from "./VoiceFieldActions";
 
 const hourOptions = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
 const minuteOptions = ["00", "15", "30", "45"];
@@ -22,7 +24,7 @@ export function TimePickerField({
   label,
   value,
   onChangeText,
-  placeholder = "09:00",
+  placeholder = "Pick a time",
   editable,
   variant = "field"
 }: TimePickerFieldProps) {
@@ -30,97 +32,129 @@ export function TimePickerField({
   const isEditable = editable ?? edit?.editable ?? true;
   const [isOpen, setIsOpen] = useState(false);
   const { hour, minute } = useMemo(() => parseTimeValue(value), [value]);
+  const displayValue = value ? formatDisplayTime(value) || value : "";
 
   function selectTime(nextHour: string, nextMinute: string) {
     onChangeText(`${nextHour}:${nextMinute}`);
     setIsOpen(false);
   }
 
-  function togglePicker() {
+  function openPicker() {
     if (!isEditable) {
       return;
     }
-    setIsOpen((current) => !current);
+    setIsOpen(true);
   }
 
-  const input = (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label ? `${label}, open time picker` : "Open time picker"}
-      onPress={togglePicker}
-      style={({ pressed }) => [
-        variant === "tile" ? styles.tile : styles.inputRow,
-        pressed && isEditable && styles.pressed,
-        !isEditable && styles.disabled
-      ]}
-    >
-      {variant === "tile" ? <Ionicons name="time-outline" size={20} color={colors.accent} /> : null}
-      <TextInput
-        style={[variant === "tile" ? styles.tileInput : styles.input, !isEditable && styles.inputDisabled]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.mutedText}
-        editable={isEditable}
-        onFocus={() => isEditable && setIsOpen(true)}
-      />
-      {variant === "field" ? (
-        <Ionicons name={isOpen ? "chevron-up" : "time-outline"} size={20} color={colors.accent} />
-      ) : null}
-    </Pressable>
-  );
-
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, variant === "tile" && styles.tileWrap]}>
       {label && variant === "field" ? (
-        <AppText variant="caption" style={styles.fieldLabel}>
-          {label}
-        </AppText>
-      ) : null}
-      {input}
-      {isOpen && isEditable ? (
-        <View style={styles.picker}>
-          <AppText variant="small" style={styles.pickerHint}>
-            Pick a time
+        <View style={styles.labelRow}>
+          <AppText variant="caption" style={styles.fieldLabel}>
+            {label}
           </AppText>
-          <View style={styles.columns}>
-            <ScrollView style={styles.column} showsVerticalScrollIndicator={false}>
-              {hourOptions.map((option) => (
-                <Pressable
-                  key={option}
-                  accessibilityRole="button"
-                  onPress={() => selectTime(option, minute)}
-                  style={({ pressed }) => [
-                    styles.option,
-                    hour === option && styles.optionSelected,
-                    pressed && styles.pressed
-                  ]}
-                >
-                  <AppText style={[styles.optionLabel, hour === option && styles.optionLabelSelected]}>{option}</AppText>
-                </Pressable>
-              ))}
-            </ScrollView>
-            <ScrollView style={styles.column} showsVerticalScrollIndicator={false}>
-              {minuteOptions.map((option) => (
-                <Pressable
-                  key={option}
-                  accessibilityRole="button"
-                  onPress={() => selectTime(hour, option)}
-                  style={({ pressed }) => [
-                    styles.option,
-                    minute === option && styles.optionSelected,
-                    pressed && styles.pressed
-                  ]}
-                >
-                  <AppText style={[styles.optionLabel, minute === option && styles.optionLabelSelected]}>
-                    {option}
-                  </AppText>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
+          <VoiceFieldActions value={value} onChangeText={onChangeText} editable={isEditable} replaceOnSpeak />
         </View>
       ) : null}
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label ? `${label}, open time picker` : "Open time picker"}
+        onPress={openPicker}
+        style={({ pressed }) => [
+          variant === "tile" ? styles.tile : styles.trigger,
+          pressed && isEditable && styles.pressed,
+          !isEditable && styles.disabled
+        ]}
+      >
+        {variant === "tile" ? (
+          <>
+            <AppText variant="caption" style={styles.tileCaption}>
+              {label ?? "Time"}
+            </AppText>
+            <View style={styles.triggerValueRow}>
+              <Ionicons name="time-outline" size={18} color={colors.accent} />
+              <AppText style={[styles.triggerValue, !displayValue && styles.placeholder]} numberOfLines={1}>
+                {displayValue || placeholder}
+              </AppText>
+            </View>
+          </>
+        ) : (
+          <>
+            <Ionicons name="time-outline" size={20} color={colors.accent} />
+            <AppText style={[styles.triggerValue, !displayValue && styles.placeholder]} numberOfLines={1}>
+              {displayValue || placeholder}
+            </AppText>
+            <Ionicons name="chevron-down" size={18} color={colors.mutedText} />
+          </>
+        )}
+      </Pressable>
+
+      <Modal visible={isOpen && isEditable} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setIsOpen(false)}>
+          <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
+            <View style={styles.sheetHeader}>
+              <AppText variant="heading">{label ?? "Time"}</AppText>
+              <Pressable accessibilityRole="button" onPress={() => setIsOpen(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={22} color={colors.mutedText} />
+              </Pressable>
+            </View>
+
+            <AppText variant="small" style={styles.pickerHint}>
+              Choose hour and minutes
+            </AppText>
+
+            <View style={styles.columns}>
+              <View style={styles.column}>
+                <AppText variant="caption" style={styles.columnLabel}>
+                  Hour
+                </AppText>
+                <ScrollView style={styles.columnScroll} showsVerticalScrollIndicator={false}>
+                  {hourOptions.map((option) => (
+                    <Pressable
+                      key={option}
+                      accessibilityRole="button"
+                      onPress={() => selectTime(option, minute)}
+                      style={({ pressed }) => [
+                        styles.option,
+                        hour === option && styles.optionSelected,
+                        pressed && styles.pressed
+                      ]}
+                    >
+                      <AppText style={[styles.optionLabel, hour === option && styles.optionLabelSelected]}>
+                        {option}
+                      </AppText>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+              <View style={styles.column}>
+                <AppText variant="caption" style={styles.columnLabel}>
+                  Min
+                </AppText>
+                <ScrollView style={styles.columnScroll} showsVerticalScrollIndicator={false}>
+                  {minuteOptions.map((option) => (
+                    <Pressable
+                      key={option}
+                      accessibilityRole="button"
+                      onPress={() => selectTime(hour, option)}
+                      style={({ pressed }) => [
+                        styles.option,
+                        minute === option && styles.optionSelected,
+                        pressed && styles.pressed
+                      ]}
+                    >
+                      <AppText style={[styles.optionLabel, minute === option && styles.optionLabelSelected]}>
+                        {option}
+                      </AppText>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -142,11 +176,21 @@ const styles = StyleSheet.create({
   wrap: {
     gap: spacing.xs
   },
+  tileWrap: {
+    flex: 1
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
   fieldLabel: {
     color: colors.mutedText,
-    fontWeight: "600"
+    fontWeight: "600",
+    flexShrink: 1
   },
-  inputRow: {
+  trigger: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
@@ -157,33 +201,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     minHeight: 48
   },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.text,
-    paddingVertical: spacing.sm
-  },
   tile: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
     borderWidth: 1,
     borderColor: colors.borderLight,
     borderRadius: radii.lg,
     backgroundColor: colors.card,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    minHeight: 52
+    paddingVertical: spacing.sm,
+    minHeight: 64,
+    justifyContent: "center",
+    gap: 4
   },
-  tileInput: {
+  tileCaption: {
+    color: colors.mutedText,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    fontSize: 11
+  },
+  triggerValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  triggerValue: {
     flex: 1,
+    minWidth: 0,
     fontSize: 16,
     color: colors.text,
-    fontWeight: "600"
+    fontWeight: "600",
+    fontVariant: ["tabular-nums"],
+    letterSpacing: 0.4
   },
-  inputDisabled: {
-    opacity: 0.6
+  placeholder: {
+    color: colors.mutedText,
+    fontWeight: "500"
   },
   disabled: {
     opacity: 0.7
@@ -191,13 +244,31 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.85
   },
-  picker: {
-    borderWidth: 1,
-    borderColor: colors.borderLight,
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(21, 32, 56, 0.45)",
+    justifyContent: "center",
+    padding: spacing.lg
+  },
+  sheet: {
+    backgroundColor: colors.background,
     borderRadius: radii.lg,
-    backgroundColor: colors.card,
-    padding: spacing.sm,
+    padding: spacing.md,
+    gap: spacing.md,
+    maxHeight: "70%",
+    ...shadows.sm
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.sm
+  },
+  closeBtn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center"
   },
   pickerHint: {
     color: colors.mutedText,
@@ -205,14 +276,24 @@ const styles = StyleSheet.create({
   },
   columns: {
     flexDirection: "row",
-    gap: spacing.sm,
-    maxHeight: 180
+    gap: spacing.md
   },
   column: {
-    flex: 1
+    flex: 1,
+    gap: spacing.xs
+  },
+  columnLabel: {
+    textAlign: "center",
+    color: colors.mutedText,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5
+  },
+  columnScroll: {
+    maxHeight: 220
   },
   option: {
-    minHeight: 40,
+    minHeight: 44,
     borderRadius: radii.md,
     alignItems: "center",
     justifyContent: "center"
@@ -222,7 +303,9 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     color: colors.text,
-    fontWeight: "600"
+    fontWeight: "600",
+    fontSize: 18,
+    fontVariant: ["tabular-nums"]
   },
   optionLabelSelected: {
     color: colors.onPrimary
