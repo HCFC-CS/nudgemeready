@@ -15,6 +15,8 @@ import type { NudgeItem, NudgeItemStatus, NudgeItemType } from "../types/nudge";
 type NudgeItemsContextValue = {
   items: NudgeItem[];
   isReady: boolean;
+  loadError: string | null;
+  clearLoadError: () => void;
   saveItem: (item: NudgeItem) => void;
   setItemStatus: (itemId: string, status: NudgeItemStatus) => void;
   completeNudgeItem: (itemId: string) => void;
@@ -29,6 +31,7 @@ const NudgeItemsContext = createContext<NudgeItemsContextValue | undefined>(unde
 export function NudgeItemsProvider({ children }: PropsWithChildren) {
   const [items, setItems] = useState<NudgeItem[]>([]);
   const [isReady, setIsReady] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const actor = useNudgeActor();
   const { reportNudgeDeleted } = useCrew();
 
@@ -37,7 +40,8 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
     loadNudgeItems()
       .then((loaded) => {
         if (active) {
-          setItems(loaded);
+          setItems(loaded.items);
+          setLoadError(loaded.error ?? null);
         }
       })
       .finally(() => {
@@ -186,6 +190,8 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
       value={{
         items,
         isReady,
+        loadError,
+        clearLoadError: () => setLoadError(null),
         saveItem,
         setItemStatus,
         completeNudgeItem,

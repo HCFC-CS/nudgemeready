@@ -24,6 +24,8 @@ export function HomeScreen() {
         {cards.map((item) => (
           <Pressable
             key={item.title}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.title}. ${item.copy}`}
             onPress={() => navigation.navigate(item.route)}
             style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
           >

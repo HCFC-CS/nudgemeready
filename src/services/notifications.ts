@@ -1,15 +1,20 @@
 import * as Notifications from "expo-notifications";
 
 import type { RepeatRule, TaskItem } from "../types/models";
+import { adjustDateForQuietHours, shouldAllowNotifications } from "./notificationPrefs";
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false
-  })
+  handleNotification: async () => {
+    const gate = await shouldAllowNotifications();
+    const allow = gate.allow;
+    return {
+      shouldShowAlert: allow,
+      shouldShowBanner: allow,
+      shouldShowList: allow,
+      shouldPlaySound: allow,
+      shouldSetBadge: false
+    };
+  }
 });
 
 export async function ensureNotificationPermission() {
@@ -48,6 +53,11 @@ export async function scheduleTaskReminder(task: TaskItem) {
     return undefined;
   }
 
+  const gate = await shouldAllowNotifications();
+  if (!gate.prefs.pushNotifications) {
+    return undefined;
+  }
+
   const reminderDates = [
     task.reminderAt,
     task.remindForGift ? task.giftReminderAt : undefined,
@@ -63,20 +73,22 @@ export async function scheduleTaskReminder(task: TaskItem) {
     return undefined;
   }
 
+  const quiet = gate.prefs.quietHours;
+
   const notificationIds = await Promise.all(
     reminderDates.flatMap((reminderAt) => {
-      const reminderDate = new Date(reminderAt);
+      const reminderDate = adjustDateForQuietHours(new Date(reminderAt), quiet);
       if (Number.isNaN(reminderDate.getTime())) {
         return [Promise.resolve(undefined)];
       }
       const firstReminder = Notifications.scheduleNotificationAsync({
-          content: {
-            title: task.title,
-            body: "Reminder for this item.",
-            data: { taskId: task.id }
-          },
-          trigger: getTrigger(task.repeatRule, reminderDate)
-        });
+        content: {
+          title: task.title,
+          body: "Reminder for this item.",
+          data: { taskId: task.id }
+        },
+        trigger: getTrigger(task.repeatRule, reminderDate)
+      });
       const keepNudging = task.keepRemindingEvery15UntilDone
         ? Notifications.scheduleNotificationAsync({
             content: {
@@ -96,7 +108,6 @@ export async function scheduleTaskReminder(task: TaskItem) {
     })
   );
 
-  // If only keep-nudging is on and there was no date, still schedule the repeat.
   if (!reminderDates.length && task.keepRemindingEvery15UntilDone) {
     const id = await Notifications.scheduleNotificationAsync({
       content: {

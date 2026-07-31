@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reset sign-in · Nudge me Ready</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var token = params.get("t");
+      if (!token) return;
+      var appLink = "nudge-me://recover?t=" + encodeURIComponent(token);
+      // Try to open the installed app immediately.
+      window.location.replace(appLink);
+    })();
+  </script>
+</head>
+<body>
+  <main class="wrap">
+    <p class="eyebrow"><a href="/">Nudge me Ready</a></p>
+    <h1>Reset your sign-in</h1>
+    <p class="lede">
+      This page opens the Nudge me Ready app so you can choose a new PIN or password.
+      Tap the button below if the app didn’t open automatically.
+    </p>
+    <div class="actions" id="actions">
+      <a class="button" id="open-app" href="nudge-me://recover">Open Nudge me Ready</a>
+      <a class="button quiet" href="/support/">Need help?</a>
+    </div>
+    <p class="fine">
+      The reset link works for 24 hours and only on the phone where the app is installed.
+      Email <a href="mailto:support@nudgemeready.app">support@nudgemeready.app</a> if you’re stuck.
+    </p>
+  </main>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var token = params.get("t");
+      var open = document.getElementById("open-app");
+      if (token && open) {
+        open.setAttribute("href", "nudge-me://recover?t=" + encodeURIComponent(token));
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -17,6 +17,11 @@ import { navigationRef } from "./src/navigation/navigationRef";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { getScreenshotInitialState, getScreenshotScreenId } from "./src/navigation/screenshotState";
 import { parseInviteFromUrl } from "./src/services/crewInvites";
+import {
+  isDeepLinkLockActive,
+  stashPendingInvite,
+  stashPendingRecoverToken
+} from "./src/services/pendingDeepLinks";
 import { colors } from "./src/theme/theme";
 import type { RootStackParamList } from "./src/types/navigation";
 
@@ -33,6 +38,24 @@ function extractInviteParams(url: string) {
     payload = undefined;
   }
   return { inviteId: parsed.inviteId, payload };
+}
+
+function extractRecoverToken(url: string) {
+  try {
+    const normalized = url.replace(/^nudge-me:\/\//i, "https://nudgemeready.app/");
+    const parsed = new URL(normalized);
+    const path = parsed.pathname.replace(/\/+$/, "").toLowerCase();
+    if (path.endsWith("/recover") || path === "/recover") {
+      return parsed.searchParams.get("t");
+    }
+    // nudge-me://recover?t=…
+    if (parsed.hostname === "recover" || path === "recover") {
+      return parsed.searchParams.get("t");
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 const appLinking: LinkingOptions<RootStackParamList> = {
@@ -65,10 +88,31 @@ const appLinking: LinkingOptions<RootStackParamList> = {
   },
   getStateFromPath(path, options) {
     const url = path.includes("://") ? path : `https://nudgemeready.app/${path.replace(/^\//, "")}`;
+    const recoverToken = extractRecoverToken(url);
+    if (recoverToken) {
+      if (isDeepLinkLockActive()) {
+        stashPendingRecoverToken(recoverToken);
+      }
+      return {
+        routes: [{ name: "Splash", params: { recoverToken } }]
+      };
+    }
     const invite = extractInviteParams(url);
     if (invite) {
+      if (isDeepLinkLockActive()) {
+        stashPendingInvite(invite);
+        return {
+          routes: [{ name: "Splash" }]
+        };
+      }
       return {
         routes: [{ name: "AcceptInvite", params: invite }]
+      };
+    }
+    if (isDeepLinkLockActive()) {
+      // Keep locked users on Splash for other deep links (settings, etc.).
+      return {
+        routes: [{ name: "Splash" }]
       };
     }
     return defaultGetStateFromPath(path, options);

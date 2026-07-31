@@ -26,6 +26,8 @@ import {
   requestLocationReminderPermission
 } from "../services/locationReminders";
 import { ensureNotificationPermission } from "../services/notifications";
+import { syncDailySummaryNotification } from "../services/dailySummary";
+import { ensureContactsPermission } from "../services/deviceContacts";
 import {
   buildLeavingHomeSpeechText,
   hasReminderPlaces,
@@ -35,11 +37,8 @@ import {
 } from "../services/homeSettingsStorage";
 import { colors, spacing } from "../theme/theme";
 
-const toneOptions = ["Gentle", "Cheerful", "Straightforward", "Minimal"];
-const appearanceOptions = ["Light", "Dark", "System"];
 const timerOptions = ["15", "25", "45", "60"];
 const reminderOptions = ["No reminder", "Morning", "Afternoon", "Evening", "Custom"];
-const categoryOptions = ["Home", "Work", "School", "Health", "Clubs"];
 
 function cloneProfile(profile: ProfileDraft): ProfileDraft {
   return {
@@ -167,13 +166,30 @@ export function SettingsScreen() {
     if (value) {
       await ensureNotificationPermission();
     }
+    await syncDailySummaryNotification();
   }
 
   async function handleContacts(value: boolean) {
     patchPrefs({ contactsEnabled: value });
     if (value) {
-      await requestLocationReminderPermission();
+      const granted = await ensureContactsPermission();
+      if (!granted) {
+        setNotice("Contacts permission wasn’t granted. You can allow it in iPhone Settings.");
+      }
     }
+  }
+
+  async function handleQuietHours(value: boolean) {
+    patchPrefs({ quietHours: value });
+  }
+
+  async function handleDailySummary(value: boolean) {
+    patchPrefs({ dailySummary: value });
+    if (value && !prefsDraft.pushNotifications) {
+      patchPrefs({ pushNotifications: true, dailySummary: true });
+      await ensureNotificationPermission();
+    }
+    await syncDailySummaryNotification();
   }
 
   async function handleSaveAll() {
@@ -191,6 +207,7 @@ export function SettingsScreen() {
     setReadAloudEnabled(prefsDraft.readAloud);
     await saveAppPreferences(prefsDraft);
     await saveHomeSettings(nextHome);
+    await syncDailySummaryNotification();
     setSavedPrefsSnapshot(clonePrefs(prefsDraft));
     setNotice("All settings saved.");
   }
@@ -216,40 +233,20 @@ export function SettingsScreen() {
           label="Push"
           value={prefsDraft.pushNotifications}
           onValueChange={(value) => void handlePushNotifications(value)}
-          note="Gentle prompts on this device."
-        />
-        <ToggleRow
-          label="Email"
-          value={prefsDraft.emailNotifications}
-          onValueChange={(value) => patchPrefs({ emailNotifications: value })}
-          note="Useful for backup nudges."
+          note="Gentle prompts on this device. Off means reminders won’t be scheduled."
         />
         <ToggleRow
           label="Quiet hours"
           value={prefsDraft.quietHours}
-          onValueChange={(value) => patchPrefs({ quietHours: value })}
-          note="Keep evenings softer."
+          onValueChange={(value) => void handleQuietHours(value)}
+          note="Holds alerts overnight (9pm–7am) and softens leaving-place prompts."
         />
         <ToggleRow
           label="Daily summary"
           value={prefsDraft.dailySummary}
-          onValueChange={(value) => patchPrefs({ dailySummary: value })}
-          note="A small look at the day ahead."
+          onValueChange={(value) => void handleDailySummary(value)}
+          note="A small morning look at the day ahead (needs Push on)."
         />
-      </SoftCard>
-
-      <SoftCard>
-        <AppText variant="heading">Appearance</AppText>
-        <OptionGrid
-          options={appearanceOptions}
-          selected={prefsDraft.appearance}
-          onSelect={(appearance) => patchPrefs({ appearance })}
-        />
-      </SoftCard>
-
-      <SoftCard>
-        <AppText variant="heading">Tone</AppText>
-        <OptionGrid options={toneOptions} selected={prefsDraft.tone} onSelect={(tone) => patchPrefs({ tone })} />
       </SoftCard>
 
       <SoftCard>
@@ -260,18 +257,9 @@ export function SettingsScreen() {
           onSelect={(focusTimer) => patchPrefs({ focusTimer })}
           suffix=" min"
         />
-      </SoftCard>
-
-      <SoftCard>
-        <AppText variant="heading">Categories</AppText>
-        <View style={styles.categoryList}>
-          {categoryOptions.map((category) => (
-            <View key={category} style={styles.categoryRow}>
-              <View style={styles.categoryDot} />
-              <AppText>{category}</AppText>
-            </View>
-          ))}
-        </View>
+        <AppText variant="caption" style={{ color: colors.mutedText }}>
+          Used as the default length on the Focus tab.
+        </AppText>
       </SoftCard>
 
       <SoftCard>

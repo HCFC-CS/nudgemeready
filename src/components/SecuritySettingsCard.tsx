@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 
 import { useAppSecurity } from "../hooks/useAppSecurity";
 import type { CredentialType } from "../services/appSecurity";
@@ -20,7 +20,8 @@ export function SecuritySettingsCard() {
     updateBiometrics,
     updateLockOnBackground,
     lockNow,
-    createReplacementRecoveryCode
+    createReplacementRecoveryCode,
+    updateRecoveryEmail
   } = useAppSecurity();
 
   const [credentialType, setCredentialType] = useState<CredentialType>("password");
@@ -28,6 +29,8 @@ export function SecuritySettingsCard() {
   const [confirmCredential, setConfirmCredential] = useState("");
   const [disableCredential, setDisableCredential] = useState("");
   const [recoveryCredential, setRecoveryCredential] = useState("");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [emailCredential, setEmailCredential] = useState("");
   const [enableFaceId, setEnableFaceId] = useState(true);
   const [shownRecoveryCode, setShownRecoveryCode] = useState("");
   const [message, setMessage] = useState("");
@@ -37,7 +40,8 @@ export function SecuritySettingsCard() {
     setMessage("");
     setError("");
     setEnableFaceId(biometricsAvailable);
-  }, [settings.lockEnabled, biometricsAvailable]);
+    setRecoveryEmail(settings.recoveryEmail ?? "");
+  }, [settings.lockEnabled, settings.recoveryEmail, biometricsAvailable]);
 
   const isPassword = credentialType === "password";
   const minLength = isPassword ? 8 : 4;
@@ -53,7 +57,8 @@ export function SecuritySettingsCard() {
     try {
       const useBiometrics = biometricsAvailable && enableFaceId;
       const recoveryCode = await turnOnLock(credential, credentialType, {
-        biometricsEnabled: useBiometrics
+        biometricsEnabled: useBiometrics,
+        recoveryEmail
       });
       setCredential("");
       setConfirmCredential("");
@@ -71,14 +76,29 @@ export function SecuritySettingsCard() {
   async function handleDisable() {
     setError("");
     setMessage("");
-    try {
-      await turnOffLock(disableCredential);
-      setDisableCredential("");
-      setShownRecoveryCode("");
-      setMessage("App lock turned off.");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not turn off app lock.");
-    }
+    Alert.alert(
+      "Turn off app lock?",
+      "Anyone with this phone will be able to open your nudges without Face ID, PIN, or password.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Turn off",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              try {
+                await turnOffLock(disableCredential);
+                setDisableCredential("");
+                setShownRecoveryCode("");
+                setMessage("App lock turned off.");
+              } catch (caught) {
+                setError(caught instanceof Error ? caught.message : "Could not turn off app lock.");
+              }
+            })();
+          }
+        }
+      ]
+    );
   }
 
   async function handleBiometrics(value: boolean) {
@@ -104,6 +124,18 @@ export function SecuritySettingsCard() {
     }
   }
 
+  async function handleUpdateRecoveryEmail() {
+    setError("");
+    setMessage("");
+    try {
+      await updateRecoveryEmail(emailCredential, recoveryEmail);
+      setEmailCredential("");
+      setMessage("Recovery email updated.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not update recovery email.");
+    }
+  }
+
   function updateCredentialDraft(value: string) {
     if (credentialType === "pin") {
       setCredential(value.replace(/\D/g, "").slice(0, 8));
@@ -126,7 +158,8 @@ export function SecuritySettingsCard() {
       <AppText variant="muted">
         App lock keeps your nudges private on this phone. Your notes, appointments, crew details, and
         settings are encrypted on device. Sign in with {hasFaceId ? "Face ID" : biometricLabel}, a PIN, or
-        a password. If you forget it, use Face ID/device passcode or your recovery code.
+        a password. If you forget it, use Face ID/device passcode, an email reset link, or your recovery
+        code.
       </AppText>
 
       {shownRecoveryCode ? (
@@ -188,6 +221,19 @@ export function SecuritySettingsCard() {
             </AppText>
           ) : null}
 
+          <Field
+            label="Recovery email"
+            value={recoveryEmail}
+            onChangeText={(value) => setRecoveryEmail(value.slice(0, 120))}
+            placeholder="you@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            voiceEnabled={false}
+          />
+          <AppText variant="caption" style={styles.hint}>
+            Used to email yourself a one-time reset link if you forget your sign-in.
+          </AppText>
+
           {biometricsAvailable ? (
             <ToggleRow
               label={`Also unlock with ${biometricLabel}`}
@@ -208,7 +254,7 @@ export function SecuritySettingsCard() {
           <Button
             tone="primary"
             onPress={() => void handleEnable()}
-            disabled={credential.length < minLength}
+            disabled={credential.length < minLength || !recoveryEmail.includes("@")}
           >
             Turn on app lock
           </Button>
@@ -243,8 +289,44 @@ export function SecuritySettingsCard() {
           </Button>
 
           <AppText variant="caption" style={styles.hint}>
-            Forgot password help uses Face ID/device passcode, or the recovery code below.
+            Forgot password help uses Face ID/device passcode, an email reset link, or the recovery code
+            below.
           </AppText>
+          <Field
+            label="Recovery email"
+            value={recoveryEmail}
+            onChangeText={(value) => setRecoveryEmail(value.slice(0, 120))}
+            placeholder="you@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            voiceEnabled={false}
+          />
+          <Field
+            label={`Current ${activeLabel} to update email`}
+            value={emailCredential}
+            onChangeText={(value) =>
+              setEmailCredential(
+                settings.credentialType === "pin"
+                  ? value.replace(/\D/g, "").slice(0, 8)
+                  : value.slice(0, 64)
+              )
+            }
+            placeholder={settings.credentialType === "password" ? "Current password" : "Current PIN"}
+            keyboardType={settings.credentialType === "password" ? "default" : "number-pad"}
+            voiceEnabled={false}
+            secureTextEntry
+          />
+          <Button
+            tone="quiet"
+            onPress={() => void handleUpdateRecoveryEmail()}
+            disabled={
+              !recoveryEmail.includes("@") ||
+              emailCredential.length < (settings.credentialType === "password" ? 8 : 4)
+            }
+          >
+            Save recovery email
+          </Button>
+
           <Field
             label={`Current ${activeLabel} for new recovery code`}
             value={recoveryCredential}

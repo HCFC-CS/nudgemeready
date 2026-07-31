@@ -21,8 +21,8 @@ export function LegalInfoScreen() {
       <SoftCard>
         <AppText variant="heading">Privacy</AppText>
         <AppText variant="muted">
-          Your nudges, notes, appointments, crew details, and settings stay on this phone and are encrypted
-          at rest. We do not sync them to a cloud account yet.
+          Your nudges, notes, appointments, crew details, settings, and document attachments stay on this phone and
+          are encrypted at rest. We do not sync them to a cloud account yet.
         </AppText>
         <AppText variant="muted">
           Optional app lock (Face ID, PIN, or password) keeps the app private when you leave it. Permissions

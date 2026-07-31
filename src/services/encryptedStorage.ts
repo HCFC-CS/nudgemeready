@@ -7,6 +7,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const DATA_KEY_STORE = "nudge.security.dataKey.v1";
 const ENCRYPTED_PREFIX = "nmr1:";
 
+export class StorageDecryptError extends Error {
+  readonly key: string;
+
+  constructor(key: string, cause?: unknown) {
+    super("Could not decrypt saved data. It may be damaged or from another install.");
+    this.name = "StorageDecryptError";
+    this.key = key;
+    if (cause instanceof Error) {
+      this.cause = cause;
+    }
+  }
+}
+
 async function getOrCreateDataKey(): Promise<Uint8Array> {
   const existing = await SecureStore.getItemAsync(DATA_KEY_STORE);
   if (existing) {
@@ -43,8 +56,44 @@ async function decryptString(payload: string): Promise<string> {
   return bytesToUtf8(plaintext);
 }
 
+/** Encrypt arbitrary bytes (attachments). Returns hex: nonce(24) + ciphertext. */
+export async function encryptBytes(plaintext: Uint8Array): Promise<Uint8Array> {
+  const key = await getOrCreateDataKey();
+  const nonceBytes = await Crypto.getRandomBytesAsync(12);
+  const nonce = new Uint8Array(nonceBytes);
+  const aes = gcm(key, nonce);
+  const ciphertext = aes.encrypt(plaintext);
+  const out = new Uint8Array(nonce.length + ciphertext.length);
+  out.set(nonce, 0);
+  out.set(ciphertext, nonce.length);
+  return out;
+}
+
+export async function decryptBytes(payload: Uint8Array): Promise<Uint8Array> {
+  if (payload.length < 13) {
+    throw new Error("Invalid encrypted file");
+  }
+  const nonce = payload.slice(0, 12);
+  const ciphertext = payload.slice(12);
+  const key = await getOrCreateDataKey();
+  const aes = gcm(key, nonce);
+  return aes.decrypt(ciphertext);
+}
+
 /** Read a string; migrates legacy plaintext into encrypted storage. */
 export async function getEncryptedItem(key: string): Promise<string | null> {
+  try {
+    return await getEncryptedItemStrict(key);
+  } catch (caught) {
+    if (caught instanceof StorageDecryptError) {
+      return null;
+    }
+    throw caught;
+  }
+}
+
+/** Like getEncryptedItem, but surfaces decrypt failures instead of treating them as empty. */
+export async function getEncryptedItemStrict(key: string): Promise<string | null> {
   const raw = await AsyncStorage.getItem(key);
   if (raw == null) {
     return null;
@@ -55,8 +104,8 @@ export async function getEncryptedItem(key: string): Promise<string | null> {
   }
   try {
     return await decryptString(raw);
-  } catch {
-    return null;
+  } catch (cause) {
+    throw new StorageDecryptError(key, cause);
   }
 }
 

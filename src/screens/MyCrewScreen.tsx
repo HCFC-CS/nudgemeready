@@ -52,8 +52,17 @@ export function MyCrewScreen() {
   );
 
   function removeMember(membershipId: string) {
-    revokeMembership(membershipId);
-    setNotice("Access revoked.");
+    Alert.alert("Remove this crew member?", "They’ll lose access to your crew on this phone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => {
+          revokeMembership(membershipId);
+          setNotice("Access revoked.");
+        }
+      }
+    ]);
   }
 
   function editMember(member: CrewMember) {

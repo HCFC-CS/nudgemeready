@@ -2,6 +2,7 @@ import * as Notifications from "expo-notifications";
 import * as Speech from "expo-speech";
 
 import { resolveItemCreator } from "./itemPermissions";
+import { adjustDateForQuietHours, shouldAllowNotifications } from "./notificationPrefs";
 import type { NudgeItem } from "../types/nudge";
 
 const TEN_MINUTES_SECONDS = 10 * 60;
@@ -50,6 +51,11 @@ export async function syncSpeakingReminderNotifications(item: NudgeItem): Promis
     return [];
   }
 
+  const gate = await shouldAllowNotifications();
+  if (!gate.prefs.pushNotifications) {
+    return [];
+  }
+
   const hasPermission = await ensureNotificationPermission();
   if (!hasPermission) {
     return [];
@@ -59,10 +65,14 @@ export async function syncSpeakingReminderNotifications(item: NudgeItem): Promis
   const creator = resolveItemCreator(item);
   const ids: string[] = [];
 
-  const reminderDate = item.reminderDate ? new Date(item.reminderDate) : undefined;
-  const hasValidDate = reminderDate && !Number.isNaN(reminderDate.getTime());
+  const reminderDateRaw = item.reminderDate ? new Date(item.reminderDate) : undefined;
+  const reminderDate =
+    reminderDateRaw && !Number.isNaN(reminderDateRaw.getTime())
+      ? adjustDateForQuietHours(reminderDateRaw, gate.prefs.quietHours)
+      : undefined;
+  const hasValidDate = reminderDate && reminderDate.getTime() > Date.now();
 
-  if (hasValidDate && reminderDate.getTime() > Date.now()) {
+  if (hasValidDate && reminderDate) {
     ids.push(
       await Notifications.scheduleNotificationAsync({
         content: buildNudgeeNotificationContent(item, speakingText, "initial"),

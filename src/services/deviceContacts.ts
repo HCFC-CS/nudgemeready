@@ -7,7 +7,7 @@ export type DeviceContact = MockContact & {
   fromDevice?: boolean;
 };
 
-async function ensureContactsPermission() {
+export async function ensureContactsPermission() {
   const current = await Contacts.getPermissionsAsync();
   if (current.granted) {
     return true;
@@ -48,6 +48,16 @@ export async function loadDeviceContacts(limit = 250): Promise<{
   message?: string;
 }> {
   try {
+    const { loadAppPreferences } = await import("./appPreferencesStorage");
+    const prefs = await loadAppPreferences();
+    if (!prefs.contactsEnabled) {
+      return {
+        contacts: [],
+        granted: false,
+        message: "Phone contacts are turned off in Settings."
+      };
+    }
+
     const granted = await ensureContactsPermission();
     if (!granted) {
       return {

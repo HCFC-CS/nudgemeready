@@ -54,7 +54,7 @@ type ProfileContextValue = {
 };
 
 const defaultProfile: Profile = {
-  name: "Helen",
+  name: "",
   icon: "sun",
   email: "",
   phone: ""
@@ -108,7 +108,7 @@ export function ProfileProvider({ children }: PropsWithChildren) {
 
   const saveProfile = useCallback((next: ProfileDraft) => {
     setProfile({
-      name: next.name.trim() || defaultProfile.name,
+      name: next.name.trim(),
       icon: next.icon,
       avatarUri: next.avatarUri,
       email: next.email.trim(),

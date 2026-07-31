@@ -25,13 +25,14 @@ export function Field({
   blurOnSubmit,
   editable,
   voiceEnabled = true,
-  secureTextEntry = false
+  secureTextEntry = false,
+  autoCapitalize
 }: {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
-  keyboardType?: "default" | "number-pad";
+  keyboardType?: "default" | "number-pad" | "email-address";
   multiline?: boolean;
   onSubmitEditing?: TextInputProps["onSubmitEditing"];
   returnKeyType?: TextInputProps["returnKeyType"];
@@ -40,8 +41,12 @@ export function Field({
   /** Show mic (speech-to-text) and speaker (text-to-speech) controls */
   voiceEnabled?: boolean;
   secureTextEntry?: boolean;
+  autoCapitalize?: TextInputProps["autoCapitalize"];
 }) {
   const isEditable = useFieldEditable(editable);
+  const resolvedCapitalize =
+    autoCapitalize ??
+    (secureTextEntry || keyboardType === "email-address" ? "none" : undefined);
 
   return (
     <View style={styles.group}>
@@ -66,8 +71,10 @@ export function Field({
         blurOnSubmit={blurOnSubmit}
         editable={isEditable}
         secureTextEntry={secureTextEntry}
-        autoCapitalize={secureTextEntry ? "none" : undefined}
-        autoCorrect={secureTextEntry ? false : undefined}
+        autoCapitalize={resolvedCapitalize}
+        autoCorrect={secureTextEntry || keyboardType === "email-address" ? false : undefined}
+        autoComplete={keyboardType === "email-address" ? "email" : undefined}
+        textContentType={keyboardType === "email-address" ? "emailAddress" : undefined}
       />
     </View>
   );
@@ -89,7 +96,14 @@ export function ToggleRow({
   const isEditable = useFieldEditable(disabled === undefined ? undefined : !disabled);
 
   return (
-    <View style={styles.toggleRow}>
+    <View
+      style={styles.toggleRow}
+      accessible
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      accessibilityHint={note}
+      accessibilityState={{ checked: value, disabled: !isEditable }}
+    >
       <View style={{ flex: 1 }}>
         <AppText>{label}</AppText>
         {note ? <AppText variant="small" style={{ color: colors.mutedText }}>{note}</AppText> : null}
@@ -100,6 +114,7 @@ export function ToggleRow({
         trackColor={{ true: colors.primary, false: colors.border }}
         thumbColor={colors.card}
         disabled={!isEditable}
+        accessibilityLabel={label}
       />
     </View>
   );

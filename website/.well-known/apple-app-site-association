@@ -4,7 +4,7 @@
     "details": [
       {
         "appID": "656UL52XWW.com.helencunliffe.nudgeme",
-        "paths": ["/invite", "/invite/*"]
+        "paths": ["/invite", "/invite/*", "/recover", "/recover/*"]
       }
     ]
   },

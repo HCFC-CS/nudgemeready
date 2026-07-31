@@ -51,6 +51,12 @@ TaskManager.defineTask(LEAVING_HOME_GEOFENCE_TASK, async ({ data, error }) => {
     return;
   }
 
+  const { shouldAllowNotifications } = await import("./notificationPrefs");
+  const gate = await shouldAllowNotifications();
+  if (!gate.allow) {
+    return;
+  }
+
   const speakText = buildLeavingPlaceSpeechText(kind, settings.checklistItems);
   await Notifications.scheduleNotificationAsync({
     content: {

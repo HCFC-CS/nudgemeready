@@ -22,10 +22,10 @@ import { colors, radii, shadows, spacing } from "../theme/theme";
 import type { RootStackParamList } from "../types/navigation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
-type SignInStep = "welcome" | "setup" | "unlock" | "forgot" | "recoveryCode" | "reset" | "recoveryShown";
+type SignInStep = "welcome" | "name" | "setup" | "unlock" | "forgot" | "recoveryCode" | "reset" | "recoveryShown";
 
-export function SplashScreen({ navigation }: Props) {
-  const { profile } = useProfile();
+export function SplashScreen({ navigation, route }: Props) {
+  const { profile, updateName } = useProfile();
   const {
     isReady,
     isLocked,
@@ -39,6 +39,9 @@ export function SplashScreen({ navigation }: Props) {
     turnOnLock,
     beginForgotPasswordWithDevice,
     beginForgotPasswordWithRecoveryCode,
+    beginForgotPasswordWithEmailLink,
+    beginForgotPasswordWithEmailToken,
+    emailSupportForRecovery,
     cancelPasswordRecovery,
     completePasswordReset,
     finishPasswordReset
@@ -48,14 +51,18 @@ export function SplashScreen({ navigation }: Props) {
   const [credentialType, setCredentialType] = useState<CredentialType>("password");
   const [credential, setCredential] = useState("");
   const [confirmCredential, setConfirmCredential] = useState("");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
   const [enableFaceId, setEnableFaceId] = useState(true);
   const [recoveryInput, setRecoveryInput] = useState("");
   const [freshRecoveryCode, setFreshRecoveryCode] = useState("");
   const [resetType, setResetType] = useState<CredentialType>("password");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
 
   const profileName = profile.name.trim();
+  const needsName = !profileName;
   const lockActive = settings.lockEnabled && settings.hasCredential;
   const needsUnlock = isLocked && lockActive;
   const faceLabel = hasFaceId ? "Face ID" : biometricLabel;
@@ -66,6 +73,7 @@ export function SplashScreen({ navigation }: Props) {
 
   useEffect(() => {
     if (!isReady) return;
+    if (route.params?.recoverToken) return;
     if (needsUnlock) {
       setStep("unlock");
       setError("");
@@ -75,7 +83,42 @@ export function SplashScreen({ navigation }: Props) {
     if (step === "unlock" || step === "forgot" || step === "recoveryCode" || step === "reset") {
       setStep("welcome");
     }
-  }, [isReady, needsUnlock]);
+  }, [isReady, needsUnlock, route.params?.recoverToken]);
+
+  useEffect(() => {
+    const token = route.params?.recoverToken;
+    if (!isReady || !token) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setBusy(true);
+      setError("");
+      setMessage("");
+      const ok = await beginForgotPasswordWithEmailToken(token);
+      if (cancelled) return;
+      setBusy(false);
+      navigation.setParams({ recoverToken: undefined });
+      if (!ok) {
+        setStep(needsUnlock ? "forgot" : "welcome");
+        setError("That reset link is invalid or has expired. Request a new email link.");
+        return;
+      }
+      setResetType(settings.credentialType);
+      setStep("reset");
+      setMessage("Email link confirmed. Choose a new PIN or password.");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    beginForgotPasswordWithEmailToken,
+    isReady,
+    navigation,
+    needsUnlock,
+    route.params?.recoverToken,
+    settings.credentialType
+  ]);
 
   useEffect(() => {
     if (step === "unlock" && settings.biometricsEnabled && biometricsAvailable && needsUnlock) {
@@ -96,13 +139,34 @@ export function SplashScreen({ navigation }: Props) {
     setConfirmCredential("");
     setRecoveryInput("");
     setError("");
+    setMessage("");
   }
 
   function enterApp(screen: "Today" | "Capture" = "Today") {
     if (needsUnlock) return;
+    if (needsName && step !== "name") {
+      setNameDraft("");
+      setStep("name");
+      return;
+    }
     navigation.reset({
       index: 0,
       routes: [{ name: "Tabs", params: { screen } }]
+    });
+  }
+
+  function submitNameAndContinue() {
+    const cleaned = nameDraft.trim();
+    if (!cleaned) {
+      setError("Add your first name to continue.");
+      return;
+    }
+    updateName(cleaned);
+    setError("");
+    setStep("welcome");
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Tabs", params: { screen: "Today" } }]
     });
   }
 
@@ -135,7 +199,8 @@ export function SplashScreen({ navigation }: Props) {
     try {
       const useBiometrics = biometricsAvailable && enableFaceId;
       const recoveryCode = await turnOnLock(credential, credentialType, {
-        biometricsEnabled: useBiometrics
+        biometricsEnabled: useBiometrics,
+        recoveryEmail
       });
       setFreshRecoveryCode(recoveryCode);
       clearDrafts();
@@ -153,7 +218,7 @@ export function SplashScreen({ navigation }: Props) {
     const ok = await beginForgotPasswordWithDevice();
     setBusy(false);
     if (!ok) {
-      setError("Couldn’t confirm it’s you. Try your recovery code instead.");
+      setError("Couldn’t confirm it’s you. Try email reset or your recovery code.");
       return;
     }
     setResetType(settings.credentialType);
@@ -171,6 +236,36 @@ export function SplashScreen({ navigation }: Props) {
     }
     setResetType(settings.credentialType);
     setStep("reset");
+  }
+
+  async function emailResetLink() {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await beginForgotPasswordWithEmailLink();
+      setMessage(
+        settings.recoveryEmail
+          ? `Email draft opened for ${settings.recoveryEmail}. Send it, then tap the link on this phone.`
+          : "Email draft opened. Send it, then tap the link on this phone."
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not open email.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function emailSupportHelp() {
+    setBusy(true);
+    setError("");
+    try {
+      await emailSupportForRecovery();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not open email.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function submitReset() {
@@ -233,6 +328,11 @@ export function SplashScreen({ navigation }: Props) {
           <View style={styles.panel}>
             {step === "welcome" && !needsUnlock ? (
               <>
+                {needsName ? (
+                  <AppText variant="caption" style={styles.hint}>
+                    First time here? We’ll ask your name, then you can set up Face ID or a password.
+                  </AppText>
+                ) : null}
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => enterApp("Today")}
@@ -272,6 +372,43 @@ export function SplashScreen({ navigation }: Props) {
                     {activeLabel}. Change this in Settings.
                   </AppText>
                 )}
+              </>
+            ) : null}
+
+            {step === "name" ? (
+              <>
+                <AppText variant="muted" style={styles.centerCopy}>
+                  What should we call you?
+                </AppText>
+                <CredentialInput
+                  value={nameDraft}
+                  onChangeText={(value) => {
+                    setNameDraft(value.slice(0, 40));
+                    setError("");
+                  }}
+                  placeholder="Your first name"
+                  isPassword={false}
+                  editable={!busy}
+                  secureTextEntry={false}
+                  keyboardType="default"
+                  autoCapitalize="sentences"
+                  maxLength={40}
+                  onSubmitEditing={submitNameAndContinue}
+                />
+                {error ? <AppText variant="caption" style={styles.error}>{error}</AppText> : null}
+                <Button tone="primary" onPress={submitNameAndContinue} disabled={!nameDraft.trim()}>
+                  Continue
+                </Button>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    clearDrafts();
+                    setStep("welcome");
+                  }}
+                  style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
+                >
+                  <AppText style={styles.linkLabel}>Back</AppText>
+                </Pressable>
               </>
             ) : null}
 
@@ -341,6 +478,19 @@ export function SplashScreen({ navigation }: Props) {
                   isPassword={setupIsPassword}
                   editable={!busy}
                 />
+                <CredentialInput
+                  value={recoveryEmail}
+                  onChangeText={(value) => setRecoveryEmail(value.slice(0, 120))}
+                  placeholder="Recovery email"
+                  isPassword={false}
+                  editable={!busy}
+                  secureTextEntry={false}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <AppText variant="caption" style={styles.hint}>
+                  We’ll use this email if you forget your {setupIsPassword ? "password" : "PIN"}.
+                </AppText>
                 {setupIsPassword ? (
                   <AppText variant="caption" style={styles.hint}>
                     Use letters and at least one number.
@@ -350,7 +500,11 @@ export function SplashScreen({ navigation }: Props) {
                 <Button
                   tone="primary"
                   onPress={() => void submitSetup()}
-                  disabled={busy || credential.length < (setupIsPassword ? 8 : 4)}
+                  disabled={
+                    busy ||
+                    credential.length < (setupIsPassword ? 8 : 4) ||
+                    !recoveryEmail.includes("@")
+                  }
                 >
                   Save and continue
                 </Button>
@@ -427,21 +581,37 @@ export function SplashScreen({ navigation }: Props) {
             {step === "forgot" ? (
               <>
                 <AppText variant="muted" style={styles.centerCopy}>
-                  Confirm it’s you with {faceLabel} or your device passcode, or use your recovery code.
+                  Reset your {activeLabel} with Face ID/device passcode, an email reset link, or your
+                  recovery code.
                 </AppText>
                 <Button tone="primary" onPress={() => void recoverWithDevice()} disabled={busy}>
                   Reset with {faceLabel} / device passcode
                 </Button>
+                {settings.hasRecoveryEmail ? (
+                  <Button tone="quiet" onPress={() => void emailResetLink()} disabled={busy}>
+                    Email a reset link to {settings.recoveryEmail}
+                  </Button>
+                ) : (
+                  <AppText variant="caption" style={styles.hint}>
+                    No recovery email saved yet. Use Face ID/device passcode, your recovery code, or email
+                    support.
+                  </AppText>
+                )}
                 {settings.hasRecoveryCode ? (
                   <Button tone="quiet" onPress={() => setStep("recoveryCode")} disabled={busy}>
                     Use recovery code
                   </Button>
                 ) : null}
+                <Button tone="quiet" onPress={() => void emailSupportHelp()} disabled={busy}>
+                  Email support for help
+                </Button>
+                {message ? <AppText variant="caption" style={styles.hint}>{message}</AppText> : null}
                 {error ? <AppText variant="caption" style={styles.error}>{error}</AppText> : null}
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => {
                     cancelPasswordRecovery();
+                    setMessage("");
                     setStep("unlock");
                   }}
                   style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
@@ -485,6 +655,7 @@ export function SplashScreen({ navigation }: Props) {
 
             {step === "reset" ? (
               <>
+                {message ? <AppText variant="caption" style={styles.hint}>{message}</AppText> : null}
                 <View style={styles.typeRow}>
                   <TypeChip
                     label="Password"
@@ -561,6 +732,9 @@ function CredentialInput({
   isPassword,
   editable,
   secureTextEntry = true,
+  keyboardType,
+  autoCapitalize,
+  maxLength,
   onSubmitEditing
 }: {
   value: string;
@@ -569,8 +743,18 @@ function CredentialInput({
   isPassword: boolean;
   editable: boolean;
   secureTextEntry?: boolean;
+  keyboardType?: "default" | "number-pad" | "email-address";
+  autoCapitalize?: "none" | "characters" | "sentences";
+  maxLength?: number;
   onSubmitEditing?: () => void;
 }) {
+  const resolvedKeyboard =
+    keyboardType ?? (isPassword || !secureTextEntry ? "default" : "number-pad");
+  const resolvedCapitalize =
+    autoCapitalize ?? (secureTextEntry ? "none" : "characters");
+  const resolvedMax =
+    maxLength ?? (keyboardType === "email-address" ? 120 : isPassword ? 64 : secureTextEntry ? 8 : 14);
+
   return (
     <TextInput
       style={[styles.credentialInput, (isPassword || !secureTextEntry) && styles.passwordInput]}
@@ -578,12 +762,14 @@ function CredentialInput({
       onChangeText={onChangeText}
       placeholder={placeholder}
       placeholderTextColor={colors.mutedText}
-      keyboardType={isPassword || !secureTextEntry ? "default" : "number-pad"}
-      autoCapitalize={secureTextEntry ? "none" : "characters"}
+      keyboardType={resolvedKeyboard}
+      autoCapitalize={resolvedCapitalize}
       autoCorrect={false}
+      autoComplete={keyboardType === "email-address" ? "email" : undefined}
+      textContentType={keyboardType === "email-address" ? "emailAddress" : undefined}
       secureTextEntry={secureTextEntry}
       editable={editable}
-      maxLength={isPassword ? 64 : secureTextEntry ? 8 : 14}
+      maxLength={resolvedMax}
       onSubmitEditing={onSubmitEditing}
     />
   );

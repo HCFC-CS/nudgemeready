@@ -1,9 +1,10 @@
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
-import { Alert, Linking } from "react-native";
+import { Alert, Linking, Platform } from "react-native";
 
 import type { DocumentCategory, NudgeAttachment } from "../types/nudge";
+import { decryptBytes, encryptBytes } from "./encryptedStorage";
 
 export const DOCUMENT_CATEGORIES: { id: DocumentCategory; label: string; hint: string }[] = [
   { id: "identity", label: "Identity", hint: "Passport, ID, birth certificate" },
@@ -15,6 +16,8 @@ export const DOCUMENT_CATEGORIES: { id: DocumentCategory; label: string; hint: s
   { id: "medical", label: "Medical", hint: "Letters, prescriptions, plans" },
   { id: "other", label: "Other", hint: "Anything else this nudge needs" }
 ];
+
+const ENCRYPTED_EXT = ".nmr1";
 
 export function documentCategoryLabel(category?: DocumentCategory) {
   return DOCUMENT_CATEGORIES.find((entry) => entry.id === category)?.label ?? "Document";
@@ -45,6 +48,34 @@ function sanitizeFileName(name: string) {
   return sanitizePathPart(trimmed).slice(0, 80);
 }
 
+function base64FromBytes(bytes: Uint8Array) {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  if (typeof globalThis.btoa === "function") {
+    return globalThis.btoa(binary);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Buffer = require("buffer").Buffer as typeof import("buffer").Buffer;
+  return Buffer.from(bytes).toString("base64");
+}
+
+function bytesFromBase64(base64: string) {
+  if (typeof globalThis.atob === "function") {
+    const binary = globalThis.atob(base64);
+    const out = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      out[i] = binary.charCodeAt(i);
+    }
+    return out;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Buffer = require("buffer").Buffer as typeof import("buffer").Buffer;
+  return new Uint8Array(Buffer.from(base64, "base64"));
+}
+
 async function ensureDir(path: string) {
   const info = await FileSystem.getInfoAsync(path);
   if (!info.exists) {
@@ -52,13 +83,32 @@ async function ensureDir(path: string) {
   }
 }
 
-async function persistPickedFile(itemId: string, sourceUri: string, fileName: string, mimeType?: string, category: DocumentCategory = "other") {
+function isEncryptedAttachmentPath(path: string) {
+  return path.endsWith(ENCRYPTED_EXT);
+}
+
+async function persistPickedFile(
+  itemId: string,
+  sourceUri: string,
+  fileName: string,
+  mimeType?: string,
+  category: DocumentCategory = "other"
+) {
   const folder = itemFolder(itemId);
   await ensureDir(folder);
   const id = createAttachmentId();
   const safeName = sanitizeFileName(fileName);
-  const destination = `${folder}${id}-${safeName}`;
-  await FileSystem.copyAsync({ from: sourceUri, to: destination });
+  const destination = `${folder}${id}-${safeName}${ENCRYPTED_EXT}`;
+
+  const base64 = await FileSystem.readAsStringAsync(sourceUri, {
+    encoding: FileSystem.EncodingType.Base64
+  });
+  const plain = bytesFromBase64(base64);
+  const encrypted = await encryptBytes(plain);
+  await FileSystem.writeAsStringAsync(destination, base64FromBytes(encrypted), {
+    encoding: FileSystem.EncodingType.Base64
+  });
+
   const attachment: NudgeAttachment = {
     id,
     name: fileName.trim() || safeName,
@@ -72,7 +122,13 @@ async function persistPickedFile(itemId: string, sourceUri: string, fileName: st
 
 export async function pickDocumentFile(itemId: string, category: DocumentCategory): Promise<NudgeAttachment | null> {
   const result = await DocumentPicker.getDocumentAsync({
-    type: ["application/pdf", "image/*", "text/*", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+    type: [
+      "application/pdf",
+      "image/*",
+      "text/*",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ],
     copyToCacheDirectory: true,
     multiple: false
   });
@@ -85,7 +141,10 @@ export async function pickDocumentFile(itemId: string, category: DocumentCategor
   return persistPickedFile(itemId, asset.uri, asset.name, asset.mimeType, category);
 }
 
-export async function pickDocumentPhoto(itemId: string, category: DocumentCategory): Promise<{ attachment: NudgeAttachment | null; error: string | null }> {
+export async function pickDocumentPhoto(
+  itemId: string,
+  category: DocumentCategory
+): Promise<{ attachment: NudgeAttachment | null; error: string | null }> {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permission.granted) {
     return { attachment: null, error: "Photo library access is needed to attach a photo of a document." };
@@ -106,7 +165,10 @@ export async function pickDocumentPhoto(itemId: string, category: DocumentCatego
   return { attachment, error: null };
 }
 
-export async function takeDocumentPhoto(itemId: string, category: DocumentCategory): Promise<{ attachment: NudgeAttachment | null; error: string | null }> {
+export async function takeDocumentPhoto(
+  itemId: string,
+  category: DocumentCategory
+): Promise<{ attachment: NudgeAttachment | null; error: string | null }> {
   const permission = await ImagePicker.requestCameraPermissionsAsync();
   if (!permission.granted) {
     return { attachment: null, error: "Camera access is needed to photograph a document." };
@@ -150,14 +212,44 @@ export async function cleanupAttachmentsForItem(itemId: string, attachments: Nud
   }
 }
 
+async function materializeAttachmentForOpen(attachment: NudgeAttachment) {
+  const info = await FileSystem.getInfoAsync(attachment.url);
+  if (!info.exists) {
+    throw new Error("File missing");
+  }
+
+  if (!isEncryptedAttachmentPath(attachment.url)) {
+    return attachment.url;
+  }
+
+  const encryptedBase64 = await FileSystem.readAsStringAsync(attachment.url, {
+    encoding: FileSystem.EncodingType.Base64
+  });
+  const plain = await decryptBytes(bytesFromBase64(encryptedBase64));
+  const cacheRoot = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+  if (!cacheRoot) {
+    throw new Error("Cache unavailable");
+  }
+  const tempDir = `${cacheRoot}nudge-open/`;
+  await ensureDir(tempDir);
+  const safeName = sanitizeFileName(attachment.name);
+  const tempPath = `${tempDir}${attachment.id}-${safeName}`;
+  await FileSystem.writeAsStringAsync(tempPath, base64FromBytes(plain), {
+    encoding: FileSystem.EncodingType.Base64
+  });
+  return tempPath;
+}
+
 export async function openAttachment(attachment: NudgeAttachment) {
   try {
-    const canOpen = await Linking.canOpenURL(attachment.url);
+    const uri = await materializeAttachmentForOpen(attachment);
+    const openUri = Platform.OS === "android" && !uri.startsWith("file://") ? `file://${uri}` : uri;
+    const canOpen = await Linking.canOpenURL(openUri);
     if (!canOpen) {
       Alert.alert("Cannot open", `Unable to open ${attachment.name} on this device.`);
       return;
     }
-    await Linking.openURL(attachment.url);
+    await Linking.openURL(openUri);
   } catch {
     Alert.alert("Cannot open", `Unable to open ${attachment.name}. Try saving it again.`);
   }

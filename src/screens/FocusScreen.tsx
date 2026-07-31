@@ -6,6 +6,7 @@ import { CategoryChip, PageHeader, PrimaryButton, SecondaryButton, SoftCard } fr
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useNudgeItems } from "../hooks/useNudgeItems";
+import { loadAppPreferences } from "../services/appPreferencesStorage";
 import { getPointsForItem } from "../services/gamification";
 import { colors, spacing } from "../theme/theme";
 import type { NudgeItem } from "../types/nudge";
@@ -34,6 +35,19 @@ export function FocusScreen() {
   const focusItems = useMemo(() => getFocusItems(items, mode), [items, mode]);
   const selectedItem = focusItems[selectedIndex % Math.max(focusItems.length, 1)];
   const timerText = formatTimer(remainingSeconds);
+
+  useEffect(() => {
+    let active = true;
+    void loadAppPreferences().then((prefs) => {
+      if (!active) return;
+      const minutes = Number(prefs.focusTimer) || 25;
+      setTimerMinutes(minutes);
+      setRemainingSeconds(minutes * 60);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isRunning) {

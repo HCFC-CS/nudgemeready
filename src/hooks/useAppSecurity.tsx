@@ -7,11 +7,13 @@ import {
   useMemo,
   useState
 } from "react";
-import { AppState, type AppStateStatus } from "react-native";
+import { AppState, Linking, type AppStateStatus } from "react-native";
 
 import {
   authenticateDeviceOwner,
   authenticateWithBiometrics,
+  buildSupportRecoveryMailto,
+  createEmailResetLink,
   credentialLabel,
   type CredentialType,
   disableAppLock,
@@ -23,7 +25,9 @@ import {
   setBiometricsEnabled,
   setLockOnBackground,
   type AppSecuritySettings,
+  updateRecoveryEmailWithCredential,
   verifyAppCredential,
+  verifyEmailResetToken,
   verifyRecoveryCode
 } from "../services/appSecurity";
 
@@ -47,13 +51,17 @@ type AppSecurityContextValue = {
   turnOnLock: (
     value: string,
     type: CredentialType,
-    options?: { biometricsEnabled?: boolean }
+    options?: { biometricsEnabled?: boolean; recoveryEmail?: string }
   ) => Promise<string>;
   turnOffLock: (value: string) => Promise<void>;
   updateBiometrics: (enabled: boolean) => Promise<void>;
   updateLockOnBackground: (enabled: boolean) => Promise<void>;
   beginForgotPasswordWithDevice: () => Promise<boolean>;
   beginForgotPasswordWithRecoveryCode: (code: string) => Promise<boolean>;
+  beginForgotPasswordWithEmailLink: () => Promise<void>;
+  beginForgotPasswordWithEmailToken: (token: string) => Promise<boolean>;
+  emailSupportForRecovery: () => Promise<void>;
+  updateRecoveryEmail: (currentCredential: string, email: string) => Promise<void>;
   cancelPasswordRecovery: () => void;
   completePasswordReset: (value: string, type: CredentialType) => Promise<string>;
   finishPasswordReset: () => void;
@@ -68,7 +76,9 @@ const defaultSettings: AppSecuritySettings = {
   hasCredential: false,
   hasPin: false,
   credentialType: "pin",
-  hasRecoveryCode: false
+  hasRecoveryCode: false,
+  recoveryEmail: null,
+  hasRecoveryEmail: false
 };
 
 const AppSecurityContext = createContext<AppSecurityContextValue | undefined>(undefined);
@@ -112,6 +122,15 @@ export function AppSecurityProvider({
       setIsReady(true);
     })();
   }, [bypassLock, refresh]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (next) => {
+      if (next === "active") {
+        void refresh();
+      }
+    });
+    return () => subscription.remove();
+  }, [refresh]);
 
   // Only re-lock when the app truly backgrounds — not on iOS "inactive"
   // (Control Center, permission sheets, multitasking previews).
@@ -178,15 +197,29 @@ export function AppSecurityProvider({
     if (!settings.biometricsEnabled || Date.now() < lockoutUntil) {
       return false;
     }
+    if (!biometricsAvailable) {
+      await refresh();
+      return false;
+    }
     const fallback = `Use ${credentialLabel(settings.credentialType)}`;
     const ok = await authenticateWithBiometrics("Unlock Nudge me Ready", fallback);
     if (ok) {
       setIsLocked(false);
       setRecoveryAuthorized(false);
       clearLockout();
+    } else {
+      registerFailedUnlock();
     }
     return ok;
-  }, [clearLockout, lockoutUntil, settings.biometricsEnabled, settings.credentialType]);
+  }, [
+    biometricsAvailable,
+    clearLockout,
+    lockoutUntil,
+    refresh,
+    registerFailedUnlock,
+    settings.biometricsEnabled,
+    settings.credentialType
+  ]);
 
   const lockNow = useCallback(() => {
     if (settings.lockEnabled) {
@@ -196,7 +229,11 @@ export function AppSecurityProvider({
   }, [settings.lockEnabled]);
 
   const turnOnLock = useCallback(
-    async (value: string, type: CredentialType, options?: { biometricsEnabled?: boolean }) => {
+    async (
+      value: string,
+      type: CredentialType,
+      options?: { biometricsEnabled?: boolean; recoveryEmail?: string }
+    ) => {
       const recoveryCode = await enableAppLock(value, type, options);
       const next = await loadAppSecuritySettings();
       setSettings(next);
@@ -269,6 +306,42 @@ export function AppSecurityProvider({
     [clearLockout]
   );
 
+  const beginForgotPasswordWithEmailLink = useCallback(async () => {
+    const reset = await createEmailResetLink();
+    const canOpen = await Linking.canOpenURL(reset.mailtoUrl);
+    if (!canOpen) {
+      throw new Error("No email app is available on this phone");
+    }
+    await Linking.openURL(reset.mailtoUrl);
+  }, []);
+
+  const beginForgotPasswordWithEmailToken = useCallback(
+    async (token: string) => {
+      const ok = await verifyEmailResetToken(token);
+      if (ok) {
+        setRecoveryAuthorized(true);
+        clearLockout();
+      }
+      return ok;
+    },
+    [clearLockout]
+  );
+
+  const emailSupportForRecovery = useCallback(async () => {
+    const url = buildSupportRecoveryMailto(credentialLabel(settings.credentialType));
+    const canOpen = await Linking.canOpenURL(url);
+    if (!canOpen) {
+      throw new Error("No email app is available on this phone");
+    }
+    await Linking.openURL(url);
+  }, [settings.credentialType]);
+
+  const updateRecoveryEmail = useCallback(async (currentCredential: string, email: string) => {
+    await updateRecoveryEmailWithCredential(currentCredential, email);
+    const next = await loadAppSecuritySettings();
+    setSettings(next);
+  }, []);
+
   const cancelPasswordRecovery = useCallback(() => {
     setRecoveryAuthorized(false);
   }, []);
@@ -318,6 +391,10 @@ export function AppSecurityProvider({
       updateLockOnBackground,
       beginForgotPasswordWithDevice,
       beginForgotPasswordWithRecoveryCode,
+      beginForgotPasswordWithEmailLink,
+      beginForgotPasswordWithEmailToken,
+      emailSupportForRecovery,
+      updateRecoveryEmail,
       cancelPasswordRecovery,
       completePasswordReset,
       finishPasswordReset,
@@ -342,6 +419,10 @@ export function AppSecurityProvider({
       updateLockOnBackground,
       beginForgotPasswordWithDevice,
       beginForgotPasswordWithRecoveryCode,
+      beginForgotPasswordWithEmailLink,
+      beginForgotPasswordWithEmailToken,
+      emailSupportForRecovery,
+      updateRecoveryEmail,
       cancelPasswordRecovery,
       completePasswordReset,
       finishPasswordReset,

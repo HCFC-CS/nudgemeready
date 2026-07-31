@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Button } from "../components/Button";
@@ -7,6 +7,7 @@ import { BackButton } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useCircle } from "../hooks/useCircle";
+import { sendHelpRequest } from "../services/helpRequests";
 import { colors, spacing } from "../theme/theme";
 import type { TrustedPerson } from "../types/models";
 
@@ -16,7 +17,35 @@ export function AskForHelpScreen() {
   const { people } = useCircle();
   const [selectedHelp, setSelectedHelp] = useState(helpOptions[0]);
   const [selectedPerson, setSelectedPerson] = useState(people[0]?.id ?? "");
+  const [busy, setBusy] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
   const [sent, setSent] = useState(false);
+
+  const person = useMemo(
+    () => people.find((entry) => entry.id === selectedPerson) ?? people[0],
+    [people, selectedPerson]
+  );
+
+  async function handleSend() {
+    if (!person) {
+      setStatusMessage("Add someone to your circle first.");
+      return;
+    }
+    setBusy(true);
+    setStatusMessage("");
+    try {
+      const result = await sendHelpRequest({
+        personId: person.id,
+        personName: person.name,
+        personContact: person.contact,
+        helpType: selectedHelp
+      });
+      setSent(result.ok || result.queued);
+      setStatusMessage(result.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <Screen>
@@ -42,23 +71,30 @@ export function AskForHelpScreen() {
 
       <Card>
         <AppText variant="heading">Send to</AppText>
-        {people.map((person) => (
-          <Button
-            key={person.id}
-            tone={selectedPerson === person.id ? "secondary" : "quiet"}
-            onPress={() => setSelectedPerson(person.id)}
-          >
-            {person.name} - {formatPersonRoles(person)}
-          </Button>
-        ))}
+        {people.length === 0 ? (
+          <AppText variant="muted">Your circle is empty. Add someone from My Crew first.</AppText>
+        ) : (
+          people.map((entry) => (
+            <Button
+              key={entry.id}
+              tone={selectedPerson === entry.id ? "secondary" : "quiet"}
+              onPress={() => setSelectedPerson(entry.id)}
+            >
+              {entry.name} - {formatPersonRoles(entry)}
+            </Button>
+          ))
+        )}
       </Card>
 
-      <Button onPress={() => setSent(true)}>Send to my village</Button>
-      {sent ? (
+      <Button onPress={() => void handleSend()} disabled={busy || !person}>
+        {busy ? "Opening…" : "Send to my village"}
+      </Button>
+      {sent || statusMessage ? (
         <Card style={styles.confirmation}>
-          <AppText variant="heading">Sent gently</AppText>
+          <AppText variant="heading">{sent ? "Ready to send" : "Almost"}</AppText>
           <AppText variant="muted">
-            Your village will know you asked for: {selectedHelp.toLowerCase()}.
+            {statusMessage ||
+              `Your village will know you asked for: ${selectedHelp.toLowerCase()}.`}
           </AppText>
         </Card>
       ) : null}

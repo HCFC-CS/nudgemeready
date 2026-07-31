@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 
 import { CrewSwitcher } from "../components/CrewSwitcher";
 import { NudgeListRow, nudgeRowMeta } from "../components/NudgeListRow";
@@ -38,9 +38,20 @@ export function TodayScreen() {
   const navigation = useNavigation<any>();
   const { profile } = useProfile();
   const { activeProfile } = useCrew();
-  const { items, setItemStatus, deleteNudgeItem } = useNudgeItems();
+  const { items, setItemStatus, deleteNudgeItem, loadError, clearLoadError } = useNudgeItems();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("allTypes");
+
+  function confirmDelete(item: NudgeItem) {
+    Alert.alert("Delete this nudge?", `"${item.title}" will be removed from this phone.`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => deleteNudgeItem(item.id)
+      }
+    ]);
+  }
 
   const allNudges = useMemo(() => {
     const openAndDone = items.filter((item) => item.status !== "cancelled");
@@ -93,6 +104,19 @@ export function TodayScreen() {
   return (
     <Screen>
       <CrewSwitcher />
+
+      {loadError ? (
+        <View style={styles.errorBanner}>
+          <AppText variant="caption" style={styles.errorText}>
+            {loadError}
+          </AppText>
+          <Pressable accessibilityRole="button" onPress={clearLoadError}>
+            <AppText variant="caption" style={styles.errorDismiss}>
+              Dismiss
+            </AppText>
+          </Pressable>
+        </View>
+      ) : null}
 
       <View style={styles.hero}>
         <View style={styles.heroTop}>
@@ -155,7 +179,7 @@ export function TodayScreen() {
             isDone={item.status === "done"}
             onPress={() => navigation.navigate("ItemDetails", { draft: item })}
             onToggleDone={() => setItemStatus(item.id, item.status === "done" ? "open" : "done")}
-            onDelete={() => deleteNudgeItem(item.id)}
+            onDelete={() => confirmDelete(item)}
           />
         ))}
       </View>
@@ -218,6 +242,21 @@ function formatTodayLabel() {
 }
 
 const styles = StyleSheet.create({
+  errorBanner: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.dangerSoft,
+    borderWidth: 1,
+    borderColor: colors.danger
+  },
+  errorText: {
+    color: colors.danger
+  },
+  errorDismiss: {
+    color: colors.danger,
+    fontWeight: "700"
+  },
   hero: {
     gap: spacing.sm
   },

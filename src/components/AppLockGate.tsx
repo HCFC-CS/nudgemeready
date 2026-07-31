@@ -3,6 +3,11 @@ import { View, StyleSheet } from "react-native";
 
 import { useAppSecurity } from "../hooks/useAppSecurity";
 import { navigationRef } from "../navigation/navigationRef";
+import {
+  onDeepLinkUnlock,
+  setDeepLinkLockActive,
+  takePendingInvite
+} from "../services/pendingDeepLinks";
 import { colors } from "../theme/theme";
 
 /**
@@ -12,6 +17,10 @@ import { colors } from "../theme/theme";
 export function AppLockGate({ children }: { children: React.ReactNode }) {
   const { isReady, isLocked, settings } = useAppSecurity();
   const shouldGate = isReady && isLocked && settings.lockEnabled && settings.hasCredential;
+
+  useEffect(() => {
+    setDeepLinkLockActive(shouldGate);
+  }, [shouldGate]);
 
   useEffect(() => {
     if (!shouldGate) {
@@ -33,7 +42,6 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
     };
 
     goToSignIn();
-    // Navigation may not be ready on the first lock tick after cold start.
     const timer = setTimeout(goToSignIn, 50);
     const retry = setTimeout(goToSignIn, 250);
     return () => {
@@ -42,15 +50,24 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
     };
   }, [shouldGate]);
 
+  useEffect(() => {
+    if (shouldGate) {
+      return;
+    }
+    return onDeepLinkUnlock(() => {
+      const invite = takePendingInvite();
+      if (!invite || !navigationRef.isReady()) {
+        return;
+      }
+      navigationRef.navigate("AcceptInvite", invite);
+    });
+  }, [shouldGate]);
+
   if (!isReady) {
     return <View style={styles.boot} accessibilityLabel="Starting Nudge me Ready" />;
   }
 
-  return (
-    <View style={styles.root} accessibilityElementsHidden={false}>
-      {children}
-    </View>
-  );
+  return <View style={styles.root}>{children}</View>;
 }
 
 const styles = StyleSheet.create({

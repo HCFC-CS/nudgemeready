@@ -4,7 +4,7 @@ import type { TaskItem, TaskType } from "./models";
 import type { NudgeItem } from "./nudge";
 
 export type RootStackParamList = {
-  Splash: undefined;
+  Splash: { recoverToken?: string } | undefined;
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   ItemDetails: { draft: NudgeItem };
   AddTask: { draft?: Partial<TaskItem>; type?: TaskType } | undefined;
