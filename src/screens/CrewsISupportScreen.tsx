@@ -50,7 +50,7 @@ export function CrewsISupportScreen() {
                 <PrimaryButton
                   size="compact"
                   onPress={() => {
-                    acceptInvitation(invite.id, profile.name.trim() || "Helen");
+                    acceptInvitation(invite.id, profile.name.trim() || "Me");
                     switchProfile(invite.targetProfileId);
                   }}
                 >

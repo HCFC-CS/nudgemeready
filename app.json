@@ -2,7 +2,7 @@
   "expo": {
     "name": "Nudge me Ready",
     "slug": "nudge-me",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "nudge-me",
@@ -55,6 +55,16 @@
               "scheme": "https",
               "host": "www.nudgemeready.app",
               "pathPrefix": "/invite"
+            },
+            {
+              "scheme": "https",
+              "host": "nudgemeready.app",
+              "pathPrefix": "/recover"
+            },
+            {
+              "scheme": "https",
+              "host": "www.nudgemeready.app",
+              "pathPrefix": "/recover"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
@@ -118,8 +128,8 @@
       "eas": {
         "projectId": "6ca4ec88-2487-43ae-a858-5c3d96abf41e"
       },
-      "privacyPolicyUrl": "https://nudgemeready.app/privacy",
-      "supportUrl": "https://nudgemeready.app/support"
+      "privacyPolicyUrl": "https://nudgemeready.app/privacy/",
+      "supportUrl": "https://nudgemeready.app/support/"
     }
   }
 }

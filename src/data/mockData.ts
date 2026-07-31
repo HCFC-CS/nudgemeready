@@ -164,7 +164,7 @@ export const mockContacts: MockContact[] = [
 export const mockNudgeeCreator = {
   type: "nudgee" as const,
   id: "nudgee",
-  name: "Helen"
+  name: "Me"
 };
 
 export const mockSarahCreator = {

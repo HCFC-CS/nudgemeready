@@ -16,6 +16,7 @@ import { ProfileAvatar } from "../components/ProfileAvatar";
 import { FixedScreen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useAppSecurity } from "../hooks/useAppSecurity";
+import { useCrew } from "../hooks/useCrew";
 import { useProfile } from "../hooks/useProfile";
 import { credentialLabel, type CredentialType } from "../services/appSecurity";
 import { colors, radii, shadows, spacing } from "../theme/theme";
@@ -26,6 +27,7 @@ type SignInStep = "welcome" | "name" | "setup" | "unlock" | "forgot" | "recovery
 
 export function SplashScreen({ navigation, route }: Props) {
   const { profile, updateName } = useProfile();
+  const { renameSelfProfile } = useCrew();
   const {
     isReady,
     isLocked,
@@ -162,6 +164,7 @@ export function SplashScreen({ navigation, route }: Props) {
       return;
     }
     updateName(cleaned);
+    renameSelfProfile(cleaned);
     setError("");
     setStep("welcome");
     navigation.reset({

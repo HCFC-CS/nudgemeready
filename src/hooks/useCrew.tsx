@@ -73,6 +73,7 @@ type CrewContextValue = {
   updateConsent: (membershipId: string, consent: ConsentRecord) => void;
   updateRequest: (requestId: string, status: CrewRequestStatus) => void;
   reportNudgeDeleted: (itemTitle: string, deletedByName: string) => void;
+  renameSelfProfile: (name: string) => void;
   getCrewForProfile: (profileId: string) => CrewMember[];
   getOrganisationProfiles: () => SupportedProfile[];
   canInviteToProfile: (profileId: string) => boolean;
@@ -604,6 +605,31 @@ function useProvideCrew() {
     });
   }
 
+  function renameSelfProfile(name: string) {
+    const cleaned = name.trim();
+    if (!cleaned) {
+      return;
+    }
+    const now = new Date().toISOString();
+    setStore((current) => {
+      const self = current.profiles.find((profile) => profile.isSelf);
+      if (!self) {
+        return current;
+      }
+      return {
+        ...current,
+        profiles: current.profiles.map((profile) =>
+          profile.id === self.id ? { ...profile, name: cleaned } : profile
+        ),
+        crews: current.crews.map((crew) =>
+          crew.supportedProfileId === self.id
+            ? { ...crew, name: `${cleaned}'s Crew`, updatedAt: now }
+            : crew
+        )
+      };
+    });
+  }
+
   function getCrewForProfile(profileId: string) {
     const crewId = getCrewIdForProfile(profileId);
     if (!crewId) {
@@ -652,6 +678,7 @@ function useProvideCrew() {
     updateConsent,
     updateRequest,
     reportNudgeDeleted,
+    renameSelfProfile,
     getCrewForProfile,
     getOrganisationProfiles,
     canInviteToProfile

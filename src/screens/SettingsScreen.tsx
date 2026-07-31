@@ -11,6 +11,7 @@ import { ProfileAvatarPicker } from "../components/ProfileAvatarPicker";
 import { Screen } from "../components/Screen";
 import { SecuritySettingsCard } from "../components/SecuritySettingsCard";
 import { AppText } from "../components/Text";
+import { useCrew } from "../hooks/useCrew";
 import { useHomeSettings } from "../hooks/useHomeSettings";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { type ProfileDraft, useProfile } from "../hooks/useProfile";
@@ -60,6 +61,7 @@ export function SettingsScreen() {
   const { homeSettings, setEnabled, setThresholdMeters, setChecklistItems } = useHomeSettings();
   const { setEnabled: setVoiceCapture, setReadAloudEnabled } = useVoiceCaptureSettings();
   const { items, clearAllNudgeItems, clearCompletedNudgeItems, clearNudgeItemsByTypes } = useNudgeItems();
+  const { renameSelfProfile } = useCrew();
   const [isClearingNudges, setIsClearingNudges] = useState(false);
 
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => cloneProfile(profile));
@@ -200,6 +202,7 @@ export function SettingsScreen() {
       checklistItems: checklistDraft
     };
     saveProfile(profileDraft);
+    renameSelfProfile(profileDraft.name);
     setEnabled(leavingEnabled);
     setThresholdMeters(thresholdDraft);
     setChecklistItems(checklistDraft);
