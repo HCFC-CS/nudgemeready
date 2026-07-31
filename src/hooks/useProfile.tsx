@@ -38,12 +38,16 @@ type Profile = {
   avatarUri?: string;
   email: string;
   phone: string;
+  /** ISO timestamp set when first-install registration is completed. */
+  registeredAt?: string;
 };
 
 export type ProfileDraft = Profile;
 
 type ProfileContextValue = {
   profile: Profile;
+  isProfileReady: boolean;
+  needsRegistration: boolean;
   updateName: (name: string) => void;
   updateIcon: (icon: ProfileIcon) => void;
   updateAvatarUri: (avatarUri: string) => void;
@@ -51,6 +55,7 @@ type ProfileContextValue = {
   updateEmail: (email: string) => void;
   updatePhone: (phone: string) => void;
   saveProfile: (next: ProfileDraft) => void;
+  completeRegistration: (next: ProfileDraft) => void;
 };
 
 const defaultProfile: Profile = {
@@ -70,7 +75,12 @@ export function ProfileProvider({ children }: PropsWithChildren) {
     getEncryptedItem(PROFILE_KEY)
       .then((raw) => {
         if (raw) {
-          setProfile({ ...defaultProfile, ...JSON.parse(raw) });
+          const parsed = { ...defaultProfile, ...JSON.parse(raw) } as Profile;
+          // Existing installs that already chose a name shouldn't be forced through registration again.
+          if (parsed.name.trim() && !parsed.registeredAt) {
+            parsed.registeredAt = "migrated";
+          }
+          setProfile(parsed);
         }
       })
       .finally(() => setIsReady(true));
@@ -112,21 +122,38 @@ export function ProfileProvider({ children }: PropsWithChildren) {
       icon: next.icon,
       avatarUri: next.avatarUri,
       email: next.email.trim(),
-      phone: next.phone.trim()
+      phone: next.phone.trim(),
+      registeredAt: next.registeredAt ?? profile.registeredAt
+    });
+  }, [profile.registeredAt]);
+
+  const completeRegistration = useCallback((next: ProfileDraft) => {
+    setProfile({
+      name: next.name.trim(),
+      icon: next.icon,
+      avatarUri: next.avatarUri,
+      email: next.email.trim().toLowerCase(),
+      phone: next.phone.trim(),
+      registeredAt: new Date().toISOString()
     });
   }, []);
+
+  const needsRegistration = isReady && (!profile.registeredAt || !profile.name.trim());
 
   return (
     <ProfileContext.Provider
       value={{
         profile,
+        isProfileReady: isReady,
+        needsRegistration,
         updateName,
         updateIcon,
         updateAvatarUri,
         clearAvatar,
         updateEmail,
         updatePhone,
-        saveProfile
+        saveProfile,
+        completeRegistration
       }}
     >
       {children}

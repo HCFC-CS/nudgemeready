@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 
 import { useAppSecurity } from "../hooks/useAppSecurity";
+import { useProfile } from "../hooks/useProfile";
 import { navigationRef } from "../navigation/navigationRef";
 import {
   onDeepLinkUnlock,
@@ -11,23 +12,27 @@ import {
 import { colors } from "../theme/theme";
 
 /**
- * Boots security and keeps the user on Splash while locked.
- * Unlock UI lives on SplashScreen (Face ID, PIN, or password).
+ * Boots security and keeps the user on Splash while locked or unregistered.
+ * Unlock / registration UI lives on SplashScreen.
  */
 export function AppLockGate({ children }: { children: React.ReactNode }) {
   const { isReady, isLocked, settings } = useAppSecurity();
-  const shouldGate = isReady && isLocked && settings.lockEnabled && settings.hasCredential;
+  const { isProfileReady, needsRegistration } = useProfile();
+  const shouldLock = isReady && isLocked && settings.lockEnabled && settings.hasCredential;
+  const shouldRegister = isProfileReady && needsRegistration;
+  const shouldGate = shouldLock || shouldRegister;
 
   useEffect(() => {
-    setDeepLinkLockActive(shouldGate);
-  }, [shouldGate]);
+    // Only stash deep links while locked — registration can still accept invites after profile is set.
+    setDeepLinkLockActive(shouldLock);
+  }, [shouldLock]);
 
   useEffect(() => {
     if (!shouldGate) {
       return;
     }
 
-    const goToSignIn = () => {
+    const goToSplash = () => {
       if (!navigationRef.isReady()) {
         return;
       }
@@ -41,9 +46,9 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
       });
     };
 
-    goToSignIn();
-    const timer = setTimeout(goToSignIn, 50);
-    const retry = setTimeout(goToSignIn, 250);
+    goToSplash();
+    const timer = setTimeout(goToSplash, 50);
+    const retry = setTimeout(goToSplash, 250);
     return () => {
       clearTimeout(timer);
       clearTimeout(retry);
@@ -51,7 +56,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   }, [shouldGate]);
 
   useEffect(() => {
-    if (shouldGate) {
+    if (shouldLock) {
       return;
     }
     return onDeepLinkUnlock(() => {
@@ -61,9 +66,9 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
       }
       navigationRef.navigate("AcceptInvite", invite);
     });
-  }, [shouldGate]);
+  }, [shouldLock]);
 
-  if (!isReady) {
+  if (!isReady || !isProfileReady) {
     return <View style={styles.boot} accessibilityLabel="Starting Nudge me Ready" />;
   }
 

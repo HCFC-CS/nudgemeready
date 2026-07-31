@@ -13,20 +13,29 @@ import {
 
 import { Button } from "../components/Button";
 import { ProfileAvatar } from "../components/ProfileAvatar";
+import { ProfileAvatarPicker } from "../components/ProfileAvatarPicker";
 import { FixedScreen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useAppSecurity } from "../hooks/useAppSecurity";
 import { useCrew } from "../hooks/useCrew";
-import { useProfile } from "../hooks/useProfile";
+import { type ProfileIcon, useProfile } from "../hooks/useProfile";
 import { credentialLabel, type CredentialType } from "../services/appSecurity";
 import { colors, radii, shadows, spacing } from "../theme/theme";
 import type { RootStackParamList } from "../types/navigation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
-type SignInStep = "welcome" | "name" | "setup" | "unlock" | "forgot" | "recoveryCode" | "reset" | "recoveryShown";
+type SignInStep =
+  | "welcome"
+  | "register"
+  | "setup"
+  | "unlock"
+  | "forgot"
+  | "recoveryCode"
+  | "reset"
+  | "recoveryShown";
 
 export function SplashScreen({ navigation, route }: Props) {
-  const { profile, updateName } = useProfile();
+  const { profile, completeRegistration, needsRegistration, isProfileReady } = useProfile();
   const { renameSelfProfile } = useCrew();
   const {
     isReady,
@@ -61,10 +70,13 @@ export function SplashScreen({ navigation, route }: Props) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [nameDraft, setNameDraft] = useState("");
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+  const [regIcon, setRegIcon] = useState<ProfileIcon>("sun");
+  const [regAvatarUri, setRegAvatarUri] = useState<string | undefined>();
 
   const profileName = profile.name.trim();
-  const needsName = !profileName;
   const lockActive = settings.lockEnabled && settings.hasCredential;
   const needsUnlock = isLocked && lockActive;
   const faceLabel = hasFaceId ? "Face ID" : biometricLabel;
@@ -72,9 +84,10 @@ export function SplashScreen({ navigation, route }: Props) {
   const setupIsPassword = credentialType === "password";
   const unlockIsPassword = settings.credentialType === "password";
   const resetIsPassword = resetType === "password";
+  const bootReady = isReady && isProfileReady;
 
   useEffect(() => {
-    if (!isReady) return;
+    if (!bootReady) return;
     if (route.params?.recoverToken) return;
     if (needsUnlock) {
       setStep("unlock");
@@ -82,10 +95,19 @@ export function SplashScreen({ navigation, route }: Props) {
       setCredential("");
       return;
     }
-    if (step === "unlock" || step === "forgot" || step === "recoveryCode" || step === "reset") {
+    if (needsRegistration) {
+      setStep("register");
+      setRegName(profile.name);
+      setRegEmail(profile.email);
+      setRegPhone(profile.phone);
+      setRegIcon(profile.icon);
+      setRegAvatarUri(profile.avatarUri);
+      return;
+    }
+    if (step === "unlock" || step === "forgot" || step === "recoveryCode" || step === "reset" || step === "register") {
       setStep("welcome");
     }
-  }, [isReady, needsUnlock, route.params?.recoverToken]);
+  }, [bootReady, needsUnlock, needsRegistration, route.params?.recoverToken]);
 
   useEffect(() => {
     const token = route.params?.recoverToken;
@@ -146,9 +168,8 @@ export function SplashScreen({ navigation, route }: Props) {
 
   function enterApp(screen: "Today" | "Capture" = "Today") {
     if (needsUnlock) return;
-    if (needsName && step !== "name") {
-      setNameDraft("");
-      setStep("name");
+    if (needsRegistration) {
+      setStep("register");
       return;
     }
     navigation.reset({
@@ -157,20 +178,35 @@ export function SplashScreen({ navigation, route }: Props) {
     });
   }
 
-  function submitNameAndContinue() {
-    const cleaned = nameDraft.trim();
-    if (!cleaned) {
-      setError("Add your first name to continue.");
+  function isValidEmail(value: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+  }
+
+  function submitRegistration() {
+    const name = regName.trim();
+    const email = regEmail.trim().toLowerCase();
+    const phone = regPhone.trim();
+    if (!name) {
+      setError("Add your name to continue.");
       return;
     }
-    updateName(cleaned);
-    renameSelfProfile(cleaned);
-    setError("");
-    setStep("welcome");
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Tabs", params: { screen: "Today" } }]
+    if (!isValidEmail(email)) {
+      setError("Add a valid email address.");
+      return;
+    }
+    completeRegistration({
+      name,
+      email,
+      phone,
+      icon: regIcon,
+      avatarUri: regAvatarUri
     });
+    renameSelfProfile(name);
+    setRecoveryEmail(email);
+    setError("");
+    setCredentialType("password");
+    setEnableFaceId(biometricsAvailable);
+    setStep("setup");
   }
 
   async function submitUnlock() {
@@ -322,20 +358,17 @@ export function SplashScreen({ navigation, route }: Props) {
             <AppText variant="muted" style={styles.subtitle}>
               {needsUnlock || step === "unlock"
                 ? `Sign in with ${settings.biometricsEnabled && biometricsAvailable ? `${faceLabel}, ` : ""}${activeLabel}`
-                : step === "setup"
-                  ? "Protect your nudges with Face ID, a PIN, or a password"
-                  : "Forget me never, one nudge at a time"}
+                : step === "register"
+                  ? "Create your profile to get started"
+                  : step === "setup"
+                    ? "Protect your nudges with Face ID, a PIN, or a password"
+                    : "Forget me never, one nudge at a time"}
             </AppText>
           </View>
 
           <View style={styles.panel}>
-            {step === "welcome" && !needsUnlock ? (
+            {step === "welcome" && !needsUnlock && !needsRegistration ? (
               <>
-                {needsName ? (
-                  <AppText variant="caption" style={styles.hint}>
-                    First time here? We’ll ask your name, then you can set up Face ID or a password.
-                  </AppText>
-                ) : null}
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => enterApp("Today")}
@@ -360,6 +393,7 @@ export function SplashScreen({ navigation, route }: Props) {
                       clearDrafts();
                       setCredentialType("password");
                       setEnableFaceId(biometricsAvailable);
+                      setRecoveryEmail(profile.email || recoveryEmail);
                       setStep("setup");
                     }}
                     style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
@@ -378,40 +412,68 @@ export function SplashScreen({ navigation, route }: Props) {
               </>
             ) : null}
 
-            {step === "name" ? (
+            {step === "register" ? (
               <>
                 <AppText variant="muted" style={styles.centerCopy}>
-                  What should we call you?
+                  Tell us a little about you. This stays on your phone.
                 </AppText>
+                <ProfileAvatarPicker
+                  name={regName}
+                  icon={regIcon}
+                  avatarUri={regAvatarUri}
+                  onIconChange={setRegIcon}
+                  onAvatarChange={setRegAvatarUri}
+                />
                 <CredentialInput
-                  value={nameDraft}
+                  value={regName}
                   onChangeText={(value) => {
-                    setNameDraft(value.slice(0, 40));
+                    setRegName(value.slice(0, 40));
                     setError("");
                   }}
-                  placeholder="Your first name"
+                  placeholder="Your name"
                   isPassword={false}
                   editable={!busy}
                   secureTextEntry={false}
                   keyboardType="default"
-                  autoCapitalize="sentences"
+                  autoCapitalize="words"
                   maxLength={40}
-                  onSubmitEditing={submitNameAndContinue}
                 />
-                {error ? <AppText variant="caption" style={styles.error}>{error}</AppText> : null}
-                <Button tone="primary" onPress={submitNameAndContinue} disabled={!nameDraft.trim()}>
-                  Continue
-                </Button>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => {
-                    clearDrafts();
-                    setStep("welcome");
+                <CredentialInput
+                  value={regEmail}
+                  onChangeText={(value) => {
+                    setRegEmail(value.slice(0, 120));
+                    setError("");
                   }}
-                  style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
+                  placeholder="Email address"
+                  isPassword={false}
+                  editable={!busy}
+                  secureTextEntry={false}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  maxLength={120}
+                />
+                <CredentialInput
+                  value={regPhone}
+                  onChangeText={(value) => setRegPhone(value.slice(0, 30))}
+                  placeholder="Phone (optional)"
+                  isPassword={false}
+                  editable={!busy}
+                  secureTextEntry={false}
+                  keyboardType="phone-pad"
+                  autoCapitalize="none"
+                  maxLength={30}
+                />
+                <AppText variant="caption" style={styles.hint}>
+                  Your email is used if you forget your PIN or password later.
+                </AppText>
+                {error ? <AppText variant="caption" style={styles.error}>{error}</AppText> : null}
+                <Button
+                  tone="primary"
+                  onPress={submitRegistration}
+                  disabled={!regName.trim() || !regEmail.includes("@")}
                 >
-                  <AppText style={styles.linkLabel}>Back</AppText>
-                </Pressable>
+                  Create my profile
+                </Button>
               </>
             ) : null}
 
@@ -515,11 +577,11 @@ export function SplashScreen({ navigation, route }: Props) {
                   accessibilityRole="button"
                   onPress={() => {
                     clearDrafts();
-                    setStep("welcome");
+                    enterApp("Today");
                   }}
                   style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
                 >
-                  <AppText style={styles.linkLabel}>Not now</AppText>
+                  <AppText style={styles.linkLabel}>Not now — continue to app</AppText>
                 </Pressable>
               </>
             ) : null}
@@ -746,8 +808,8 @@ function CredentialInput({
   isPassword: boolean;
   editable: boolean;
   secureTextEntry?: boolean;
-  keyboardType?: "default" | "number-pad" | "email-address";
-  autoCapitalize?: "none" | "characters" | "sentences";
+  keyboardType?: "default" | "number-pad" | "email-address" | "phone-pad";
+  autoCapitalize?: "none" | "characters" | "sentences" | "words";
   maxLength?: number;
   onSubmitEditing?: () => void;
 }) {

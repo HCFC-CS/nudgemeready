@@ -69,7 +69,7 @@ When Helen ships a new build:
 
 Please try and note anything that breaks:
 
-- [ ] First open asks for your name, then splash: *Forget me never, one nudge at a time*
+- [ ] First open shows **registration** (name, email, optional phone, avatar), then optional Face ID/PIN
 - [ ] Optional: set Face ID / PIN / password + recovery email; save recovery code
 - [ ] Lock the app, reopen, unlock (Face ID or password)
 - [ ] Forgot password → email reset link / recovery code / device passcode
