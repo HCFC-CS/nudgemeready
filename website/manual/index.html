@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Manual — Nudge me Ready</title>
+  <meta name="description" content="Full illustrated user guide for Nudge me Ready: setup, nudges, Focus, Crew, security, and settings." />
+  <link rel="icon" href="/icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="manual-wrap manual">
+    <p class="eyebrow"><a href="/">Nudge me Ready</a></p>
+    <h1>User manual</h1>
+    <p class="lede">
+      Forget me never, one nudge at a time — a calm guide to everything in the app.
+    </p>
+    <p class="fine">
+      Version 0.2.0 · iPhone (TestFlight) · Data stays on your phone
+    </p>
+
+    <nav class="manual-toc" aria-label="Contents">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#welcome">Welcome</a></li>
+        <li><a href="#getting-started">Getting started</a></li>
+        <li><a href="#protect">Protect your data</a></li>
+        <li><a href="#find-your-way">Find your way around</a></li>
+        <li><a href="#add-nudges">Add nudges</a></li>
+        <li><a href="#nudge-types">Nudge types explained</a></li>
+        <li><a href="#my-nudges">My Nudges</a></li>
+        <li><a href="#focus">Focus</a></li>
+        <li><a href="#voice">Voice, speak &amp; hear</a></li>
+        <li><a href="#documents">Important documents</a></li>
+        <li><a href="#leaving">Leaving places</a></li>
+        <li><a href="#crew">My Crew &amp; support</a></li>
+        <li><a href="#ask-help">Ask for Help</a></li>
+        <li><a href="#settings">Settings</a></li>
+        <li><a href="#forgot">Forgot PIN or password</a></li>
+        <li><a href="#privacy">Privacy &amp; data</a></li>
+        <li><a href="#tips">Tips &amp; troubleshooting</a></li>
+      </ol>
+    </nav>
+
+    <section id="welcome">
+      <h2>1. Welcome</h2>
+      <p>
+        <strong class="kbd">Nudge me Ready</strong> is a gentle reminder app for the small and large things
+        that keep life moving: appointments, notes, lists, routines, occasions, and the people who support you.
+      </p>
+      <p>
+        Everything is designed to stay on your phone. There is no cloud account in this version.
+        You choose what to share when you invite someone to your Crew or ask for help.
+      </p>
+      <div class="callout">
+        Illustrations in this guide are simplified mockups. Labels and layout match the app;
+        small details may differ slightly on your device.
+      </div>
+    </section>
+
+    <section id="getting-started">
+      <h2>2. Getting started</h2>
+      <p>On first install, the app asks you to create a profile before you enter.</p>
+
+      <figure>
+        <img src="/manual/images/manual-register.png" alt="Registration screen with name, email, phone, and Create my profile" width="280" height="373" loading="lazy" />
+        <figcaption>First open — create your profile</figcaption>
+      </figure>
+
+      <ol class="step-list">
+        <li>
+          Open <span class="kbd">Nudge me Ready</span> from TestFlight.
+        </li>
+        <li>
+          Choose a profile picture or icon, then enter your <span class="kbd">name</span> and
+          <span class="kbd">email</span>. Phone is optional.
+        </li>
+        <li>
+          Tap <span class="kbd">Create my profile</span>. Your email is also used later if you forget a PIN or password.
+        </li>
+        <li>
+          Optionally set up Face ID, a PIN, or a password (see next section), or choose
+          <span class="kbd">Not now — continue to app</span>.
+        </li>
+        <li>
+          On the welcome screen, tap <span class="kbd">Nudges ready</span> to open Home, or
+          <span class="kbd">Add a nudge</span> to start capturing straight away.
+        </li>
+      </ol>
+    </section>
+
+    <section id="protect">
+      <h2>3. Protect your data</h2>
+      <p>
+        App lock keeps notes, appointments, crew details, and settings private if someone else picks up your phone.
+        Your information is encrypted on the device.
+      </p>
+
+      <figure>
+        <img src="/manual/images/manual-lock.png" alt="Security setup with password, Face ID, and recovery email" width="280" height="373" loading="lazy" />
+        <figcaption>Optional lock setup after registration</figcaption>
+      </figure>
+
+      <h3>Turn on lock</h3>
+      <ol class="step-list">
+        <li>Choose <span class="kbd">Password</span> (letters and a number, 8+ characters) or <span class="kbd">PIN</span> (4–8 digits).</li>
+        <li>Optionally turn on <span class="kbd">Also use Face ID</span> (or your device biometric).</li>
+        <li>Confirm your credential and add a <span class="kbd">recovery email</span>.</li>
+        <li>Tap <span class="kbd">Save and continue</span>.</li>
+        <li>
+          If a recovery code is shown, write it down somewhere safe — it will not be shown again — then tap
+          <span class="kbd">I’ve saved it — continue</span>.
+        </li>
+      </ol>
+
+      <h3>Later, from Settings</h3>
+      <p>
+        Open <span class="kbd">More → Settings → Security</span> to turn lock on or off, change Face ID,
+        save a recovery email, create a new recovery code, or lock the app now.
+      </p>
+
+      <div class="callout warn">
+        Keep your recovery code offline (paper or a password manager). Without Face ID, your recovery email link,
+        or the code, a forgotten PIN or password cannot be reset from the cloud.
+      </div>
+    </section>
+
+    <section id="find-your-way">
+      <h2>4. Find your way around</h2>
+      <p>The bottom bar is your main map:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tab</th>
+            <th>What it is for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="kbd">Home</span></td>
+            <td>Calm hub with shortcuts to Focus, My Nudges, My Crew, and Completed.</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">My Nudges</span></td>
+            <td>Everything still open (and filters for all or completed).</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">+nudge</span></td>
+            <td>Say something out loud, or pick a type to create.</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Focus</span></td>
+            <td>One gentle timed session on a single thing.</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">More</span></td>
+            <td>Profile, Settings, My Crew, Crews I Support, and more.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <figure>
+        <img src="/manual/images/manual-home.png" alt="Home screen with Focus, My Nudges, My Crew, Completed tiles and tab bar" width="280" height="373" loading="lazy" />
+        <figcaption>Home — your calm starting point</figcaption>
+      </figure>
+    </section>
+
+    <section id="add-nudges">
+      <h2>5. Add nudges</h2>
+      <p>
+        A <strong>nudge</strong> is any reminder or note you save — a dentist visit, a shopping list,
+        a birthday, a quiet thought for later.
+      </p>
+
+      <figure>
+        <img src="/manual/images/manual-capture.png" alt="+nudge screen with Say it microphone and type grid" width="280" height="373" loading="lazy" />
+        <figcaption>+nudge — say it, or pick a type</figcaption>
+      </figure>
+
+      <h3>Say it</h3>
+      <ol class="step-list">
+        <li>Open <span class="kbd">+nudge</span>.</li>
+        <li>Tap <span class="kbd">Say it</span> and speak naturally (for example: “Remind me to take the bins out tomorrow”).</li>
+        <li>Tap <span class="kbd">Done speaking</span>. The app suggests a type and opens the details screen so you can refine and save.</li>
+      </ol>
+      <p>
+        Voice needs a TestFlight or development build (not Expo Go) and microphone / speech permission.
+      </p>
+
+      <h3>Pick a type</h3>
+      <p>
+        From the same screen, tap a card such as <span class="kbd">Appointments</span>,
+        <span class="kbd">Lists</span>, or <span class="kbd">Notes</span>, then create or open an item.
+      </p>
+    </section>
+
+    <section id="nudge-types">
+      <h2>6. Nudge types explained</h2>
+      <p>Each type has fields that fit how you use it. You can often speak into a field with the mic, or hear text read aloud.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Use it for</th>
+            <th>Highlights</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="kbd">Task</span></td>
+            <td>One thing to do</td>
+            <td>When (today / tomorrow / pick date), where, contact, reminder, notes</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Appointment</span></td>
+            <td>Fixed time with someone or somewhere</td>
+            <td>Date &amp; time, place, guests from Contacts, travel time, calendar link, email invites</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Event</span></td>
+            <td>Dinners, parties, dated plans</td>
+            <td>Venue, guests, prep plan (travel / ready / steps), calendar</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Occasion</span></td>
+            <td>Birthdays and yearly days</td>
+            <td>Repeats yearly, gift ideas, card/present prompts, reminder schedule</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Reminder</span></td>
+            <td>A timed prompt</td>
+            <td>Speaking text, 10-minute nudge, contact, repeat, push/email notify</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Routine</span></td>
+            <td>Regular habits</td>
+            <td>Daily / weekdays / weekly / monthly, time, pause, gentle tracking</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Chore</span></td>
+            <td>House jobs</td>
+            <td>Simple chore fields, held lightly</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">List</span></td>
+            <td>Checklists &amp; shopping</td>
+            <td>Items, paste a list, suggestions, share sheet</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Note</span></td>
+            <td>Thoughts to keep</td>
+            <td>Optional follow-up: turn into task or add reminder</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Project</span></td>
+            <td>Bigger goals in steps</td>
+            <td>Goal, target date, linked nudges as children</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        On any details screen, use <span class="kbd">Save</span>, mark <span class="kbd">Complete</span>,
+        or <span class="kbd">Delete</span>. Many screens also offer <span class="kbd">Just keep it simple</span>
+        to hide extra fields.
+      </p>
+    </section>
+
+    <section id="my-nudges">
+      <h2>7. My Nudges</h2>
+      <figure>
+        <img src="/manual/images/manual-nudges.png" alt="My Nudges list with Open filter and sample appointments and reminders" width="280" height="373" loading="lazy" />
+        <figcaption>My Nudges — open items at a glance</figcaption>
+      </figure>
+
+      <ul>
+        <li>Filter with <span class="kbd">Open</span>, <span class="kbd">All</span>, or <span class="kbd">Completed</span>.</li>
+        <li>Narrow by type (Appointment, Reminder, List, and so on).</li>
+        <li>Tap a row to open details; use the checkbox to complete; delete when you no longer need it.</li>
+        <li>If you support someone in a Crew, the Crew switcher at the top lets you view their nudges.</li>
+      </ul>
+      <p>
+        <span class="kbd">Completed</span> (from Home or +nudge browse) shows history by date.
+        <span class="kbd">Everything</span> / My World offers search across types.
+      </p>
+    </section>
+
+    <section id="focus">
+      <h2>8. Focus</h2>
+      <figure>
+        <img src="/manual/images/manual-focus.png" alt="Focus timer screen with Deep Work mode and 25 minute timer" width="280" height="373" loading="lazy" />
+        <figcaption>Focus — one thing, for a short while</figcaption>
+      </figure>
+
+      <ol class="step-list">
+        <li>Open <span class="kbd">Focus</span>.</li>
+        <li>Pick a mode: Quick Win, Low Energy, Deep Work, Project Step, or Anything.</li>
+        <li>Choose a timer length (15, 25, 45, or 60 minutes — default is set in Settings).</li>
+        <li>Tap <span class="kbd">Start Focus</span>. Use Pause, Complete, Break, or Skip as you need.</li>
+      </ol>
+      <p>When a session finishes, you see a quiet completion card. There is no pressure to “win” — only to begin.</p>
+    </section>
+
+    <section id="voice">
+      <h2>9. Voice, speak &amp; hear</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Control</th>
+            <th>What it does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="kbd">Say it</span> / mic on a field</td>
+            <td>Turns speech into text for capture or a single field.</td>
+          </tr>
+          <tr>
+            <td>Speaker / <span class="kbd">Hear</span></td>
+            <td>Reads text aloud (titles, leaving-home checklist, and more).</td>
+          </tr>
+          <tr>
+            <td>Speaking reminders</td>
+            <td>When a reminder fires, the app can speak the reminder text.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        In Settings → <span class="kbd">Voice</span>, turn <span class="kbd">Voice to text</span> and
+        <span class="kbd">Text to voice</span> on or off.
+      </p>
+    </section>
+
+    <section id="documents">
+      <h2>10. Important documents</h2>
+      <p>
+        On most nudge detail screens you can attach files under <span class="kbd">Important documents</span>.
+        Categories include Identity, Driving, Mobility, Access, Tax, Insurance, Medical, and Other.
+      </p>
+      <ul>
+        <li><span class="kbd">Upload file</span>, <span class="kbd">Photo</span>, or <span class="kbd">Scan</span></li>
+        <li>Open or remove an attachment any time</li>
+        <li>Attachments are stored encrypted on your phone</li>
+      </ul>
+    </section>
+
+    <section id="leaving">
+      <h2>11. Leaving places</h2>
+      <p>
+        Optional leaving reminders help you check phone, wallet, keys (or your own list) when you leave Home,
+        Work, School, or a Safe place.
+      </p>
+      <ol class="step-list">
+        <li>Open <span class="kbd">More → Settings → Leaving places</span> (places can also be edited on Profile).</li>
+        <li>Turn on <span class="kbd">Leaving reminders</span>.</li>
+        <li>Set each place with postcode or GPS, and how far you must move (5–100 m).</li>
+        <li>Edit the checklist items and preview the spoken prompt with Hear.</li>
+      </ol>
+      <p>Allow location permission when iOS asks — including background location if you want reminders when the app is closed.</p>
+    </section>
+
+    <section id="crew">
+      <h2>12. My Crew &amp; support</h2>
+      <figure>
+        <img src="/manual/images/manual-crew.png" alt="My Crew screen with Invite button and people cards" width="280" height="373" loading="lazy" />
+        <figcaption>My Crew — people who walk with you</figcaption>
+      </figure>
+
+      <h3>Invite someone</h3>
+      <ol class="step-list">
+        <li>Open <span class="kbd">My Crew</span> (from Home or More) and tap <span class="kbd">Invite</span>.</li>
+        <li>Choose Email, SMS, WhatsApp, or Copy link.</li>
+        <li>Follow the steps for contact, profile, roles, and permissions.</li>
+        <li>Share the invite. They open it on a phone with Nudge me Ready installed.</li>
+      </ol>
+
+      <h3>Roles (examples)</h3>
+      <p>
+        Crew Captain, Guardian, Guide, Anchor, Cheerleader, Observer, Admin — you choose what each person can see.
+      </p>
+
+      <h3>Crews I Support</h3>
+      <p>
+        If someone invites you, accept from <span class="kbd">More → Crews I Support</span>, then switch
+        whose nudges you are viewing when needed.
+      </p>
+
+      <div class="callout warn">
+        Nudge me Ready helps with everyday support. It is not an emergency service. In a crisis, contact local emergency services.
+      </div>
+    </section>
+
+    <section id="ask-help">
+      <h2>13. Ask for Help</h2>
+      <p>When you want a gentle hand from your village:</p>
+      <ol class="step-list">
+        <li>Open Ask for Help (from Task Buddy / Help routes in the app).</li>
+        <li>Choose what you need: Encourage me, Remind me, Stay with me, or Help break it down.</li>
+        <li>Tap <span class="kbd">Send to my village</span> and share via Messages, email, or the system Share sheet.</li>
+      </ol>
+      <p>
+        If you cancel the share sheet, a draft can stay queued on the device so you can try again later.
+      </p>
+    </section>
+
+    <section id="settings">
+      <h2>14. Settings</h2>
+      <figure>
+        <img src="/manual/images/manual-settings.png" alt="Settings overview with notifications, focus timer, security, and voice" width="280" height="373" loading="lazy" />
+        <figcaption>Settings — make Nudge me Ready yours</figcaption>
+      </figure>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Section</th>
+            <th>Options</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="kbd">Notifications</span></td>
+            <td>Push; Quiet hours (holds alerts overnight); Daily summary (“Your day ahead”)</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Focus timer</span></td>
+            <td>Default 15 / 25 / 45 / 60 minutes</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Leaving places</span></td>
+            <td>Places, distance, checklist, spoken preview</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Contacts &amp; calendars</span></td>
+            <td>Use phone contacts; optional calendar linking for appointments and events</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Voice</span></td>
+            <td>Voice to text; Text to voice</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Security</span></td>
+            <td>App lock, Face ID, recovery email and code, lock now</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Privacy &amp; support</span></td>
+            <td>Opens privacy and support information</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Data and backup</span></td>
+            <td>Cloud backup not available yet; clear completed or selected types; clear all nudges</td>
+          </tr>
+          <tr>
+            <td><span class="kbd">Account</span></td>
+            <td>Name, email, phone, avatar; default reminder preference</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Tap <span class="kbd">Save settings</span> when you are done, or <span class="kbd">Discard</span> to leave changes.</p>
+      <p>
+        Profile picture and home places can also be edited under <span class="kbd">More → Profile</span>.
+      </p>
+    </section>
+
+    <section id="forgot">
+      <h2>15. Forgot PIN or password</h2>
+      <ol class="step-list">
+        <li>On the sign-in screen, tap <span class="kbd">Forgot password?</span> or <span class="kbd">Forgot PIN?</span>.</li>
+        <li>
+          Confirm with Face ID / device passcode if offered, or
+          <span class="kbd">Email a reset link</span> to your recovery email, or
+          <span class="kbd">Use recovery code</span>.
+        </li>
+        <li>
+          Email links open <span class="kbd">https://nudgemeready.app/recover</span> and only work on the phone
+          where the app is installed (usually valid for 24 hours).
+        </li>
+        <li>Choose a new PIN or password, then continue.</li>
+      </ol>
+      <p>
+        Still stuck? Email <a href="mailto:support@nudgemeready.app">support@nudgemeready.app</a> —
+        support cannot see your encrypted data, but can help you through the steps.
+      </p>
+    </section>
+
+    <section id="privacy">
+      <h2>16. Privacy &amp; data</h2>
+      <ul>
+        <li>Nudges, notes, attachments, crew details, and settings stay on this phone and are encrypted at rest.</li>
+        <li>This version does not sync to the cloud. Uninstalling the app removes local data.</li>
+        <li>Permissions (microphone, speech, location, contacts, calendar, Face ID, photos) are only used for the features you turn on.</li>
+        <li>Full policy: <a href="/privacy/">Privacy policy</a></li>
+      </ul>
+    </section>
+
+    <section id="tips">
+      <h2>17. Tips &amp; troubleshooting</h2>
+      <div class="card">
+        <h3 style="margin-top:0">Face ID, voice, calendar, or contacts missing?</h3>
+        <p>
+          Those need a full TestFlight (or development) install, not Expo Go. Update to the latest TestFlight build after native changes.
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Notifications feel quiet</h3>
+        <p>
+          Check iOS Settings → Nudge me Ready → Notifications, then in-app Push and Quiet hours.
+          Daily summary needs Push turned on.
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Invite link does nothing</h3>
+        <p>
+          Install the app first, then open the invite on the same phone. Links look like
+          <span class="kbd">nudgemeready.app/invite/…</span> and should hand off into the app.
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Report a problem</h3>
+        <p>
+          Email <a href="mailto:support@nudgemeready.app">support@nudgemeready.app</a> with your iPhone model,
+          iOS version, what you were trying to do, and a screenshot if helpful.
+        </p>
+      </div>
+    </section>
+
+    <div class="nav-footer">
+      <a href="/">Home</a>
+      ·
+      <a href="/support/">Support</a>
+      ·
+      <a href="/privacy/">Privacy</a>
+      ·
+      <a href="mailto:support@nudgemeready.app">support@nudgemeready.app</a>
+    </div>
+  </main>
+</body>
+</html>

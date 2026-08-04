@@ -1,13 +1,15 @@
 # Support — Nudge me Ready
 
 **Email:** [support@nudgemeready.app](mailto:support@nudgemeready.app)  
-**Web:** [https://nudgemeready.app/support](https://nudgemeready.app/support)
+**Web:** [https://nudgemeready.app/support](https://nudgemeready.app/support)  
+**User manual:** [https://nudgemeready.app/manual/](https://nudgemeready.app/manual/)
 
 ## Getting started
 
-1. Open the app and set up Face ID, a PIN, or a password on the landing page (recommended).
+1. Open the app, create your profile, then optionally set up Face ID, a PIN, or a password.
 2. Add a nudge from **+nudge**, or browse Notes, Reminders, Appointments, and Lists.
 3. For appointments, add guests from Contacts and optionally link to your phone calendar.
+4. Read the full illustrated [User manual](https://nudgemeready.app/manual/) for every screen and setting.
 
 ## Common questions
 
