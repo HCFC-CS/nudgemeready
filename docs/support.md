@@ -10,6 +10,7 @@
 2. Add a nudge from **+nudge**, or browse Notes, Reminders, Appointments, and Lists.
 3. For appointments, add guests from Contacts and optionally link to your phone calendar.
 4. Read the full illustrated [User manual](https://nudgemeready.app/manual/) for every screen and setting.
+5. Product team docs (spec, Ready 4 catalogue, guides, flows): [docs/product/](./product/README.md).
 
 ## Common questions
 
