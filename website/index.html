@@ -4,29 +4,120 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nudge me Ready</title>
-  <meta name="description" content="Gentle reminders and support — forget me never, one nudge at a time." />
+  <title>Nudge me Ready — Forget me never</title>
+  <meta name="description" content="Gentle reminders and shared support — forget me never, one nudge at a time." />
+  <meta name="theme-color" content="#D9D2C9" />
   <link rel="icon" href="/icon.png" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
-  <main class="wrap">
-    <p class="eyebrow">Nudge me Ready</p>
-    <h1>Forget me never,<br />one nudge at a time</h1>
-    <p class="lede">
-      A calm reminder app for appointments, notes, lists, and the people who support you.
-    </p>
+<body class="home">
+  <header class="site-header">
+    <a class="brand-lockup" href="/" aria-label="Nudge me Ready home">
+      <img src="/icon.png" width="44" height="44" alt="" />
+      <span class="brand-wordmark"><span class="nudge">Nudge</span><span class="me"> me </span><span class="ready">Ready</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/manual/">Manual</a>
+      <a href="/support/">Support</a>
+      <a href="/privacy/">Privacy</a>
+    </nav>
+  </header>
+
+  <section class="hero" aria-label="Nudge me Ready">
+    <div class="hero-atmosphere" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="hero-tag">Forget me never</p>
+        <h1 class="hero-brand">
+          <span class="nudge">Nudge</span><span class="me"> me </span><span class="ready">Ready</span>
+        </h1>
+        <p class="hero-lede">
+          Calm reminders for appointments, routines, and the people who support you — without shame or pressure.
+        </p>
+        <div class="actions">
+          <a class="button" href="/manual/">Open the user manual</a>
+          <a class="button quiet" href="/support/">Get support</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <img
+          src="/icon.png"
+          width="512"
+          height="512"
+          alt="Nudge me Ready brand mark — bell, caring hand, and forget me never"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-split">
+      <div>
+        <p class="band-kicker">Ready 4 packs</p>
+        <h2>Life systems you can edit</h2>
+        <p>
+          Install calm routines for home, wellbeing, travel, study and more — then change every nudge to fit your day.
+        </p>
+      </div>
+      <div class="band-media">
+        <img src="/manual/images/manual-home.png" width="280" height="373" alt="Nudge me Ready home screen" loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-split reverse">
+      <div>
+        <p class="band-kicker">My Crew</p>
+        <h2>Support that stays gentle</h2>
+        <p>
+          Invite trusted people to help with everyday nudges. You stay in control of what is shared — and nobody is shamed for needing a hand.
+        </p>
+      </div>
+      <div class="band-media">
+        <img src="/manual/images/manual-crew.png" width="280" height="373" alt="My Crew screen" loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-split">
+      <div>
+        <p class="band-kicker">On your phone</p>
+        <h2>Private by design</h2>
+        <p>
+          Your nudges stay on device. Keep a phone passcode, turn on app lock, and store your recovery code offline.
+        </p>
+      </div>
+      <div class="band-media">
+        <img src="/manual/images/manual-lock.png" width="280" height="373" alt="App lock and security screen" loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <section class="band cta-band">
+    <div class="heart-rule" aria-hidden="true"><span></span></div>
+    <p class="band-kicker">Available on TestFlight</p>
+    <h2>Ready when you are</h2>
+    <p>Read the illustrated guide, or email us if you need a calm hand with setup.</p>
     <div class="actions">
       <a class="button" href="/manual/">User manual</a>
-      <a class="button quiet" href="/support/">Support</a>
-      <a class="button quiet" href="/privacy/">Privacy policy</a>
-      <a class="button quiet" href="/terms/">Terms of Use</a>
-      <a class="button quiet" href="/crew-terms/">Crew Supporter Terms</a>
+      <a class="button gold" href="mailto:support@nudgemeready.app">Email support</a>
     </div>
-    <p class="fine">
-      Available on TestFlight. Contact
+  </section>
+
+  <footer class="site-footer">
+    <a class="brand-lockup" href="/">
+      <span class="brand-wordmark"><span class="nudge">Nudge</span><span class="me"> me </span><span class="ready">Ready</span></span>
+    </a>
+    <nav aria-label="Footer">
+      <a href="/manual/">Manual</a>
+      <a href="/support/">Support</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/crew-terms/">Crew terms</a>
       <a href="mailto:support@nudgemeready.app">support@nudgemeready.app</a>
-    </p>
-  </main>
+    </nav>
+  </footer>
 </body>
 </html>

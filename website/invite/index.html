@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Open invite — Nudge me Ready</title>
+  <meta name="theme-color" content="#D9D2C9" />
   <link rel="icon" href="/icon.png" />
   <link rel="stylesheet" href="/styles.css" />
   <script>
@@ -20,7 +21,6 @@
         var copy = document.getElementById("deep-link");
         if (open) open.setAttribute("href", deep);
         if (copy) copy.textContent = deep;
-        // Attempt to open the installed app.
         window.setTimeout(function () {
           window.location.href = deep;
         }, 500);
@@ -35,10 +35,22 @@
   </script>
 </head>
 <body>
-  <main class="wrap center">
-    <p class="eyebrow">Nudge me Ready</p>
+  <header class="site-header">
+    <a class="brand-lockup" href="/" aria-label="Nudge me Ready home">
+      <img src="/icon.png" width="44" height="44" alt="" />
+      <span class="brand-wordmark"><span class="nudge">Nudge</span><span class="me"> me </span><span class="ready">Ready</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/support/">Support</a>
+      <a href="/crew-terms/">Crew terms</a>
+    </nav>
+  </header>
+
+  <main class="page-shell center">
+    <img src="/icon.png" width="96" height="96" alt="" style="margin:0 auto 1rem;border-radius:22px;border:1px solid rgba(184,149,79,0.4)" />
+    <p class="eyebrow">Crew invite</p>
     <h1>Opening your Crew invite…</h1>
-    <p class="lede">
+    <p class="lede" style="margin-inline:auto">
       If the app does not open automatically, install Nudge me Ready from TestFlight, then tap the button below.
       Accepting a Crew invite includes agreeing to the
       <a href="/crew-terms/">Crew Supporter Terms</a>.
@@ -50,5 +62,15 @@
     </div>
     <p class="fine">Deep link: <span id="deep-link" class="mono">nudge-me://invite</span></p>
   </main>
+
+  <footer class="site-footer">
+    <a class="brand-lockup" href="/">
+      <span class="brand-wordmark"><span class="nudge">Nudge</span><span class="me"> me </span><span class="ready">Ready</span></span>
+    </a>
+    <nav aria-label="Footer">
+      <a href="/support/">Support</a>
+      <a href="/crew-terms/">Crew terms</a>
+    </nav>
+  </footer>
 </body>
 </html>

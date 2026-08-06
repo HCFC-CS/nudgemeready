@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Reset sign-in · Nudge me Ready</title>
   <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#D9D2C9" />
   <link rel="icon" href="/icon.png" />
   <link rel="stylesheet" href="/styles.css" />
   <script>
@@ -13,14 +14,23 @@
       var token = params.get("t");
       if (!token) return;
       var appLink = "nudge-me://recover?t=" + encodeURIComponent(token);
-      // Try to open the installed app immediately.
       window.location.replace(appLink);
     })();
   </script>
 </head>
 <body>
-  <main class="wrap">
-    <p class="eyebrow"><a href="/">Nudge me Ready</a></p>
+  <header class="site-header">
+    <a class="brand-lockup" href="/" aria-label="Nudge me Ready home">
+      <img src="/icon.png" width="44" height="44" alt="" />
+      <span class="brand-wordmark"><span class="nudge">Nudge</span><span class="me"> me </span><span class="ready">Ready</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/support/">Support</a>
+    </nav>
+  </header>
+
+  <main class="page-shell">
+    <p class="eyebrow">Security</p>
     <h1>Reset your sign-in</h1>
     <p class="lede">
       This page opens the Nudge me Ready app so you can choose a new PIN or password.
@@ -35,6 +45,16 @@
       Email <a href="mailto:support@nudgemeready.app">support@nudgemeready.app</a> if you’re stuck.
     </p>
   </main>
+
+  <footer class="site-footer">
+    <a class="brand-lockup" href="/">
+      <span class="brand-wordmark"><span class="nudge">Nudge</span><span class="me"> me </span><span class="ready">Ready</span></span>
+    </a>
+    <nav aria-label="Footer">
+      <a href="/support/">Support</a>
+      <a href="/privacy/">Privacy</a>
+    </nav>
+  </footer>
   <script>
     (function () {
       var params = new URLSearchParams(window.location.search);

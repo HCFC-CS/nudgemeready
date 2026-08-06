@@ -4,21 +4,33 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Support — Nudge me Ready</title>
+  <meta name="theme-color" content="#D9D2C9" />
   <link rel="icon" href="/icon.png" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <main class="wrap">
-    <p class="eyebrow"><a href="/">Nudge me Ready</a></p>
+  <header class="site-header">
+    <a class="brand-lockup" href="/" aria-label="Nudge me Ready home">
+      <img src="/icon.png" width="44" height="44" alt="" />
+      <span class="brand-wordmark"><span class="nudge">Nudge</span><span class="me"> me </span><span class="ready">Ready</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/manual/">Manual</a>
+      <a href="/support/">Support</a>
+      <a href="/privacy/">Privacy</a>
+    </nav>
+  </header>
+
+  <main class="page-shell">
+    <p class="eyebrow">Help</p>
     <h1>Support</h1>
     <p class="lede">
       Email <a href="mailto:support@nudgemeready.app">support@nudgemeready.app</a> for help with Nudge me Ready.
     </p>
-
-    <p class="lede" style="font-size:1.05rem">
-      Full illustrated guide:
-      <a href="/manual/">User manual</a>
-    </p>
+    <div class="actions">
+      <a class="button" href="/manual/">User manual</a>
+      <a class="button quiet" href="mailto:support@nudgemeready.app">Email us</a>
+    </div>
 
     <h2>Getting started</h2>
     <ul>
@@ -29,19 +41,19 @@
 
     <h2>Common questions</h2>
     <div class="card">
-      <h2 style="margin-top:0">Why can’t I use Face ID / voice / calendar yet?</h2>
+      <h3 style="margin-top:0">Why can’t I use Face ID / voice / calendar yet?</h3>
       <p>Those features need a full app install from TestFlight (or a development build), not Expo Go. Install the latest TestFlight build after each native update.</p>
     </div>
     <div class="card">
-      <h2 style="margin-top:0">Where is my data stored?</h2>
-      <p>On your phone. This version does not sync nudges to the cloud. Keep a recovery code if you turn on app lock.</p>
+      <h3 style="margin-top:0">Where is my data stored?</h3>
+      <p>On your phone. This version does not sync nudges to the cloud. Keep a passcode on the phone, turn on app lock, and store your recovery code offline.</p>
     </div>
     <div class="card">
-      <h2 style="margin-top:0">How do Crew invites work?</h2>
+      <h3 style="margin-top:0">How do Crew invites work?</h3>
       <p>Share the invite link from <strong>Invite Crew</strong>. The other person opens it on their phone with Nudge me Ready installed. The link carries the invite details so they can accept even if they never had the invite before.</p>
     </div>
     <div class="card">
-      <h2 style="margin-top:0">I forgot my PIN or password</h2>
+      <h3 style="margin-top:0">I forgot my PIN or password</h3>
       <p>On the sign-in screen, choose <strong>Forgot PIN?</strong> / <strong>Forgot password?</strong> and confirm with Face ID / device passcode, or enter your recovery code.</p>
     </div>
 
@@ -53,7 +65,18 @@
       <li>A screenshot if helpful</li>
     </ul>
     <p>We aim to reply within a few working days.</p>
-    <p><a href="/manual/">User manual</a> · <a href="/privacy/">Privacy policy</a> · <a href="/">Home</a></p>
   </main>
+
+  <footer class="site-footer">
+    <a class="brand-lockup" href="/">
+      <span class="brand-wordmark"><span class="nudge">Nudge</span><span class="me"> me </span><span class="ready">Ready</span></span>
+    </a>
+    <nav aria-label="Footer">
+      <a href="/manual/">Manual</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/crew-terms/">Crew terms</a>
+    </nav>
+  </footer>
 </body>
 </html>

@@ -45,7 +45,7 @@ Some ReadyPacks help organise wellbeing routines (for example reminders or appoi
 
 ## Security
 
-App lock (Face ID, PIN, or password) and on-device encryption protect data stored by the App on your phone. No security measure is perfect. Keep your device passcode on, and keep your recovery code somewhere safe if you enable app lock.
+App lock (Face ID, PIN, or password) and on-device encryption protect data stored by the App on your phone. No security measure is perfect. Keep your device passcode on, turn on app lock, and store your recovery code offline (not only on the same phone) if you enable app lock.
 
 ## Children
 
