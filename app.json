@@ -128,6 +128,9 @@
       "eas": {
         "projectId": "6ca4ec88-2487-43ae-a858-5c3d96abf41e"
       },
+      "devAdminEnabled": false,
+      "revenueCatApiKeyIOS": "",
+      "revenueCatApiKeyAndroid": "",
       "privacyPolicyUrl": "https://nudgemeready.app/privacy/",
       "supportUrl": "https://nudgemeready.app/support/"
     }

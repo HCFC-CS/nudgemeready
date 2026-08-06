@@ -12,6 +12,7 @@ import { AppProviders } from "./src/AppProviders";
 import { AppLockGate } from "./src/components/AppLockGate";
 import { AppSecurityProvider } from "./src/hooks/useAppSecurity";
 import { useLeavingHomeMonitor } from "./src/hooks/useLeavingHomeMonitor";
+import { usePhoneCalendarImport } from "./src/hooks/usePhoneCalendarImport";
 import { useSpeakingReminderNotifications } from "./src/hooks/useSpeakingReminderNotifications";
 import { navigationRef } from "./src/navigation/navigationRef";
 import { RootNavigator } from "./src/navigation/RootNavigator";
@@ -122,6 +123,7 @@ const appLinking: LinkingOptions<RootStackParamList> = {
 function AppContent() {
   useSpeakingReminderNotifications();
   useLeavingHomeMonitor();
+  usePhoneCalendarImport();
 
   return (
     <>

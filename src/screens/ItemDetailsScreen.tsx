@@ -13,6 +13,10 @@ import { GuestsEditor } from "../components/GuestsEditor";
 import { LocationFinderField } from "../components/LocationFinderField";
 import { TimePickerField } from "../components/TimePickerField";
 import { OccasionShoppingPrompts } from "../components/OccasionShoppingPrompts";
+import { HolidayTravelLinks } from "../components/HolidayTravelLinks";
+import { AdhdDistractionLinks } from "../components/AdhdDistractionLinks";
+import { ReadyPackShopLinks } from "../components/ReadyPackShopLinks";
+import { PackProvenanceBanner } from "../components/PackProvenanceBanner";
 import { SpeakingReminderPlayer } from "../components/SpeakingReminderPlayer";
 import type { IoniconName } from "../components/iconTypes";
 import {
@@ -220,6 +224,37 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     );
   }
 
+
+  function renderReadyPackOutboundLinks() {
+    return (
+      <>
+        <HolidayTravelLinks
+          sourcePackId={draft.sourcePackId}
+          sourceTemplateId={draft.sourceTemplateId}
+          title={title}
+          notes={notes}
+          locationLabel={where}
+        />
+        <AdhdDistractionLinks
+          sourcePackId={draft.sourcePackId}
+          sourceTemplateId={draft.sourceTemplateId}
+          title={title}
+          notes={notes}
+        />
+        <ReadyPackShopLinks
+          sourcePackId={draft.sourcePackId}
+          sourceTemplateId={draft.sourceTemplateId}
+          title={title}
+          notes={notes}
+        />
+      </>
+    );
+  }
+
+  function renderPackProvenance() {
+    return <PackProvenanceBanner sourcePackId={draft.sourcePackId} userEdited={draft.userEdited} />;
+  }
+
   async function saveAndOpenWorld(status = draft.status) {
     if (!editable) {
       return;
@@ -331,6 +366,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     return (
       <Screen>
         <PageHeaderWithEdit title="Task" subtitle="One thing at a time." />
+        {renderPackProvenance()}
         <SoftCard>
           <Field label="Title" value={title} onChangeText={setTitle} placeholder="Book dentist" />
           <Field label="For what?" value={forWhat} onChangeText={setForWhat} placeholder="Routine check-up" />
@@ -397,6 +433,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           {voiceNoteUrl ? <AppText variant="small">Voice note saved.</AppText> : null}
           {notice ? <AppText variant="small">{notice}</AppText> : null}
         </SoftCard>
+        {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
       </Screen>
@@ -407,6 +444,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     return (
       <Screen>
         <PageHeaderWithEdit title="Appointment" subtitle="A time and place, held gently." />
+        {renderPackProvenance()}
         <SoftCard>
           <Field label="What?" value={title} onChangeText={setTitle} placeholder="Dentist" />
           <DateTimeFields
@@ -470,6 +508,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           />
           {notice ? <AppText variant="small">{notice}</AppText> : null}
         </SoftCard>
+        {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => void saveAndOpenWorld())}
         <View style={styles.actions}>
@@ -514,6 +553,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     return (
       <Screen>
         <PageHeaderWithEdit title="Project" subtitle="Big things, broken down." />
+        {renderPackProvenance()}
         <SoftCard>
           <Field label="Project title" value={title} onChangeText={setTitle} placeholder="Kitchen Refresh" />
           <Field label="Goal" value={projectGoal} onChangeText={setProjectGoal} multiline placeholder="What would feel good to move forward?" />
@@ -584,6 +624,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             <AppText variant="muted">Nothing linked yet — pick a type above.</AppText>
           )}
         </SoftCard>
+        {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
         <SecondaryButton onPress={() => saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
@@ -769,6 +810,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           </Pressable>
         )}
 
+        {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
 
@@ -799,6 +841,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     return (
       <Screen>
         <PageHeaderWithEdit title="Note" subtitle="A place to put the thought down." />
+        {renderPackProvenance()}
         <SoftCard>
           <Field label="Title" value={title} onChangeText={setTitle} placeholder="Useful thought" />
           <Field label="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Anything useful" />
@@ -820,6 +863,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             </View>
           </View>
         </SoftCard>
+        {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => void saveAndOpenWorld())}
         <SecondaryButton onPress={() => void saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
@@ -984,6 +1028,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           </View>
         ) : null}
 
+        {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
       </Screen>
@@ -994,6 +1039,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     return (
       <Screen>
         <PageHeaderWithEdit title="Routine" subtitle="Pick this up again when it helps." />
+        {renderPackProvenance()}
         <SoftCard>
           <Field label="Routine title" value={title} onChangeText={setTitle} placeholder="Take vitamins" />
           <View style={styles.section}>
@@ -1041,6 +1087,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           <AppText variant="muted">Last completed yesterday</AppText>
           <AppText variant="muted">Pick this up again</AppText>
         </SoftCard>
+        {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
         <View style={styles.actions}>
@@ -1054,6 +1101,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     return (
       <Screen>
         <PageHeaderWithEdit title="Chore" subtitle="One house job at a time." />
+        {renderPackProvenance()}
         <SoftCard>
           <Field label="Chore title" value={title} onChangeText={setTitle} placeholder="Clean the kitchen" />
           <View style={styles.section}>
@@ -1076,6 +1124,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             onCaptured={(capturedText, capturedVoiceNoteUrl) => appendToNotes(capturedText, setNotes, setVoiceNoteUrl, capturedVoiceNoteUrl)}
           />
         </SoftCard>
+        {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
       </Screen>
@@ -1086,6 +1135,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     return (
       <Screen>
         <PageHeaderWithEdit title="Event" subtitle="Plan the journey and getting ready." />
+        {renderPackProvenance()}
         <SoftCard>
           <Field label="Event" value={title} onChangeText={setTitle} placeholder="Concert" />
           <DateTimeFields
@@ -1148,6 +1198,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           />
           {notice ? <AppText variant="small">{notice}</AppText> : null}
         </SoftCard>
+        {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => void saveAndOpenWorld())}
       </Screen>
@@ -1158,6 +1209,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     return (
       <Screen>
         <PageHeaderWithEdit title="Occasion" subtitle="Birthdays, anniversaries and things worth remembering." />
+        {renderPackProvenance()}
         <SoftCard>
           <Field label="Who or what?" value={title} onChangeText={setTitle} placeholder="Mum's Birthday" />
           <DatePickerField label="Date" value={when} onChangeText={setWhen} placeholder="DD-MM-YYYY" />
@@ -1235,6 +1287,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             onCaptured={(capturedText, capturedVoiceNoteUrl) => appendToNotes(capturedText, setNotes, setVoiceNoteUrl, capturedVoiceNoteUrl)}
           />
         </SoftCard>
+        {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
         <SecondaryButton onPress={() => saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
@@ -1245,6 +1298,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
   return (
     <Screen>
       <PageHeaderWithEdit title={getHeader(draft.type)} subtitle="Add what helps. Leave the rest." />
+        {renderPackProvenance()}
       <SoftCard>
         <AppText variant="small">Suggested type</AppText>
         <AppText variant="heading">{formatTypeLabel(draft.type)}</AppText>
@@ -1294,7 +1348,8 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           );
         })}
       </SoftCard>
-      {renderDocumentsSection()}
+      {renderReadyPackOutboundLinks()}
+        {renderDocumentsSection()}
       {renderItemOptions(() => saveAndOpenWorld())}
       <SecondaryButton onPress={() => saveAndOpenWorld()}>Just Keep It Simple</SecondaryButton>
     </Screen>

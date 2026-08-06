@@ -45,6 +45,7 @@ export const colors = {
   progress: brand.softGold,
   danger: brand.softRose,
   dangerSoft: brand.softRoseMuted,
+  ivoryElevated: brand.ivoryElevated,
   fab: brand.babyBlue,
   link: brand.softGold,
   onPrimary: brand.midnightBlue,

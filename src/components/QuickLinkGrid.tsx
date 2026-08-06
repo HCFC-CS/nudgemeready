@@ -3,7 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import type { IoniconName } from "./iconTypes";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { colors, radii, spacing } from "../theme/theme";
+import { colors, radii, shadows, spacing } from "../theme/theme";
 import { AppText } from "./Text";
 
 export function QuickLinkGrid({
@@ -22,11 +22,7 @@ export function QuickLinkGrid({
           onPress={() => onPress(link.route)}
           style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
         >
-          {link.icon ? (
-            <View style={styles.iconBadge}>
-              <Ionicons name={link.icon} size={18} color={colors.primaryDark} />
-            </View>
-          ) : null}
+          {link.icon ? <Ionicons name={link.icon} size={26} color={colors.primaryDark} /> : null}
           <AppText variant="small" style={styles.tileLabel}>
             {link.label}
           </AppText>
@@ -40,38 +36,31 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.sm
+    gap: spacing.sm,
+    justifyContent: "space-between"
   },
   tile: {
     width: "48%",
-    flexGrow: 1,
-    minWidth: "46%",
-    flexDirection: "row",
+    minHeight: 88,
     alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radii.md,
+    backgroundColor: colors.ivoryElevated,
+    borderRadius: radii.lg,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.borderLight
+    borderColor: colors.borderLight,
+    ...shadows.sm
   },
   tilePressed: {
     opacity: 0.88,
     transform: [{ scale: 0.98 }],
     backgroundColor: colors.primarySoft
   },
-  iconBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: radii.sm,
-    backgroundColor: colors.card,
-    alignItems: "center",
-    justifyContent: "center"
-  },
   tileLabel: {
-    flex: 1,
     fontWeight: "600",
-    color: colors.primaryDark
+    color: colors.primaryDark,
+    textAlign: "center"
   }
 });

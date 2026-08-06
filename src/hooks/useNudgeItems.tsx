@@ -6,6 +6,7 @@ import {
   syncSpeakingReminderNotifications
 } from "../services/speakingReminders";
 import { completeItem, deleteItem, updateItem } from "../services/nudgeItems";
+import { markPackItemEdited } from "../services/readyPackInstall";
 import { cleanupAttachmentsForItem } from "../services/documentAttachments";
 import { clearNudgeItemsStorage, loadNudgeItems, saveNudgeItems } from "../services/nudgeItemsStorage";
 import { useCrew } from "./useCrew";
@@ -18,6 +19,7 @@ type NudgeItemsContextValue = {
   loadError: string | null;
   clearLoadError: () => void;
   saveItem: (item: NudgeItem) => void;
+  replaceItems: (items: NudgeItem[]) => void;
   setItemStatus: (itemId: string, status: NudgeItemStatus) => void;
   completeNudgeItem: (itemId: string) => void;
   deleteNudgeItem: (itemId: string) => void;
@@ -69,7 +71,18 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
         if (existing && !canEditItem(existing, actor)) {
           return current;
         }
-        return updateItem(current, item.id, item);
+        const nextItem =
+          existing?.sourcePackId || item.sourcePackId
+            ? markPackItemEdited(
+                {
+                  ...item,
+                  sourcePackId: item.sourcePackId ?? existing?.sourcePackId,
+                  sourceTemplateId: item.sourceTemplateId ?? existing?.sourceTemplateId
+                },
+                existing
+              )
+            : item;
+        return updateItem(current, item.id, nextItem);
       }
       return [item, ...current];
     });
@@ -80,6 +93,10 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
         setItems((current) => updateItem(current, item.id, { reminderNotificationIds: notificationIds }));
       })();
     }
+  }
+
+  function replaceItems(next: NudgeItem[]) {
+    setItems(next);
   }
 
   function stopReminderNotifications(item: NudgeItem) {
@@ -193,6 +210,7 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
         loadError,
         clearLoadError: () => setLoadError(null),
         saveItem,
+        replaceItems,
         setItemStatus,
         completeNudgeItem,
         deleteNudgeItem,

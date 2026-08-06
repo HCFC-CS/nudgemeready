@@ -389,6 +389,30 @@ export async function resetAppCredential(value: string, type: CredentialType) {
   return recoveryCode;
 }
 
+/**
+ * Developer/support lock reset. Rotates PIN/password + recovery code only.
+ * Never touches the data encryption key or AsyncStorage user content.
+ */
+export async function adminResetLockKeepData(
+  value: string,
+  type: CredentialType,
+  options?: { biometricsEnabled?: boolean; recoveryEmail?: string }
+) {
+  await setAppCredential(value, type);
+  if (options?.recoveryEmail) {
+    await setRecoveryEmail(options.recoveryEmail);
+  }
+  const recoveryCode = await generateRecoveryCode();
+  await storeRecoveryCode(recoveryCode);
+  await writeFlag(LOCK_ENABLED_KEY, true);
+  await writeFlag(LOCK_ON_BACKGROUND_KEY, true);
+  if (options?.biometricsEnabled != null) {
+    await writeFlag(BIOMETRICS_KEY, options.biometricsEnabled);
+  }
+  await clearEmailResetToken();
+  return recoveryCode;
+}
+
 export async function issueNewRecoveryCode(currentCredential: string) {
   const ok = await verifyAppCredential(currentCredential);
   if (!ok) {

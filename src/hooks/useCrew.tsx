@@ -49,8 +49,14 @@ type CrewContextValue = {
   isReady: boolean;
   activeProfile: SupportedProfile;
   activeProfileId: string;
+  /** True when this user has set up Nudge me Ready for themselves (not invite-only). */
+  hasOwnNudgeWorld: boolean;
+  /** Supporting others without a personal nudge world yet. */
+  isSupporterOnly: boolean;
   myMembershipId?: string;
   switchProfile: (profileId: string) => void;
+  enableOwnNudgeWorld: () => void;
+  setHasOwnNudgeWorld: (enabled: boolean) => void;
   profiles: SupportedProfile[];
   crewsISupport: SupportedProfile[];
   supportedCrewLinks: SupportedCrewLink[];
@@ -65,7 +71,11 @@ type CrewContextValue = {
   resendInvitation: (membershipId: string, invitedByName?: string) => CrewInvitation;
   importSharedInvitation: (payload: import("../services/crewInvites").SharedInvitePayload) => CrewInvitation;
   findInvitation: (inviteId?: string) => CrewInvitation | undefined;
-  acceptInvitation: (inviteId: string, userName?: string) => void;
+  acceptInvitation: (
+    inviteId: string,
+    userName?: string,
+    terms?: { acceptedAt: string; version: string }
+  ) => void;
   declineInvitation: (inviteId: string) => void;
   revokeMembership: (membershipId: string) => void;
   updateMembershipRoles: (membershipId: string, roles: CrewRole[]) => void;
@@ -233,7 +243,52 @@ function useProvideCrew() {
   }, [store.crews, store.memberships, store.profiles]);
 
   function switchProfile(profileId: string) {
-    setStore((current) => ({ ...current, activeProfileId: profileId }));
+    setStore((current) => {
+      const profile = current.profiles.find((entry) => entry.id === profileId);
+      if (!profile) {
+        return current;
+      }
+      if (profile.isSelf && !current.hasOwnNudgeWorld) {
+        return current;
+      }
+      return { ...current, activeProfileId: profileId };
+    });
+  }
+
+  function setHasOwnNudgeWorld(enabled: boolean) {
+    setStore((current) => {
+      const selfId = current.profiles.find((profile) => profile.isSelf)?.id;
+      if (enabled) {
+        return {
+          ...current,
+          hasOwnNudgeWorld: true,
+          activeProfileId: selfId ?? current.activeProfileId
+        };
+      }
+      const supportedProfileId = current.memberships
+        .filter(
+          (membership) =>
+            membership.userId === CURRENT_USER_ID && membership.inviteStatus === "accepted"
+        )
+        .map((membership) => current.crews.find((crew) => crew.id === membership.crewId)?.supportedProfileId)
+        .find((profileId) => profileId && profileId !== selfId);
+      return {
+        ...current,
+        hasOwnNudgeWorld: false,
+        activeProfileId: supportedProfileId ?? current.activeProfileId
+      };
+    });
+  }
+
+  function enableOwnNudgeWorld() {
+    setStore((current) => {
+      const selfId = current.profiles.find((profile) => profile.isSelf)?.id ?? current.activeProfileId;
+      return {
+        ...current,
+        hasOwnNudgeWorld: true,
+        activeProfileId: selfId
+      };
+    });
   }
 
   function getCrewIdForProfile(profileId: string) {
@@ -439,10 +494,17 @@ function useProvideCrew() {
     [store.invitations]
   );
 
-  function acceptInvitation(inviteId: string, userName = "Me") {
+  function acceptInvitation(
+    inviteId: string,
+    userName = "Me",
+    terms?: { acceptedAt: string; version: string }
+  ) {
     setStore((current) => {
       const invitation = current.invitations.find((entry) => entry.id === inviteId);
       if (!invitation || (invitation.status !== "sent" && invitation.status !== "draft")) {
+        return current;
+      }
+      if (!terms?.acceptedAt || !terms?.version) {
         return current;
       }
       const now = new Date().toISOString();
@@ -455,6 +517,8 @@ function useProvideCrew() {
                   inviteStatus: "accepted" as const,
                   userId: CURRENT_USER_ID,
                   memberName: userName,
+                  supporterTermsAcceptedAt: terms.acceptedAt,
+                  supporterTermsVersion: terms.version,
                   updatedAt: now,
                   lastActiveAt: now
                 }
@@ -475,6 +539,8 @@ function useProvideCrew() {
               consentStatus: (invitation.proposedConsents ?? []).map((type) => ({ type, granted: false })),
               relationship: "Crew invite",
               isPrimaryCaptain: false,
+              supporterTermsAcceptedAt: terms.acceptedAt,
+              supporterTermsVersion: terms.version,
               createdAt: now,
               updatedAt: now,
               lastActiveAt: now
@@ -483,9 +549,21 @@ function useProvideCrew() {
 
       return {
         ...current,
+        activeProfileId: invitation.targetProfileId,
+        // Accepting a crew invite grants access to that nudgee only.
+        // Keep an existing personal world if they already set one up; otherwise stay supporter-only.
+        hasOwnNudgeWorld: current.hasOwnNudgeWorld !== false,
         invitations: current.invitations.map((entry) =>
           entry.id === inviteId
-            ? { ...entry, status: "accepted", acceptedAt: now, updatedAt: now, inviteeUserId: CURRENT_USER_ID }
+            ? {
+                ...entry,
+                status: "accepted",
+                acceptedAt: now,
+                updatedAt: now,
+                inviteeUserId: CURRENT_USER_ID,
+                supporterTermsAcceptedAt: terms.acceptedAt,
+                supporterTermsVersion: terms.version
+              }
             : entry
         ),
         memberships
@@ -654,8 +732,12 @@ function useProvideCrew() {
     isReady,
     activeProfile,
     activeProfileId: store.activeProfileId,
+    hasOwnNudgeWorld: store.hasOwnNudgeWorld !== false,
+    isSupporterOnly: store.hasOwnNudgeWorld === false,
     myMembershipId,
     switchProfile,
+    enableOwnNudgeWorld,
+    setHasOwnNudgeWorld,
     profiles: store.profiles,
     crewsISupport,
     supportedCrewLinks,

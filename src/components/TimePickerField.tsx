@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { useOptionalItemEdit } from "../hooks/useItemEdit";
@@ -9,7 +9,7 @@ import { AppText } from "./Text";
 import { VoiceFieldActions } from "./VoiceFieldActions";
 
 const hourOptions = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
-const minuteOptions = ["00", "15", "30", "45"];
+const minuteOptions = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0"));
 
 type TimePickerFieldProps = {
   label?: string;
@@ -31,11 +31,21 @@ export function TimePickerField({
   const edit = useOptionalItemEdit();
   const isEditable = editable ?? edit?.editable ?? true;
   const [isOpen, setIsOpen] = useState(false);
-  const { hour, minute } = useMemo(() => parseTimeValue(value), [value]);
+  const parsed = useMemo(() => parseTimeValue(value), [value]);
+  const [hour, setHour] = useState(parsed.hour);
+  const [minute, setMinute] = useState(parsed.minute);
   const displayValue = value ? formatDisplayTime(value) || value : "";
 
-  function selectTime(nextHour: string, nextMinute: string) {
-    onChangeText(`${nextHour}:${nextMinute}`);
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    setHour(parsed.hour);
+    setMinute(parsed.minute);
+  }, [isOpen, parsed.hour, parsed.minute]);
+
+  function confirmTime() {
+    onChangeText(`${hour}:${minute}`);
     setIsOpen(false);
   }
 
@@ -100,8 +110,11 @@ export function TimePickerField({
               </Pressable>
             </View>
 
+            <AppText variant="heading" style={styles.preview}>
+              {hour}:{minute}
+            </AppText>
             <AppText variant="small" style={styles.pickerHint}>
-              Choose hour and minutes
+              Choose any hour and minute
             </AppText>
 
             <View style={styles.columns}>
@@ -114,7 +127,7 @@ export function TimePickerField({
                     <Pressable
                       key={option}
                       accessibilityRole="button"
-                      onPress={() => selectTime(option, minute)}
+                      onPress={() => setHour(option)}
                       style={({ pressed }) => [
                         styles.option,
                         hour === option && styles.optionSelected,
@@ -137,7 +150,7 @@ export function TimePickerField({
                     <Pressable
                       key={option}
                       accessibilityRole="button"
-                      onPress={() => selectTime(hour, option)}
+                      onPress={() => setMinute(option)}
                       style={({ pressed }) => [
                         styles.option,
                         minute === option && styles.optionSelected,
@@ -152,6 +165,14 @@ export function TimePickerField({
                 </ScrollView>
               </View>
             </View>
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={confirmTime}
+              style={({ pressed }) => [styles.confirmBtn, pressed && styles.pressed]}
+            >
+              <AppText style={styles.confirmLabel}>Use {hour}:{minute}</AppText>
+            </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
@@ -165,10 +186,7 @@ function parseTimeValue(value: string) {
     return { hour: "09", minute: "00" };
   }
   const hour = String(Math.min(23, Math.max(0, Number(match[1])))).padStart(2, "0");
-  const rawMinute = Number(match[2]);
-  const minute = minuteOptions.includes(String(rawMinute).padStart(2, "0"))
-    ? String(rawMinute).padStart(2, "0")
-    : "00";
+  const minute = String(Math.min(59, Math.max(0, Number(match[2])))).padStart(2, "0");
   return { hour, minute };
 }
 
@@ -255,7 +273,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     padding: spacing.md,
     gap: spacing.md,
-    maxHeight: "70%",
+    maxHeight: "78%",
     ...shadows.sm
   },
   sheetHeader: {
@@ -269,6 +287,11 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: "center",
     justifyContent: "center"
+  },
+  preview: {
+    textAlign: "center",
+    fontVariant: ["tabular-nums"],
+    fontSize: 28
   },
   pickerHint: {
     color: colors.mutedText,
@@ -290,10 +313,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5
   },
   columnScroll: {
-    maxHeight: 220
+    maxHeight: 240
   },
   option: {
-    minHeight: 44,
+    minHeight: 40,
     borderRadius: radii.md,
     alignItems: "center",
     justifyContent: "center"
@@ -309,5 +332,18 @@ const styles = StyleSheet.create({
   },
   optionLabelSelected: {
     color: colors.onPrimary
+  },
+  confirmBtn: {
+    minHeight: 48,
+    borderRadius: radii.lg,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  confirmLabel: {
+    color: colors.onPrimary,
+    fontWeight: "700",
+    fontSize: 16,
+    fontVariant: ["tabular-nums"]
   }
 });

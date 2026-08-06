@@ -33,6 +33,11 @@ export type RootStackParamList = {
   Profile: undefined;
   Settings: undefined;
   LegalInfo: undefined;
+  TermsOfUse: undefined;
+  CrewTerms: undefined;
+  DevAdmin: undefined;
+  ReadyPacks: undefined;
+  ReadyPackPreview: { packId: string };
 };
 
 export type TabParamList = {

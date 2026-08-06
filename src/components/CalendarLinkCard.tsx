@@ -64,7 +64,7 @@ export function CalendarLinkCard({
             void refreshCalendars();
           }
         }}
-        note="Saves into the Calendar app — iCloud, Google, Outlook, or any account on this phone."
+        note="Saves into the Calendar app — iCloud, Google, Outlook, or any account on this phone. Turn on “Pull phone calendar into nudges” in Settings to bring phone events back into the app."
         disabled={!editable}
       />
 

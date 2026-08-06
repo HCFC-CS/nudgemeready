@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
@@ -7,11 +8,13 @@ import { colors, radii, shadows, spacing } from "../theme/theme";
 import { AppText } from "./Text";
 
 export function CrewSwitcher({ compact }: { compact?: boolean }) {
-  const { activeProfile, profiles, crewsISupport, switchProfile } = useCrew();
+  const navigation = useNavigation<any>();
+  const { activeProfile, profiles, crewsISupport, switchProfile, hasOwnNudgeWorld, enableOwnNudgeWorld } =
+    useCrew();
   const [open, setOpen] = useState(false);
 
   const options = [
-    ...profiles.filter((profile) => profile.isSelf),
+    ...(hasOwnNudgeWorld ? profiles.filter((profile) => profile.isSelf) : []),
     ...crewsISupport
   ];
 
@@ -46,7 +49,9 @@ export function CrewSwitcher({ compact }: { compact?: boolean }) {
               Switch profile
             </AppText>
             <AppText variant="muted" style={styles.sheetSubtitle}>
-              Move between your nudges and people you support.
+              {hasOwnNudgeWorld
+                ? "Move between your nudges and people you support."
+                : "You’re supporting a nudgee. Set up the app for yourself if you want your own nudges."}
             </AppText>
             <ScrollView style={styles.optionList} contentContainerStyle={styles.optionListContent}>
               {options.map((profile) => {
@@ -76,6 +81,20 @@ export function CrewSwitcher({ compact }: { compact?: boolean }) {
                 );
               })}
             </ScrollView>
+            {!hasOwnNudgeWorld ? (
+              <Pressable
+                onPress={() => {
+                  enableOwnNudgeWorld();
+                  setOpen(false);
+                  navigation.navigate("Profile");
+                }}
+                style={styles.setupButton}
+              >
+                <AppText variant="body" style={styles.setupLabel}>
+                  Set up Nudge me Ready for myself
+                </AppText>
+              </Pressable>
+            ) : null}
             <Pressable onPress={() => setOpen(false)} style={styles.closeButton}>
               <AppText variant="body" style={styles.closeLabel}>
                 Close
@@ -186,6 +205,17 @@ const styles = StyleSheet.create({
   },
   optionName: {
     fontWeight: "700"
+  },
+  setupButton: {
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    borderRadius: radii.lg,
+    backgroundColor: colors.primarySoft
+  },
+  setupLabel: {
+    color: colors.primaryDark,
+    fontWeight: "700",
+    textAlign: "center"
   },
   closeButton: {
     alignItems: "center",

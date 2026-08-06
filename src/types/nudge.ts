@@ -132,6 +132,12 @@ export interface NudgeItem {
   syncToCalendar?: boolean;
   calendarId?: string;
   calendarEventId?: string;
+  /** ReadyPack that created this item, if any. */
+  sourcePackId?: string;
+  /** Template id within the ReadyPack. */
+  sourceTemplateId?: string;
+  /** True once the user has customised a pack-sourced item. */
+  userEdited?: boolean;
 }
 
 export type NudgeItemInput = Partial<

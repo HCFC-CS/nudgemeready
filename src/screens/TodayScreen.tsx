@@ -187,14 +187,29 @@ export function TodayScreen() {
       {!visible.length ? (
         <View style={styles.empty}>
           <AppText variant="heading">
-            {statusFilter === "open" ? "No open nudges" : "Nothing in this filter"}
+            {statusFilter === "open"
+              ? items.length === 0
+                ? "No nudges yet"
+                : "No open nudges"
+              : "Nothing in this filter"}
           </AppText>
           <AppText variant="muted">
-            {statusFilter === "open"
-              ? "Completed ones are hidden. Tap All or Completed to see them."
-              : "Try another filter, or add a nudge."}
+            {items.length === 0
+              ? "Add one yourself, or start from a ReadyPack."
+              : statusFilter === "open"
+                ? "Completed ones are hidden. Tap All or Completed to see them."
+                : "Try another filter, or add a nudge."}
           </AppText>
-          {statusFilter === "open" ? (
+          {items.length === 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => navigation.navigate("ReadyPacks")}
+              style={styles.emptyAction}
+            >
+              <AppText style={styles.emptyActionLabel}>Browse ReadyPacks</AppText>
+            </Pressable>
+          ) : null}
+          {statusFilter === "open" && items.length > 0 ? (
             <Pressable
               accessibilityRole="button"
               onPress={() => setStatusFilter("all")}

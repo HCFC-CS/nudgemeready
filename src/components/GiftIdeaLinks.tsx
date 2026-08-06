@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import { Linking, StyleSheet, View } from "react-native";
 
+import { withAffiliate } from "../services/affiliateLinks";
 import { getCardLinksForOccasion, getGiftLinksForOccasion } from "../services/giftLinks";
 import { spacing } from "../theme/theme";
+import { AffiliateDisclosure } from "./AffiliateDisclosure";
 import { SecondaryButton } from "./NudgeComponents";
 import { AppText } from "./Text";
 
@@ -31,12 +33,13 @@ export function GiftIdeaLinks({
         <SecondaryButton
           key={link.id}
           onPress={() => {
-            void Linking.openURL(link.url);
+            void Linking.openURL(withAffiliate(link.url));
           }}
         >
           {link.label}
         </SecondaryButton>
       ))}
+      <AffiliateDisclosure compact />
     </View>
   );
 }

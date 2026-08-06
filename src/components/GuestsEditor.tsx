@@ -3,14 +3,18 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, Linking, Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { Field } from "./FormControls";
+import { ContactSuggestionRow } from "./ContactSuggestionRow";
 import { PrimaryButton, SecondaryButton, SoftCard } from "./NudgeComponents";
 import { AppText } from "./Text";
 import type { MockContact } from "../data/mockData";
 import {
+  applyFavoriteFlags,
+  getFavoriteContacts,
   loadDeviceContacts,
   mergeContactSuggestions,
   type DeviceContact
 } from "../services/deviceContacts";
+import { contactFavoriteKey, toggleFavoriteContactKey } from "../services/favoriteContactsStorage";
 import { colors, radii, spacing } from "../theme/theme";
 import type { AppointmentGuest } from "../types/nudge";
 
@@ -52,23 +56,28 @@ export function GuestsEditor({
   const [emailDraft, setEmailDraft] = useState("");
   const [search, setSearch] = useState("");
   const [deviceContacts, setDeviceContacts] = useState<DeviceContact[]>([]);
-  const [contactsNotice, setContactsNotice] = useState("Loading phone contacts…");
+  const [favorites, setFavorites] = useState<DeviceContact[]>([]);
+  const [contactsNotice, setContactsNotice] = useState("");
+  const [contactsReady, setContactsReady] = useState(false);
 
   useEffect(() => {
     let active = true;
     void loadDeviceContacts().then((result) => {
       if (!active) return;
       setDeviceContacts(result.contacts);
+      setFavorites(result.favorites);
       setContactsNotice(result.message ?? "");
+      setContactsReady(true);
     });
     return () => {
       active = false;
     };
   }, []);
 
+  const query = search.trim();
   const suggestions = useMemo(
-    () => mergeContactSuggestions(search, deviceContacts, true).slice(0, 8),
-    [deviceContacts, search]
+    () => (query ? mergeContactSuggestions(query, deviceContacts, true).slice(0, 8) : []),
+    [deviceContacts, query]
   );
 
   function addGuest(guest: AppointmentGuest) {
@@ -94,7 +103,16 @@ export function GuestsEditor({
   async function reloadContacts() {
     const result = await loadDeviceContacts();
     setDeviceContacts(result.contacts);
+    setFavorites(result.favorites);
     setContactsNotice(result.message ?? "");
+    setContactsReady(true);
+  }
+
+  async function handleToggleFavorite(contact: DeviceContact) {
+    const keys = await toggleFavoriteContactKey(contactFavoriteKey(contact));
+    const nextContacts = applyFavoriteFlags(deviceContacts, keys);
+    setDeviceContacts(nextContacts);
+    setFavorites(getFavoriteContacts(nextContacts, keys));
   }
 
   function inviteGuests() {
@@ -135,7 +153,7 @@ export function GuestsEditor({
           ))}
         </View>
       ) : (
-        <AppText variant="muted">Search your phone contacts, or add a guest email.</AppText>
+        <AppText variant="muted">Pick a favorite, start typing a name, or add a guest email.</AppText>
       )}
 
       {editable ? (
@@ -163,25 +181,49 @@ export function GuestsEditor({
             <TextInput
               value={search}
               onChangeText={setSearch}
-              placeholder="Search phone contacts..."
+              placeholder="Start typing a name…"
               placeholderTextColor={colors.mutedText}
+              autoCorrect={false}
+              autoCapitalize="words"
               style={styles.searchInput}
             />
             <SecondaryButton onPress={() => void reloadContacts()}>Refresh contacts</SecondaryButton>
           </View>
           <View style={styles.suggestions}>
-            {suggestions.map((contact) => (
-              <Pressable
-                key={contact.id}
-                onPress={() => addGuest(guestFromContact(contact))}
-                style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}
-              >
-                <AppText>{contact.name}</AppText>
-                <AppText variant="small" style={{ color: colors.mutedText }}>
-                  {contact.email || contact.phone || contact.role}
+            {!contactsReady ? (
+              <AppText variant="muted">Loading phone contacts…</AppText>
+            ) : !query ? (
+              favorites.length ? (
+                <>
+                  <AppText variant="section">Favorites</AppText>
+                  {favorites.map((contact) => (
+                    <ContactSuggestionRow
+                      key={contact.id}
+                      contact={contact}
+                      onSelect={() => addGuest(guestFromContact(contact))}
+                      onToggleFavorite={() => void handleToggleFavorite(contact)}
+                      isFavorite
+                    />
+                  ))}
+                </>
+              ) : (
+                <AppText variant="muted">
+                  Start typing to search, or tap the star on a contact to pin favorites here.
                 </AppText>
-              </Pressable>
-            ))}
+              )
+            ) : suggestions.length ? (
+              suggestions.map((contact) => (
+                <ContactSuggestionRow
+                  key={contact.id}
+                  contact={contact}
+                  onSelect={() => addGuest(guestFromContact(contact))}
+                  onToggleFavorite={() => void handleToggleFavorite(contact)}
+                  isFavorite={Boolean(contact.appFavorite || contact.deviceFavorite)}
+                />
+              ))
+            ) : (
+              <AppText variant="muted">No matching contacts.</AppText>
+            )}
           </View>
 
           {guests.some((guest) => guest.email) ? (
@@ -190,7 +232,10 @@ export function GuestsEditor({
         </>
       ) : null}
 
-      {contactsNotice ? <AppText variant="small">{contactsNotice}</AppText> : null}
+      {contactsNotice && query ? <AppText variant="small">{contactsNotice}</AppText> : null}
+      {contactsNotice && !query && (contactsNotice.includes("Allow") || contactsNotice.includes("turned off")) ? (
+        <AppText variant="small">{contactsNotice}</AppText>
+      ) : null}
     </View>
   );
 }
@@ -213,12 +258,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card
   },
   suggestions: { gap: spacing.xs },
-  suggestion: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    backgroundColor: colors.card
-  },
   pressed: { opacity: 0.85 }
 });

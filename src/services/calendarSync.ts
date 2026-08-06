@@ -4,6 +4,7 @@ import * as Sharing from "expo-sharing";
 import { Platform } from "react-native";
 
 import { loadAppPreferences, saveAppPreferences } from "./appPreferencesStorage";
+import { createItem, updateItem } from "./nudgeItems";
 import type { AppointmentGuest, NudgeItem } from "../types/nudge";
 
 export type CalendarSyncResult =
@@ -75,19 +76,28 @@ export async function listWritablePhoneCalendars(): Promise<{
   granted: boolean;
   message?: string;
 }> {
+  const result = await listPhoneCalendars({ writableOnly: true });
+  return result;
+}
+
+export async function listPhoneCalendars(options?: { writableOnly?: boolean }): Promise<{
+  calendars: PhoneCalendarOption[];
+  granted: boolean;
+  message?: string;
+}> {
   try {
     const granted = await ensureCalendarPermission();
     if (!granted) {
       return {
         calendars: [],
         granted: false,
-        message: "Allow calendar access so appointments can sync to iCloud, Google, or Outlook on this phone."
+        message: "Allow calendar access so appointments can sync with the Calendar app on this phone."
       };
     }
 
     const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-    const options: PhoneCalendarOption[] = calendars
-      .filter((calendar) => calendar.allowsModifications)
+    const optionsList: PhoneCalendarOption[] = calendars
+      .filter((calendar) => (options?.writableOnly ? calendar.allowsModifications : true))
       .map((calendar) => {
         const source = describeSource(calendar);
         return {
@@ -108,11 +118,13 @@ export async function listWritablePhoneCalendars(): Promise<{
       });
 
     return {
-      calendars: options,
+      calendars: optionsList,
       granted: true,
-      message: options.length
+      message: optionsList.length
         ? undefined
-        : "No writable calendars found. Add iCloud, Google, or Outlook in the phone Calendar settings."
+        : options?.writableOnly
+          ? "No writable calendars found. Add iCloud, Google, or Outlook in the phone Calendar settings."
+          : "No calendars found on this phone."
     };
   } catch {
     return {
@@ -121,6 +133,167 @@ export async function listWritablePhoneCalendars(): Promise<{
       message: "Could not read calendars on this phone."
     };
   }
+}
+
+function toIsoDate(value: Date | string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return undefined;
+  }
+  return date.toISOString();
+}
+
+function eventToNudgeDraft(
+  event: Calendar.Event,
+  actor?: NudgeItem["createdBy"]
+): NudgeItem | undefined {
+  const title = (event.title ?? "").trim();
+  if (!title || event.id.startsWith("ics:")) {
+    return undefined;
+  }
+  const startDate = toIsoDate(event.startDate);
+  if (!startDate) {
+    return undefined;
+  }
+  const endDate = toIsoDate(event.endDate);
+  const allDay = Boolean(event.allDay);
+  const locationLabel = typeof event.location === "string" ? event.location.trim() : "";
+  const notes = typeof event.notes === "string" ? event.notes.trim() : "";
+
+  return createItem({
+    id: `cal-${event.id}`,
+    title,
+    type: allDay ? "event" : "appointment",
+    status: "open",
+    createdBy: actor,
+    startDate,
+    endDate,
+    dueDate: startDate,
+    location: locationLabel ? { label: locationLabel, address: locationLabel } : undefined,
+    notes: notes || undefined,
+    guests: [],
+    syncToCalendar: true,
+    calendarId: event.calendarId,
+    calendarEventId: event.id
+  });
+}
+
+export type PhoneCalendarImportResult = {
+  ok: boolean;
+  added: number;
+  updated: number;
+  scanned: number;
+  message?: string;
+  drafts: NudgeItem[];
+};
+
+/** Fetch phone calendar events and map them to appointment/event nudge drafts. */
+export async function fetchPhoneCalendarNudgeDrafts(options?: {
+  daysBack?: number;
+  daysForward?: number;
+  actor?: NudgeItem["createdBy"];
+  calendarIds?: string[];
+}): Promise<PhoneCalendarImportResult> {
+  const daysBack = options?.daysBack ?? 1;
+  const daysForward = options?.daysForward ?? 90;
+
+  try {
+    const listed = await listPhoneCalendars({ writableOnly: false });
+    if (!listed.granted) {
+      return { ok: false, added: 0, updated: 0, scanned: 0, drafts: [], message: listed.message };
+    }
+    if (!listed.calendars.length) {
+      return { ok: false, added: 0, updated: 0, scanned: 0, drafts: [], message: listed.message };
+    }
+
+    const calendarIds =
+      options?.calendarIds?.length
+        ? options.calendarIds
+        : listed.calendars.map((calendar) => calendar.id);
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - daysBack);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    end.setDate(end.getDate() + daysForward);
+
+    const events = await Calendar.getEventsAsync(calendarIds, start, end);
+    const drafts = events
+      .map((event) => eventToNudgeDraft(event, options?.actor))
+      .filter((item): item is NudgeItem => Boolean(item));
+
+    return {
+      ok: true,
+      added: 0,
+      updated: 0,
+      scanned: events.length,
+      drafts,
+      message: drafts.length
+        ? undefined
+        : "No upcoming calendar events found in the selected range."
+    };
+  } catch {
+    return {
+      ok: false,
+      added: 0,
+      updated: 0,
+      scanned: 0,
+      drafts: [],
+      message: "Could not read events from the phone calendar."
+    };
+  }
+}
+
+/** Merge imported calendar drafts into existing nudges (match on calendarEventId). */
+export function mergePhoneCalendarDrafts(
+  current: NudgeItem[],
+  drafts: NudgeItem[]
+): { items: NudgeItem[]; added: number; updated: number } {
+  const byEventId = new Map<string, NudgeItem>();
+  for (const item of current) {
+    if (item.calendarEventId) {
+      byEventId.set(item.calendarEventId, item);
+    }
+  }
+
+  let items = [...current];
+  let added = 0;
+  let updated = 0;
+
+  for (const draft of drafts) {
+    const eventId = draft.calendarEventId;
+    if (!eventId) {
+      continue;
+    }
+    const existing = byEventId.get(eventId);
+    if (existing) {
+      const nextStatus = existing.status === "done" || existing.status === "cancelled" ? existing.status : draft.status;
+      items = updateItem(items, existing.id, {
+        title: draft.title,
+        type: existing.type === "appointment" || existing.type === "event" ? draft.type : existing.type,
+        startDate: draft.startDate,
+        endDate: draft.endDate,
+        dueDate: draft.dueDate,
+        location: draft.location ?? existing.location,
+        notes: draft.notes ?? existing.notes,
+        calendarId: draft.calendarId ?? existing.calendarId,
+        calendarEventId: eventId,
+        syncToCalendar: true,
+        status: nextStatus
+      });
+      updated += 1;
+      continue;
+    }
+    items = [draft, ...items];
+    byEventId.set(eventId, draft);
+    added += 1;
+  }
+
+  return { items, added, updated };
 }
 
 export async function resolveTargetCalendarId(preferredCalendarId?: string) {

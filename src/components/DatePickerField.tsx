@@ -9,11 +9,16 @@ import {
   formatMonthTitle,
   getCalendarDays,
   getDateFromInput,
-  isSameSelectedDay
+  isCalendarToday,
+  isSameSelectedDay,
+  makeLocalDate
 } from "../services/reminderDates";
 import { colors, radii, shadows, spacing } from "../theme/theme";
 import { AppText } from "./Text";
 import { VoiceFieldActions } from "./VoiceFieldActions";
+
+const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] as const;
+const CELL_WIDTH = `${100 / 7}%` as const;
 
 type DatePickerFieldProps = {
   label?: string;
@@ -58,7 +63,11 @@ export function DatePickerField({
   }
 
   function selectDate(day: number) {
-    onChangeText(formatDateInput(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day)));
+    const next = makeLocalDate(visibleMonth.getFullYear(), visibleMonth.getMonth(), day);
+    if (!next) {
+      return;
+    }
+    onChangeText(formatDateInput(next));
     setIsOpen(false);
   }
 
@@ -135,20 +144,28 @@ export function DatePickerField({
               </Pressable>
             </View>
 
-            <View style={styles.calendarGrid}>
-              {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((dayName) => (
-                <AppText key={dayName} variant="small" style={styles.weekday}>
-                  {dayName}
-                </AppText>
+            <View style={styles.weekdayRow}>
+              {WEEKDAYS.map((dayName) => (
+                <View key={dayName} style={styles.cell}>
+                  <AppText variant="small" style={styles.weekday}>
+                    {dayName}
+                  </AppText>
+                </View>
               ))}
+            </View>
+
+            <View style={styles.calendarGrid}>
               {days.map((day, index) =>
                 day ? (
                   <Pressable
-                    key={`${day}-${index}`}
+                    key={`${visibleMonth.getFullYear()}-${visibleMonth.getMonth()}-${day}`}
                     accessibilityRole="button"
+                    accessibilityLabel={`${day} ${formatMonthTitle(visibleMonth)}`}
                     onPress={() => selectDate(day)}
                     style={({ pressed }) => [
+                      styles.cell,
                       styles.dayBtn,
+                      isCalendarToday(day, visibleMonth, today) && styles.dayBtnToday,
                       isSameSelectedDay(day, visibleMonth, selectedDate) && styles.dayBtnSelected,
                       pressed && styles.pressed
                     ]}
@@ -156,6 +173,7 @@ export function DatePickerField({
                     <AppText
                       style={[
                         styles.dayLabel,
+                        isCalendarToday(day, visibleMonth, today) && styles.dayLabelToday,
                         isSameSelectedDay(day, visibleMonth, selectedDate) && styles.dayLabelSelected
                       ]}
                     >
@@ -163,7 +181,7 @@ export function DatePickerField({
                     </AppText>
                   </Pressable>
                 ) : (
-                  <View key={`blank-${index}`} style={styles.dayBlank} />
+                  <View key={`blank-${index}`} style={styles.cell} />
                 )
               )}
             </View>
@@ -285,36 +303,48 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 17
   },
+  weekdayRow: {
+    flexDirection: "row",
+    width: "100%"
+  },
   calendarGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.xs
+    width: "100%"
   },
-  weekday: {
-    width: "13.4%",
-    textAlign: "center",
-    color: colors.mutedText,
-    fontWeight: "700"
-  },
-  dayBtn: {
-    width: "13.4%",
-    minHeight: 42,
-    borderRadius: radii.md,
+  cell: {
+    width: CELL_WIDTH,
     alignItems: "center",
     justifyContent: "center"
   },
+  weekday: {
+    textAlign: "center",
+    color: colors.mutedText,
+    fontWeight: "700",
+    paddingVertical: spacing.xs
+  },
+  dayBtn: {
+    minHeight: 44,
+    borderRadius: radii.md,
+    marginVertical: 1
+  },
+  dayBtnToday: {
+    borderWidth: 1.5,
+    borderColor: colors.primary
+  },
   dayBtnSelected: {
-    backgroundColor: colors.accent
+    backgroundColor: colors.accent,
+    borderColor: colors.accent
   },
   dayLabel: {
     color: colors.text,
-    fontWeight: "600"
+    fontWeight: "600",
+    fontVariant: ["tabular-nums"]
+  },
+  dayLabelToday: {
+    color: colors.primaryDark
   },
   dayLabelSelected: {
     color: colors.onPrimary
-  },
-  dayBlank: {
-    width: "13.4%",
-    minHeight: 42
   }
 });

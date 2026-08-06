@@ -37,7 +37,14 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
         return;
       }
       const route = navigationRef.getCurrentRoute();
-      if (route?.name === "Splash") {
+      if (
+        route?.name === "Splash" ||
+        route?.name === "DevAdmin" ||
+        route?.name === "TermsOfUse" ||
+        route?.name === "CrewTerms" ||
+        route?.name === "LegalInfo" ||
+        route?.name === "AcceptInvite"
+      ) {
         return;
       }
       navigationRef.reset({

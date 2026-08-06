@@ -35,6 +35,8 @@ export const mockOrganisationProfiles: OrganisationSupportedProfile[] = [];
 
 export type CrewStoreState = {
   activeProfileId: string;
+  /** False when this install is only supporting a nudgee via invite (until they set up for themselves). */
+  hasOwnNudgeWorld: boolean;
   profiles: SupportedProfile[];
   crews: Crew[];
   memberships: CrewMembership[];
@@ -46,10 +48,11 @@ export type CrewStoreState = {
 };
 
 /** Fresh install: only the person using the phone, with their own empty crew. */
-export function createEmptyCrewStore(name = "Me"): CrewStoreState {
+export function createEmptyCrewStore(name = "Me", options?: { hasOwnNudgeWorld?: boolean }): CrewStoreState {
   const profileId = "profile-self";
   const crewId = "crew-profile-self";
   const now = new Date().toISOString();
+  const hasOwnNudgeWorld = options?.hasOwnNudgeWorld ?? true;
   const profile: SupportedProfile = {
     id: profileId,
     name: name.trim() || "Me",
@@ -66,6 +69,7 @@ export function createEmptyCrewStore(name = "Me"): CrewStoreState {
   };
   return {
     activeProfileId: profileId,
+    hasOwnNudgeWorld,
     profiles: [profile],
     crews: [crew],
     memberships: [],

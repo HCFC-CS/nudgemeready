@@ -1,6 +1,6 @@
 # Privacy Policy — Nudge me Ready
 
-**Last updated:** 30 July 2026  
+**Last updated:** 4 August 2026  
 **Contact:** [support@nudgemeready.app](mailto:support@nudgemeready.app)
 
 ## Who we are
@@ -37,10 +37,15 @@ You can refuse or revoke these in your phone Settings.
 
 - **Calendar / contacts / email / SMS / WhatsApp** features use your device apps and accounts. We do not receive the contents of those shares.
 - **Crew invite links** can include invite details needed for someone to join your crew on their device. Only share invites with people you trust.
+- **Partner / shop links** in the App may open third-party websites (for example shops or travel booking). Affiliate programmes are only active when partner IDs are configured; until then links work as ordinary websites. We do not receive your payment card details from those sites.
+
+## Health-related ReadyPacks
+
+Some ReadyPacks help organise wellbeing routines (for example reminders or appointment notes). They are **organisational support only**. They do not diagnose conditions, prescribe treatment, or change medication. Always follow advice from your clinician or other qualified professional.
 
 ## Security
 
-App lock (Face ID, PIN, or password) and on-device encryption protect data stored by the App on your phone. No security measure is perfect. Keep your device passcode on, and keep your recovery code somewhere safe if you enable app lock.
+App lock (Face ID, PIN, or password) and on-device encryption protect data stored by the App on your phone. No security measure is perfect. Keep your device passcode on, turn on app lock, and store your recovery code offline (not only on the same phone) if you enable app lock.
 
 ## Children
 

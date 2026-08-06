@@ -40,6 +40,9 @@ type Profile = {
   phone: string;
   /** ISO timestamp set when first-install registration is completed. */
   registeredAt?: string;
+  /** When the user accepted Terms of Use */
+  termsOfUseAcceptedAt?: string;
+  termsOfUseVersion?: string;
 };
 
 export type ProfileDraft = Profile;
@@ -123,9 +126,11 @@ export function ProfileProvider({ children }: PropsWithChildren) {
       avatarUri: next.avatarUri,
       email: next.email.trim(),
       phone: next.phone.trim(),
-      registeredAt: next.registeredAt ?? profile.registeredAt
+      registeredAt: next.registeredAt ?? profile.registeredAt,
+      termsOfUseAcceptedAt: next.termsOfUseAcceptedAt ?? profile.termsOfUseAcceptedAt,
+      termsOfUseVersion: next.termsOfUseVersion ?? profile.termsOfUseVersion
     });
-  }, [profile.registeredAt]);
+  }, [profile.registeredAt, profile.termsOfUseAcceptedAt, profile.termsOfUseVersion]);
 
   const completeRegistration = useCallback((next: ProfileDraft) => {
     setProfile({
@@ -134,7 +139,9 @@ export function ProfileProvider({ children }: PropsWithChildren) {
       avatarUri: next.avatarUri,
       email: next.email.trim().toLowerCase(),
       phone: next.phone.trim(),
-      registeredAt: new Date().toISOString()
+      registeredAt: new Date().toISOString(),
+      termsOfUseAcceptedAt: next.termsOfUseAcceptedAt ?? new Date().toISOString(),
+      termsOfUseVersion: next.termsOfUseVersion
     });
   }, []);
 

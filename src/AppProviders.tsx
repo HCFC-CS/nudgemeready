@@ -5,6 +5,7 @@ import { CircleProvider } from "./hooks/useCircle";
 import { HomeSettingsProvider } from "./hooks/useHomeSettings";
 import { NudgeItemsProvider } from "./hooks/useNudgeItems";
 import { ProfileProvider } from "./hooks/useProfile";
+import { ReadyPacksProvider } from "./hooks/useReadyPacks";
 import { TasksProvider } from "./hooks/useTasks";
 import { VoiceCaptureSettingsProvider } from "./hooks/useVoiceCaptureSettings";
 
@@ -16,7 +17,9 @@ export function AppProviders({ children }: PropsWithChildren) {
           <TasksProvider>
             <CrewProvider>
               <NudgeItemsProvider>
-                <CircleProvider>{children}</CircleProvider>
+                <ReadyPacksProvider>
+                  <CircleProvider>{children}</CircleProvider>
+                </ReadyPacksProvider>
               </NudgeItemsProvider>
             </CrewProvider>
           </TasksProvider>

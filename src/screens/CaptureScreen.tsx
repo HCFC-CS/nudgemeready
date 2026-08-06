@@ -1,10 +1,10 @@
 import { useNavigation } from "@react-navigation/native";
 import type { IoniconName } from "../components/iconTypes";
 
+import { SparkleDivider } from "../components/BrandMark";
 import { PageHeader, VoiceCaptureButton } from "../components/NudgeComponents";
 import { QuickLinkGrid } from "../components/QuickLinkGrid";
 import { Screen } from "../components/Screen";
-import { AppText } from "../components/Text";
 import { useNudgeActor } from "../hooks/useNudgeActor";
 import { classifyCaptureText } from "../services/classifyCaptureText";
 import { createItem } from "../services/nudgeItems";
@@ -12,14 +12,14 @@ import { createItem } from "../services/nudgeItems";
 const browseLinks: Array<{ label: string; route: string; icon: IoniconName }> = [
   { label: "Lists", route: "Lists", icon: "list-outline" },
   { label: "Notes", route: "Notes", icon: "document-text-outline" },
-  { label: "Chores", route: "Chores", icon: "checkmark-circle-outline" },
+  { label: "Chores", route: "Chores", icon: "brush-outline" },
   { label: "Reminders", route: "Reminders", icon: "notifications-outline" },
-  { label: "Routines", route: "Routines", icon: "repeat-outline" },
-  { label: "Appointments", route: "Appointments", icon: "medkit-outline" },
-  { label: "Events", route: "Events", icon: "calendar-outline" },
-  { label: "Occasions", route: "Occasions", icon: "gift-outline" },
+  { label: "Routines", route: "Routines", icon: "refresh-outline" },
+  { label: "Appointments", route: "Appointments", icon: "calendar-outline" },
+  { label: "Events", route: "Events", icon: "ticket-outline" },
+  { label: "Occasions", route: "Occasions", icon: "balloon-outline" },
   { label: "Projects", route: "Projects", icon: "folder-outline" },
-  { label: "Completed", route: "Done", icon: "checkmark-done-outline" }
+  { label: "Completed", route: "Done", icon: "checkmark-circle-outline" }
 ];
 
 export function CaptureScreen() {
@@ -50,9 +50,9 @@ export function CaptureScreen() {
 
   return (
     <Screen>
-      <PageHeader title="+nudge" subtitle="Say it, or pick a type below." />
-      <VoiceCaptureButton idleLabel="Say it" idleTone="primary" onCaptured={handleVoiceCapture} />
-      <AppText variant="section">Browse</AppText>
+      <PageHeader title="+nudge" subtitle="Say it, or pick a type below." showBack={false} />
+      <VoiceCaptureButton idleLabel="Say it" idleTone="primary" layout="heroMic" onCaptured={handleVoiceCapture} />
+      <SparkleDivider />
       <QuickLinkGrid links={browseLinks} onPress={(route) => navigation.navigate(route)} />
     </Screen>
   );

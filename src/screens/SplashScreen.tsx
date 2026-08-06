@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -14,12 +14,20 @@ import {
 import { Button } from "../components/Button";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { ProfileAvatarPicker } from "../components/ProfileAvatarPicker";
+import { RecoveryCodeSaveCard } from "../components/RecoveryCodeSaveCard";
 import { FixedScreen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useAppSecurity } from "../hooks/useAppSecurity";
 import { useCrew } from "../hooks/useCrew";
 import { type ProfileIcon, useProfile } from "../hooks/useProfile";
 import { credentialLabel, type CredentialType } from "../services/appSecurity";
+import { isDevAdminAvailable } from "../services/devAdmin";
+import { peekPendingInvite } from "../services/pendingDeepLinks";
+import { resetSecurityLockPrompt } from "../services/securityLockPrompt";
+import {
+  TERMS_OF_USE_ACCEPT_LABEL,
+  TERMS_OF_USE_VERSION
+} from "../content/termsOfUse";
 import { colors, radii, shadows, spacing } from "../theme/theme";
 import type { RootStackParamList } from "../types/navigation";
 
@@ -36,7 +44,7 @@ type SignInStep =
 
 export function SplashScreen({ navigation, route }: Props) {
   const { profile, completeRegistration, needsRegistration, isProfileReady } = useProfile();
-  const { renameSelfProfile } = useCrew();
+  const { renameSelfProfile, setHasOwnNudgeWorld } = useCrew();
   const {
     isReady,
     isLocked,
@@ -70,9 +78,29 @@ export function SplashScreen({ navigation, route }: Props) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const titleTapRef = useRef({ count: 0, timer: null as ReturnType<typeof setTimeout> | null });
+
+  function handleTitleTap() {
+    if (!isDevAdminAvailable()) {
+      return;
+    }
+    const state = titleTapRef.current;
+    state.count += 1;
+    if (state.timer) {
+      clearTimeout(state.timer);
+    }
+    state.timer = setTimeout(() => {
+      state.count = 0;
+    }, 1800);
+    if (state.count >= 7) {
+      state.count = 0;
+      navigation.navigate("DevAdmin");
+    }
+  }
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPhone, setRegPhone] = useState("");
+  const [regTermsAccepted, setRegTermsAccepted] = useState(false);
   const [regIcon, setRegIcon] = useState<ProfileIcon>("sun");
   const [regAvatarUri, setRegAvatarUri] = useState<string | undefined>();
 
@@ -194,14 +222,22 @@ export function SplashScreen({ navigation, route }: Props) {
       setError("Add a valid email address.");
       return;
     }
+    if (!regTermsAccepted) {
+      setError("Please agree to the Terms of Use to continue.");
+      return;
+    }
     completeRegistration({
       name,
       email,
       phone,
       icon: regIcon,
-      avatarUri: regAvatarUri
+      avatarUri: regAvatarUri,
+      termsOfUseAcceptedAt: new Date().toISOString(),
+      termsOfUseVersion: TERMS_OF_USE_VERSION
     });
     renameSelfProfile(name);
+    // Invite-first installs support the nudgee only until they opt into their own world.
+    setHasOwnNudgeWorld(!peekPendingInvite());
     setRecoveryEmail(email);
     setError("");
     setCredentialType("password");
@@ -241,6 +277,7 @@ export function SplashScreen({ navigation, route }: Props) {
         biometricsEnabled: useBiometrics,
         recoveryEmail
       });
+      await resetSecurityLockPrompt();
       setFreshRecoveryCode(recoveryCode);
       clearDrafts();
       setStep("recoveryShown");
@@ -347,9 +384,11 @@ export function SplashScreen({ navigation, route }: Props) {
           <View style={styles.hero}>
             <View style={styles.glow} />
             <ProfileAvatar size={88} />
-            <AppText variant="title" style={styles.title}>
-              Nudge me Ready
-            </AppText>
+            <Pressable onPress={handleTitleTap} accessibilityRole="header">
+              <AppText variant="title" style={styles.title}>
+                Nudge me Ready
+              </AppText>
+            </Pressable>
             {profileName ? (
               <AppText variant="body" style={styles.profileName}>
                 Hi, {profileName}
@@ -415,7 +454,9 @@ export function SplashScreen({ navigation, route }: Props) {
             {step === "register" ? (
               <>
                 <AppText variant="muted" style={styles.centerCopy}>
-                  Tell us a little about you. This stays on your phone.
+                  {peekPendingInvite()
+                    ? "You’re joining to support someone. This stays on your phone. You’ll only access their nudges unless you set up the app for yourself later."
+                    : "Tell us a little about you. This stays on your phone."}
                 </AppText>
                 <ProfileAvatarPicker
                   name={regName}
@@ -466,11 +507,35 @@ export function SplashScreen({ navigation, route }: Props) {
                 <AppText variant="caption" style={styles.hint}>
                   Your email is used if you forget your PIN or password later.
                 </AppText>
+                <Pressable
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: regTermsAccepted }}
+                  onPress={() => {
+                    setRegTermsAccepted((value) => !value);
+                    setError("");
+                  }}
+                  style={({ pressed }) => [styles.termsRow, pressed && styles.pressed]}
+                >
+                  <Ionicons
+                    name={regTermsAccepted ? "checkbox" : "square-outline"}
+                    size={24}
+                    color={regTermsAccepted ? colors.primary : colors.mutedText}
+                  />
+                  <AppText variant="caption" style={styles.termsLabel}>
+                    {TERMS_OF_USE_ACCEPT_LABEL}
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  onPress={() => navigation.navigate("TermsOfUse")}
+                  style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
+                >
+                  <AppText style={styles.linkLabel}>Read Terms of Use</AppText>
+                </Pressable>
                 {error ? <AppText variant="caption" style={styles.error}>{error}</AppText> : null}
                 <Button
                   tone="primary"
                   onPress={submitRegistration}
-                  disabled={!regName.trim() || !regEmail.includes("@")}
+                  disabled={!regName.trim() || !regEmail.includes("@") || !regTermsAccepted}
                 >
                   Create my profile
                 </Button>
@@ -647,7 +712,8 @@ export function SplashScreen({ navigation, route }: Props) {
               <>
                 <AppText variant="muted" style={styles.centerCopy}>
                   Reset your {activeLabel} with Face ID/device passcode, an email reset link, or your
-                  recovery code.
+                  recovery code. Your nudges and profile stay on this phone — recovery only changes the lock,
+                  and data is removed only if you uninstall the app.
                 </AppText>
                 <Button tone="primary" onPress={() => void recoverWithDevice()} disabled={busy}>
                   Reset with {faceLabel} / device passcode
@@ -771,17 +837,11 @@ export function SplashScreen({ navigation, route }: Props) {
             ) : null}
 
             {step === "recoveryShown" ? (
-              <>
-                <AppText variant="muted" style={styles.centerCopy}>
-                  Save this recovery code somewhere safe. It won’t be shown again.
-                </AppText>
-                <View style={styles.codeCard}>
-                  <AppText style={styles.codeText}>{freshRecoveryCode}</AppText>
-                </View>
-                <Button tone="primary" onPress={finishRecoveryAndEnter}>
-                  I’ve saved it — continue
-                </Button>
-              </>
+              <RecoveryCodeSaveCard
+                code={freshRecoveryCode}
+                onSaved={finishRecoveryAndEnter}
+                continueLabel="I’ve saved it — continue"
+              />
             ) : null}
           </View>
         </ScrollView>
@@ -1002,27 +1062,25 @@ const styles = StyleSheet.create({
     color: colors.mutedText,
     textAlign: "center"
   },
+  termsRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: colors.primarySoft
+  },
+  termsLabel: {
+    flex: 1,
+    color: colors.text,
+    textAlign: "left"
+  },
   centerCopy: {
     textAlign: "center"
   },
   error: {
     color: colors.danger,
     textAlign: "center"
-  },
-  codeCard: {
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    backgroundColor: colors.card,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    alignItems: "center"
-  },
-  codeText: {
-    fontSize: 22,
-    fontWeight: "700",
-    letterSpacing: 2,
-    color: colors.text
   },
   primaryLabel: {
     color: colors.onPrimary,

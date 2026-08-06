@@ -12,6 +12,7 @@ import { AppState, Linking, type AppStateStatus } from "react-native";
 import {
   authenticateDeviceOwner,
   authenticateWithBiometrics,
+  adminResetLockKeepData,
   buildSupportRecoveryMailto,
   createEmailResetLink,
   credentialLabel,
@@ -30,6 +31,7 @@ import {
   verifyEmailResetToken,
   verifyRecoveryCode
 } from "../services/appSecurity";
+import { isDevAdminAvailable } from "../services/devAdmin";
 
 const MAX_FAILED_ATTEMPTS = 5;
 const BASE_LOCKOUT_MS = 30_000;
@@ -66,6 +68,14 @@ type AppSecurityContextValue = {
   completePasswordReset: (value: string, type: CredentialType) => Promise<string>;
   finishPasswordReset: () => void;
   createReplacementRecoveryCode: (currentCredential: string) => Promise<string>;
+  /** Dev/support only: authorize the reset UI without recovery proof. Does not delete data. */
+  authorizeDevRecovery: () => boolean;
+  /** Dev/support only: set a new lock credential. Never deletes user content. */
+  adminResetLockKeepData: (
+    value: string,
+    type: CredentialType,
+    options?: { biometricsEnabled?: boolean; recoveryEmail?: string }
+  ) => Promise<string>;
   refresh: () => Promise<void>;
 };
 
@@ -372,6 +382,35 @@ export function AppSecurityProvider({
     return recoveryCode;
   }, []);
 
+  const authorizeDevRecovery = useCallback(() => {
+    if (!isDevAdminAvailable()) {
+      return false;
+    }
+    setRecoveryAuthorized(true);
+    clearLockout();
+    return true;
+  }, [clearLockout]);
+
+  const adminResetLockKeepDataFn = useCallback(
+    async (
+      value: string,
+      type: CredentialType,
+      options?: { biometricsEnabled?: boolean; recoveryEmail?: string }
+    ) => {
+      if (!isDevAdminAvailable()) {
+        throw new Error("Developer admin tools are not available in this build.");
+      }
+      const recoveryCode = await adminResetLockKeepData(value, type, options);
+      const next = await loadAppSecuritySettings();
+      setSettings(next);
+      setIsLocked(false);
+      setRecoveryAuthorized(false);
+      clearLockout();
+      return recoveryCode;
+    },
+    [clearLockout]
+  );
+
   const value = useMemo(
     () => ({
       isReady,
@@ -399,6 +438,8 @@ export function AppSecurityProvider({
       completePasswordReset,
       finishPasswordReset,
       createReplacementRecoveryCode,
+      authorizeDevRecovery,
+      adminResetLockKeepData: adminResetLockKeepDataFn,
       refresh
     }),
     [
@@ -427,6 +468,8 @@ export function AppSecurityProvider({
       completePasswordReset,
       finishPasswordReset,
       createReplacementRecoveryCode,
+      authorizeDevRecovery,
+      adminResetLockKeepDataFn,
       refresh
     ]
   );

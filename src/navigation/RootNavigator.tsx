@@ -8,11 +8,14 @@ import { CaptureScreen } from "../screens/CaptureScreen";
 import { ChoresScreen } from "../screens/ChoresScreen";
 import { CircleScreen } from "../screens/CircleScreen";
 import { DoneScreen } from "../screens/DoneScreen";
+import { DevAdminScreen } from "../screens/DevAdminScreen";
+import { CrewTermsScreen } from "../screens/CrewTermsScreen";
 import { EventsScreen } from "../screens/EventsScreen";
 import { FocusScreen } from "../screens/FocusScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { ItemDetailsScreen } from "../screens/ItemDetailsScreen";
 import { LegalInfoScreen } from "../screens/LegalInfoScreen";
+import { TermsOfUseScreen } from "../screens/TermsOfUseScreen";
 import { ListsScreen } from "../screens/ListsScreen";
 import { MoreScreen } from "../screens/MoreScreen";
 import { MyWorldScreen } from "../screens/MyWorldScreen";
@@ -26,6 +29,8 @@ import { OrganisationDashboardScreen } from "../screens/OrganisationDashboardScr
 import { OccasionsScreen } from "../screens/OccasionsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { ProjectsScreen } from "../screens/ProjectsScreen";
+import { ReadyPackPreviewScreen } from "../screens/ReadyPackPreviewScreen";
+import { ReadyPacksScreen } from "../screens/ReadyPacksScreen";
 import { RemindersScreen } from "../screens/RemindersScreen";
 import { RoutinesScreen } from "../screens/RoutinesScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -91,7 +96,12 @@ export function RootNavigator() {
       <Stack.Screen name="Done" component={DoneScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="ReadyPacks" component={ReadyPacksScreen} />
+      <Stack.Screen name="ReadyPackPreview" component={ReadyPackPreviewScreen} />
       <Stack.Screen name="LegalInfo" component={LegalInfoScreen} />
+      <Stack.Screen name="TermsOfUse" component={TermsOfUseScreen} />
+      <Stack.Screen name="CrewTerms" component={CrewTermsScreen} />
+      <Stack.Screen name="DevAdmin" component={DevAdminScreen} />
     </Stack.Navigator>
   );
 }

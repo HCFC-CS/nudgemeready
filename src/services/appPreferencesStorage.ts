@@ -16,6 +16,8 @@ export type AppPreferences = {
   voiceCapture: boolean;
   readAloud: boolean;
   preferredCalendarId?: string;
+  /** When true, phone Calendar events are pulled into the app as appointments/events. */
+  importFromPhoneCalendar: boolean;
 };
 
 export const defaultAppPreferences: AppPreferences = {
@@ -31,7 +33,8 @@ export const defaultAppPreferences: AppPreferences = {
   defaultReminder: "Morning",
   voiceCapture: true,
   readAloud: true,
-  preferredCalendarId: undefined
+  preferredCalendarId: undefined,
+  importFromPhoneCalendar: false
 };
 
 export async function loadAppPreferences(): Promise<AppPreferences> {

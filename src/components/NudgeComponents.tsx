@@ -8,6 +8,8 @@ import { useOptionalItemEdit } from "../hooks/useItemEdit";
 import { useSpeechToText } from "../hooks/useSpeechToText";
 import { useOptionalVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
 import {
+  applyFavoriteFlags,
+  getFavoriteContacts,
   loadDeviceContacts,
   mergeContactSuggestions,
   openContactCall,
@@ -15,10 +17,12 @@ import {
   openContactMaps,
   type DeviceContact
 } from "../services/deviceContacts";
-import { colors, radii, spacing } from "../theme/theme";
+import { contactFavoriteKey, toggleFavoriteContactKey } from "../services/favoriteContactsStorage";
+import { colors, radii, shadows, spacing } from "../theme/theme";
 import type { TaskItem } from "../types/models";
 import { Button } from "./Button";
 import { Card } from "./Card";
+import { ContactSuggestionRow } from "./ContactSuggestionRow";
 import { ItemEditBanner } from "./ItemEditBanner";
 import { HeroSurface, SearchBar } from "./ModernUI";
 import { AppText } from "./Text";
@@ -184,27 +188,47 @@ export function ContactLink({
   onSelect: (contact: MockContact) => void;
   onRemove: () => void;
 }) {
-  const [search, setSearch] = useState(searchHint ?? "");
+  const [search, setSearch] = useState("");
   const [actionNotice, setActionNotice] = useState("");
   const [deviceContacts, setDeviceContacts] = useState<DeviceContact[]>([]);
-  const [contactsMessage, setContactsMessage] = useState("Loading phone contacts…");
+  const [favorites, setFavorites] = useState<DeviceContact[]>([]);
+  const [contactsReady, setContactsReady] = useState(false);
+  const [contactsMessage, setContactsMessage] = useState("");
+
+  async function refreshContacts() {
+    const result = await loadDeviceContacts();
+    setDeviceContacts(result.contacts);
+    setFavorites(result.favorites);
+    setContactsMessage(result.message ?? "");
+    setContactsReady(true);
+  }
 
   useEffect(() => {
     let active = true;
     void loadDeviceContacts().then((result) => {
       if (!active) return;
       setDeviceContacts(result.contacts);
+      setFavorites(result.favorites);
       setContactsMessage(result.message ?? "");
+      setContactsReady(true);
     });
     return () => {
       active = false;
     };
   }, []);
 
+  const query = search.trim();
   const suggestions = useMemo(
-    () => mergeContactSuggestions(search, deviceContacts, true).slice(0, 8),
-    [deviceContacts, search]
+    () => (query ? mergeContactSuggestions(query, deviceContacts, true).slice(0, 8) : []),
+    [deviceContacts, query]
   );
+
+  async function handleToggleFavorite(contact: DeviceContact) {
+    const keys = await toggleFavoriteContactKey(contactFavoriteKey(contact));
+    const nextContacts = applyFavoriteFlags(deviceContacts, keys);
+    setDeviceContacts(nextContacts);
+    setFavorites(getFavoriteContacts(nextContacts, keys));
+  }
 
   return (
     <View style={styles.contactLink}>
@@ -212,8 +236,10 @@ export function ContactLink({
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="Search phone contacts..."
+          placeholder={searchHint ? `Type to find “${searchHint}”…` : "Start typing a name…"}
           placeholderTextColor={colors.mutedText}
+          autoCorrect={false}
+          autoCapitalize="words"
           style={[styles.input, styles.contactSearchInput]}
         />
         <VoiceFieldActions value={search} onChangeText={setSearch} size={28} />
@@ -262,28 +288,47 @@ export function ContactLink({
         </SoftCard>
       ) : (
         <View style={styles.contactSuggestions}>
-          {suggestions.length ? (
-            suggestions.map((contact) => (
-              <Pressable key={contact.id} onPress={() => onSelect(contact)} style={styles.contactSuggestion}>
-                <AppText>{contact.name}</AppText>
-                <AppText variant="small" style={{ color: colors.mutedText }}>
-                  {contact.email || contact.phone || contact.role}
+          {!contactsReady ? (
+            <AppText variant="muted">Loading phone contacts…</AppText>
+          ) : !query ? (
+            <>
+              {favorites.length ? (
+                <>
+                  <AppText variant="section">Favorites</AppText>
+                  {favorites.map((contact) => (
+                    <ContactSuggestionRow
+                      key={contact.id}
+                      contact={contact}
+                      onSelect={() => onSelect(contact)}
+                      onToggleFavorite={() => void handleToggleFavorite(contact)}
+                      isFavorite
+                    />
+                  ))}
+                </>
+              ) : (
+                <AppText variant="muted">
+                  Start typing to search, or tap the star on a contact to pin favorites here.
                 </AppText>
-              </Pressable>
+              )}
+            </>
+          ) : suggestions.length ? (
+            suggestions.map((contact) => (
+              <ContactSuggestionRow
+                key={contact.id}
+                contact={contact}
+                onSelect={() => onSelect(contact)}
+                onToggleFavorite={() => void handleToggleFavorite(contact)}
+                isFavorite={Boolean(contact.appFavorite || contact.deviceFavorite)}
+              />
             ))
           ) : (
-            <AppText variant="muted">{contactsMessage || "No matching contacts."}</AppText>
+            <AppText variant="muted">
+              {contactsMessage.includes("Allow") || contactsMessage.includes("turned off")
+                ? contactsMessage
+                : "No matching contacts."}
+            </AppText>
           )}
-          <SecondaryButton
-            onPress={() => {
-              void loadDeviceContacts().then((result) => {
-                setDeviceContacts(result.contacts);
-                setContactsMessage(result.message ?? "");
-              });
-            }}
-          >
-            Refresh phone contacts
-          </SecondaryButton>
+          <SecondaryButton onPress={() => void refreshContacts()}>Refresh phone contacts</SecondaryButton>
         </View>
       )}
     </View>
@@ -295,13 +340,15 @@ export function VoiceCaptureButton({
   placeholder = "What do you want to add?",
   idleLabel = "Tap to speak",
   idleTone = "secondary",
-  compact = false
+  compact = false,
+  layout = "card"
 }: {
   onCaptured?: (text: string, voiceNoteUrl: string) => void;
   placeholder?: string;
   idleLabel?: string;
   idleTone?: "primary" | "secondary";
   compact?: boolean;
+  layout?: "card" | "heroMic";
 }) {
   const [fallbackInput, setFallbackInput] = useState("");
   const [fallbackListening, setFallbackListening] = useState(false);
@@ -399,6 +446,57 @@ export function VoiceCaptureButton({
         {speech.error ? (
           <AppText variant="caption" style={styles.voiceError}>{speech.error}</AppText>
         ) : null}
+      </View>
+    );
+  }
+
+  if (layout === "heroMic") {
+    return (
+      <View style={styles.heroMicWrap}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={isListening ? "Done speaking" : idleLabel}
+          onPress={isListening ? captureText : startListening}
+          disabled={!isEditable}
+          style={({ pressed }) => [
+            styles.heroMicButton,
+            isListening && styles.heroMicListening,
+            pressed && styles.compactMicPressed
+          ]}
+        >
+          {isListening ? (
+            <>
+              <View style={[styles.heroRing, styles.heroRingOuter]} />
+              <View style={[styles.heroRing, styles.heroRingMid]} />
+            </>
+          ) : null}
+          <Ionicons name="mic" size={40} color={colors.primaryDark} />
+        </Pressable>
+        <AppText variant="heading" style={styles.heroMicLabel}>
+          {isListening ? "Listening…" : idleLabel}
+        </AppText>
+        {isListening ? (
+          <AppText variant="caption" style={styles.heroMicHint}>
+            Tap to stop
+          </AppText>
+        ) : null}
+        {isListening ? (
+          <>
+            <TextInput
+              value={liveText}
+              onChangeText={useSpeech ? undefined : setFallbackInput}
+              placeholder={placeholder}
+              placeholderTextColor={colors.mutedText}
+              style={styles.input}
+              autoFocus={!useSpeech}
+              editable={!useSpeech}
+            />
+            <Button tone="quiet" onPress={resetVoice}>
+              Cancel
+            </Button>
+          </>
+        ) : null}
+        {speech.error ? <AppText variant="caption" style={styles.voiceError}>{speech.error}</AppText> : null}
       </View>
     );
   }
@@ -589,6 +687,47 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md
+  },
+  heroMicWrap: {
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.md
+  },
+  heroMicButton: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.sm
+  },
+  heroMicListening: {
+    backgroundColor: colors.primary
+  },
+  heroRing: {
+    position: "absolute",
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: colors.primary
+  },
+  heroRingOuter: {
+    width: 148,
+    height: 148,
+    opacity: 0.35
+  },
+  heroRingMid: {
+    width: 130,
+    height: 130,
+    opacity: 0.55
+  },
+  heroMicLabel: {
+    textAlign: "center",
+    marginTop: spacing.xs
+  },
+  heroMicHint: {
+    textAlign: "center"
   },
   voiceIcon: {
     width: 56,

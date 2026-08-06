@@ -27,16 +27,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: typography.title,
     lineHeight: 34,
-    fontWeight: "700",
+    fontWeight: "600",
     letterSpacing: -0.5,
-    color: colors.text
+    color: colors.text,
+    fontFamily: "Georgia"
   },
   heading: {
     fontSize: typography.heading,
     lineHeight: 22,
     fontWeight: "600",
     letterSpacing: -0.2,
-    color: colors.text
+    color: colors.text,
+    fontFamily: "Georgia"
   },
   section: {
     fontSize: typography.section,

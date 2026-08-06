@@ -25,6 +25,9 @@ export async function loadCrewStore(): Promise<CrewStoreState> {
     return {
       ...createEmptyCrewStore("Me"),
       ...parsed,
+      hasOwnNudgeWorld: typeof (parsed as CrewStoreState).hasOwnNudgeWorld === "boolean"
+        ? (parsed as CrewStoreState).hasOwnNudgeWorld
+        : true,
       profiles: parsed.profiles,
       crews: parsed.crews ?? [],
       memberships: parsed.memberships ?? [],

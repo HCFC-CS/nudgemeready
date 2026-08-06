@@ -3,12 +3,13 @@ import { useNavigation, useNavigationState } from "@react-navigation/native";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors, radii, shadows, spacing } from "../theme/theme";
+import { colors, shadows, spacing } from "../theme/theme";
 import type { TabParamList } from "../types/navigation";
 import type { IoniconName } from "./iconTypes";
 import { AppText } from "./Text";
+import { useCrew } from "../hooks/useCrew";
 
-export const TAB_MENU_HEIGHT = 68;
+export const TAB_MENU_HEIGHT = 72;
 
 type TabItem = {
   label: string;
@@ -16,14 +17,6 @@ type TabItem = {
   icon: IoniconName;
   isFab?: boolean;
 };
-
-const tabItems: TabItem[] = [
-  { label: "Home", screen: "Home", icon: "home-outline" },
-  { label: "My Nudges", screen: "Today", icon: "sunny-outline" },
-  { label: "+nudge", screen: "Capture", icon: "add", isFab: true },
-  { label: "Focus", screen: "Focus", icon: "timer-outline" },
-  { label: "More", screen: "More", icon: "ellipsis-horizontal" }
-];
 
 function useActiveTab(): keyof TabParamList | null {
   return useNavigationState((state) => {
@@ -41,6 +34,19 @@ export function TabMenu() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const activeTab = useActiveTab();
+  const { isSupporterOnly, activeProfile } = useCrew();
+
+  const tabItems: TabItem[] = [
+    { label: "Home", screen: "Home", icon: "home-outline" },
+    {
+      label: isSupporterOnly ? activeProfile.name.split(" ")[0] || "Crew" : "My Nudges",
+      screen: "Today",
+      icon: "notifications-outline"
+    },
+    { label: "+nudge", screen: "Capture", icon: "add", isFab: true },
+    { label: "Focus", screen: "Focus", icon: "disc-outline" },
+    { label: "More", screen: "More", icon: "ellipsis-horizontal" }
+  ];
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
@@ -56,8 +62,9 @@ export function TabMenu() {
               onPress={() => navigation.navigate("Tabs", { screen: item.screen })}
               style={({ pressed }) => [styles.fabWrap, pressed && styles.pressed]}
             >
-              <View style={styles.fab}>
-                <Ionicons name={item.icon} size={28} color={colors.onFab} />
+              <View style={[styles.fab, isActive && styles.fabActive]}>
+                <Ionicons name="add" size={26} color={colors.onFab} />
+                <AppText style={styles.fabLabel}>nudge</AppText>
               </View>
             </Pressable>
           );
@@ -71,13 +78,11 @@ export function TabMenu() {
             onPress={() => navigation.navigate("Tabs", { screen: item.screen })}
             style={({ pressed }) => [styles.item, pressed && styles.pressed]}
           >
-            <View style={[styles.iconWrap, isActive && styles.iconWrapActive]}>
-              <Ionicons
-                name={item.icon}
-                size={22}
-                color={isActive ? colors.primaryDark : colors.mutedText}
-              />
-            </View>
+            <Ionicons
+              name={item.icon}
+              size={22}
+              color={isActive ? colors.accent : colors.primary}
+            />
             <AppText variant="caption" style={[styles.label, isActive && styles.labelActive]}>
               {item.label}
             </AppText>
@@ -93,50 +98,52 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.borderLight,
-    backgroundColor: colors.card,
+    backgroundColor: colors.ivoryElevated,
     paddingTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs,
     minHeight: TAB_MENU_HEIGHT,
     ...shadows.sm
   },
   item: {
     flex: 1,
     alignItems: "center",
-    gap: 2,
+    gap: 3,
     paddingVertical: spacing.xs
-  },
-  iconWrap: {
-    width: 36,
-    height: 32,
-    borderRadius: radii.pill,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  iconWrapActive: {
-    backgroundColor: colors.primarySoft
   },
   fabWrap: {
     flex: 1,
     alignItems: "center",
-    marginTop: -22
+    marginTop: -26
   },
   fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: colors.fab,
     alignItems: "center",
     justifyContent: "center",
+    gap: 0,
     ...shadows.fab
+  },
+  fabActive: {
+    backgroundColor: colors.primaryPressed
+  },
+  fabLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.onFab,
+    marginTop: -2,
+    letterSpacing: 0.2
   },
   pressed: {
     opacity: 0.86,
     transform: [{ scale: 0.96 }]
   },
   label: {
-    fontWeight: "600"
+    fontWeight: "600",
+    color: colors.primaryDark
   },
   labelActive: {
     color: colors.accent

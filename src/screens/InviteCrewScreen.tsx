@@ -204,7 +204,11 @@ export function InviteCrewScreen() {
       {step === "roles" ? (
         <View style={styles.section}>
           <AppText variant="heading">What kind of support can they give?</AppText>
-          <AppText variant="muted">You can choose more than one role and change this later.</AppText>
+          <AppText variant="muted">
+            You can choose more than one role and change this later. When they accept, they agree to the Crew
+            Supporter Terms and get access to this person’s nudges only — not their own world unless they set up
+            the app for themselves.
+          </AppText>
           <MultiRoleSelector selectedRoles={roles} onToggle={toggleRole} />
           <PrimaryButton onPress={() => setStep("permissions")} disabled={!roles.length}>
             Continue

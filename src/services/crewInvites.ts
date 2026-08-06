@@ -224,16 +224,18 @@ You've been invited to join a Crew on Nudge me Ready.
 
 Nudge me Ready helps people stay independent with gentle reminders, support and peace of mind for the people who care about them.
 
-Use the secure link below to accept your invite:
+This invite gives you access to their nudges only. You only get your own reminders if you set up the app for yourself.
+
+When you accept, you’ll agree to the Crew Supporter Terms — a short promise to be supportive, respect privacy, and stay within the role you’re offered.
+
+Use the secure link below to review the invite and accept:
 
 ${invite.inviteLink}`
   };
 }
 
 export function getSmsInviteCopy(invite: CrewInvitation) {
-  return `You've been invited to join a Crew on Nudge me Ready.
-
-Accept here:
+  return `You've been invited to join a Crew on Nudge me Ready (access to their nudges only — set up the app yourself for your own):
 
 ${invite.inviteLink}`;
 }
@@ -241,9 +243,11 @@ ${invite.inviteLink}`;
 export function getWhatsAppInviteCopy(invite: CrewInvitation) {
   return `Hi, I'd like to invite you to join my Crew on Nudge me Ready.
 
-Nudge me Ready helps me stay on track with gentle reminders and support.
+You'll get access to my nudges only. Set up the app for yourself if you want your own reminders.
 
-You can join using this secure link:
+When you accept, you’ll agree to the Crew Supporter Terms (be supportive, respect privacy, stay in role).
+
+Join using this secure link:
 
 ${invite.inviteLink}`;
 }

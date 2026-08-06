@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
+import * as LocalAuthentication from "expo-local-authentication";
 
 import { useAppSecurity } from "../hooks/useAppSecurity";
 import type { CredentialType } from "../services/appSecurity";
+import { resetSecurityLockPrompt } from "../services/securityLockPrompt";
 import { colors, radii, spacing } from "../theme/theme";
 import { Button } from "./Button";
 import { Field, ToggleRow } from "./FormControls";
 import { SoftCard } from "./NudgeComponents";
+import { RecoveryCodeSaveCard } from "./RecoveryCodeSaveCard";
 import { AppText } from "./Text";
 
 export function SecuritySettingsCard() {
@@ -35,6 +38,7 @@ export function SecuritySettingsCard() {
   const [shownRecoveryCode, setShownRecoveryCode] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [devicePasscodeOn, setDevicePasscodeOn] = useState<boolean | null>(null);
 
   useEffect(() => {
     setMessage("");
@@ -42,6 +46,21 @@ export function SecuritySettingsCard() {
     setEnableFaceId(biometricsAvailable);
     setRecoveryEmail(settings.recoveryEmail ?? "");
   }, [settings.lockEnabled, settings.recoveryEmail, biometricsAvailable]);
+
+  useEffect(() => {
+    let active = true;
+    LocalAuthentication.getEnrolledLevelAsync()
+      .then((level) => {
+        if (!active) return;
+        setDevicePasscodeOn(level > LocalAuthentication.SecurityLevel.NONE);
+      })
+      .catch(() => {
+        if (active) setDevicePasscodeOn(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const isPassword = credentialType === "password";
   const minLength = isPassword ? 8 : 4;
@@ -60,6 +79,7 @@ export function SecuritySettingsCard() {
         biometricsEnabled: useBiometrics,
         recoveryEmail
       });
+      await resetSecurityLockPrompt();
       setCredential("");
       setConfirmCredential("");
       setShownRecoveryCode(recoveryCode);
@@ -118,7 +138,7 @@ export function SecuritySettingsCard() {
       const code = await createReplacementRecoveryCode(recoveryCredential);
       setRecoveryCredential("");
       setShownRecoveryCode(code);
-      setMessage("New recovery code created. Save it somewhere safe.");
+      setMessage("New recovery code created. Save it somewhere safe offline.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not create a recovery code.");
     }
@@ -156,22 +176,23 @@ export function SecuritySettingsCard() {
     <SoftCard>
       <AppText variant="heading">Security</AppText>
       <AppText variant="muted">
-        App lock keeps your nudges private on this phone. Your notes, appointments, crew details, and
-        settings are encrypted on device. Sign in with {hasFaceId ? "Face ID" : biometricLabel}, a PIN, or
-        a password. If you forget it, use Face ID/device passcode, an email reset link, or your recovery
-        code.
+        Keep a passcode on this phone, turn on app lock, and store your recovery code offline. Your notes,
+        appointments, crew details, and settings are encrypted on device.
       </AppText>
 
+      {devicePasscodeOn === false ? (
+        <AppText variant="caption" style={styles.warning}>
+          This phone does not appear to have a device passcode or Face ID set up. Add one in iPhone Settings
+          first — app lock works best on top of that.
+        </AppText>
+      ) : null}
+
       {shownRecoveryCode ? (
-        <View style={styles.codeCard}>
-          <AppText variant="caption" style={styles.hint}>
-            Recovery code — save this now. It won’t be shown again.
-          </AppText>
-          <AppText style={styles.codeText}>{shownRecoveryCode}</AppText>
-          <Button tone="quiet" onPress={() => setShownRecoveryCode("")}>
-            I’ve saved it
-          </Button>
-        </View>
+        <RecoveryCodeSaveCard
+          code={shownRecoveryCode}
+          onSaved={() => setShownRecoveryCode("")}
+          continueLabel="I’ve saved it"
+        />
       ) : null}
 
       {!settings.lockEnabled ? (
@@ -290,7 +311,7 @@ export function SecuritySettingsCard() {
 
           <AppText variant="caption" style={styles.hint}>
             Forgot password help uses Face ID/device passcode, an email reset link, or the recovery code
-            below.
+            below. Store a fresh code offline if you rotate it.
           </AppText>
           <Field
             label="Recovery email"
@@ -375,8 +396,16 @@ export function SecuritySettingsCard() {
         </View>
       )}
 
-      {error ? <AppText variant="caption" style={styles.error}>{error}</AppText> : null}
-      {message ? <AppText variant="caption" style={styles.message}>{message}</AppText> : null}
+      {error ? (
+        <AppText variant="caption" style={styles.error}>
+          {error}
+        </AppText>
+      ) : null}
+      {message ? (
+        <AppText variant="caption" style={styles.message}>
+          {message}
+        </AppText>
+      ) : null}
     </SoftCard>
   );
 }
@@ -394,11 +423,7 @@ function TypeChip({
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.chip,
-        selected && styles.chipSelected,
-        pressed && styles.pressed
-      ]}
+      style={({ pressed }) => [styles.chip, selected && styles.chipSelected, pressed && styles.pressed]}
     >
       <AppText style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{label}</AppText>
     </Pressable>
@@ -437,20 +462,8 @@ const styles = StyleSheet.create({
   hint: {
     color: colors.mutedText
   },
-  codeCard: {
-    gap: spacing.sm,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    backgroundColor: colors.card,
-    padding: spacing.md
-  },
-  codeText: {
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: 2,
-    textAlign: "center",
-    color: colors.text
+  warning: {
+    color: colors.danger
   },
   error: {
     color: colors.danger

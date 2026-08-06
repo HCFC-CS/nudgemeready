@@ -83,6 +83,9 @@ export type CrewMembership = {
   consentStatus: ConsentRecord[];
   relationship: string;
   isPrimaryCaptain: boolean;
+  /** When the member accepted Crew Supporter Terms */
+  supporterTermsAcceptedAt?: string;
+  supporterTermsVersion?: string;
   createdAt: string;
   updatedAt: string;
   lastActiveAt?: string;
@@ -110,6 +113,9 @@ export type CrewInvitation = {
   personalMessage?: string;
   expiresAt: string;
   acceptedAt?: string;
+  /** Recorded when the invitee accepted Crew Supporter Terms */
+  supporterTermsAcceptedAt?: string;
+  supporterTermsVersion?: string;
   createdAt: string;
   updatedAt: string;
 };

@@ -1,3 +1,5 @@
+import { withAffiliate } from "./affiliateLinks";
+
 export type GiftShopLink = {
   id: string;
   label: string;
@@ -83,11 +85,11 @@ export function buildGiftSearchQuery(title: string, giftIdea?: string) {
 }
 
 function amazonSearchUrl(query: string) {
-  return `https://www.amazon.co.uk/s?k=${encodeURIComponent(query.replace(/\s+/g, "+"))}`;
+  return withAffiliate(`https://www.amazon.co.uk/s?k=${encodeURIComponent(query.replace(/\s+/g, "+"))}`);
 }
 
 function notOnTheHighstreetSearchUrl(query: string) {
-  return `https://www.notonthehighstreet.com/search?q=${encodeURIComponent(query)}`;
+  return withAffiliate(`https://www.notonthehighstreet.com/search?q=${encodeURIComponent(query)}`);
 }
 
 export function getDefaultGiftIdeas(title: string) {
@@ -102,7 +104,7 @@ export function getDefaultGiftIdeas(title: string) {
 }
 
 function moonpigSearchUrl(query: string) {
-  return `https://www.moonpig.com/uk/search/?term=${encodeURIComponent(query)}`;
+  return withAffiliate(`https://www.moonpig.com/uk/search/?term=${encodeURIComponent(query)}`);
 }
 
 export function getCardLinksForOccasion(title: string): GiftShopLink[] {

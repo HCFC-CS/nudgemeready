@@ -8,24 +8,36 @@ import {
   View
 } from "react-native";
 
-import { formatNudgeTypeLabel, getTypeAccent } from "../services/typeAccent";
+import { formatNudgeTypeLabel } from "../services/typeAccent";
 import { formatWhenLabel } from "../services/reminderDates";
-import { colors, radii, spacing } from "../theme/theme";
+import { colors, radii, shadows, spacing } from "../theme/theme";
 import type { NudgeItem, NudgeItemType } from "../types/nudge";
+import type { IoniconName } from "./iconTypes";
 import { AppText } from "./Text";
 
 const DELETE_WIDTH = 88;
 const OPEN_THRESHOLD = 40;
 
+const typeIcons: Partial<Record<NudgeItemType, IoniconName>> = {
+  appointment: "calendar-outline",
+  event: "ticket-outline",
+  occasion: "balloon-outline",
+  special_day: "balloon-outline",
+  reminder: "notifications-outline",
+  task: "checkbox-outline",
+  project: "folder-outline",
+  routine: "refresh-outline",
+  chore: "brush-outline",
+  list: "list-outline",
+  note: "document-text-outline",
+  subtask: "git-commit-outline"
+};
+
 export function TypePill({ type }: { type: NudgeItemType }) {
-  const accent = getTypeAccent(type);
   return (
-    <View style={[styles.pill, { backgroundColor: `${accent}18` }]}>
-      <View style={[styles.dot, { backgroundColor: accent }]} />
-      <AppText variant="caption" style={[styles.label, { color: accent }]}>
-        {formatNudgeTypeLabel(type)}
-      </AppText>
-    </View>
+    <AppText variant="caption" style={styles.typeLabel}>
+      {formatNudgeTypeLabel(type).toUpperCase()}
+    </AppText>
   );
 }
 
@@ -46,7 +58,7 @@ export function NudgeListRow({
   onToggleDone?: () => void;
   onDelete?: () => void;
 }) {
-  const accent = getTypeAccent(type);
+  const icon = typeIcons[type] ?? "ellipse-outline";
   const translateX = useRef(new Animated.Value(0)).current;
   const openRef = useRef(false);
 
@@ -92,20 +104,6 @@ export function NudgeListRow({
       disabled={!onPress}
       style={({ pressed }) => [styles.row, pressed && onPress && styles.rowPressed]}
     >
-      <View style={[styles.accent, { backgroundColor: accent }]} />
-      <View style={styles.main}>
-        <AppText variant="body" style={[styles.title, isDone && styles.titleDone]}>
-          {title}
-        </AppText>
-        <View style={styles.metaRow}>
-          <TypePill type={type} />
-          {meta?.filter(Boolean).map((line) => (
-            <AppText key={line} variant="caption">
-              {line}
-            </AppText>
-          ))}
-        </View>
-      </View>
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: isDone }}
@@ -113,8 +111,23 @@ export function NudgeListRow({
         disabled={!onToggleDone}
         style={[styles.check, isDone && styles.checkDone]}
       >
-        {isDone ? <AppText variant="small" style={styles.checkMark}>✓</AppText> : null}
+        {isDone ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}
       </Pressable>
+      <View style={styles.iconWrap}>
+        <Ionicons name={icon} size={20} color={colors.accent} />
+      </View>
+      <View style={styles.main}>
+        <TypePill type={type} />
+        <AppText variant="heading" style={[styles.title, isDone && styles.titleDone]}>
+          {title}
+        </AppText>
+        {meta?.filter(Boolean).length ? (
+          <AppText variant="caption" style={styles.meta}>
+            {meta.filter(Boolean).join(" · ")}
+          </AppText>
+        ) : null}
+      </View>
+      {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.accent} /> : null}
     </Pressable>
   );
 
@@ -166,39 +179,28 @@ function getDueMeta(item: NudgeItem) {
   if (!date) {
     return [];
   }
-  return [`When: ${formatWhenLabel(date)}`];
+  return [formatWhenLabel(date)];
 }
 
 export function nudgeRowMeta(item: NudgeItem & { parentProjectName?: string }) {
   return [
     ...getDueMeta(item),
-    item.parentProjectName ? `Project: ${item.parentProjectName}` : "",
+    item.parentProjectName ? item.parentProjectName : "",
     item.contactName ? item.contactName : ""
   ].filter(Boolean);
 }
 
 const styles = StyleSheet.create({
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radii.pill
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3
-  },
-  label: {
-    fontWeight: "600",
-    textTransform: "none"
+  typeLabel: {
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    color: colors.accent,
+    textTransform: "uppercase"
   },
   swipeWrap: {
     position: "relative",
     overflow: "hidden",
-    borderRadius: radii.md
+    borderRadius: radii.lg
   },
   swipeFront: {
     backgroundColor: colors.background
@@ -207,57 +209,52 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: colors.card,
-    borderRadius: radii.md,
-    paddingVertical: spacing.sm,
-    paddingRight: spacing.sm,
-    paddingLeft: 0,
-    overflow: "hidden",
+    backgroundColor: colors.ivoryElevated,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     borderWidth: 1,
-    borderColor: colors.borderLight
+    borderColor: colors.borderLight,
+    ...shadows.sm
   },
   rowPressed: {
     opacity: 0.92
   },
-  accent: {
-    width: 4,
-    alignSelf: "stretch",
-    borderTopLeftRadius: radii.md,
-    borderBottomLeftRadius: radii.md
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center"
   },
   main: {
     flex: 1,
-    gap: spacing.xs
+    gap: 2
   },
   title: {
+    fontFamily: "Georgia",
     fontWeight: "600"
   },
   titleDone: {
     textDecorationLine: "line-through",
     color: colors.mutedText
   },
-  metaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: spacing.sm
+  meta: {
+    marginTop: 1
   },
   check: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 26,
+    height: 26,
+    borderRadius: 7,
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: colors.accent,
     alignItems: "center",
     justifyContent: "center"
   },
   checkDone: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primaryPressed
-  },
-  checkMark: {
-    color: colors.onPrimary,
-    fontWeight: "700"
+    backgroundColor: colors.accent,
+    borderColor: colors.accent
   },
   deleteAction: {
     position: "absolute",
@@ -269,7 +266,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
-    borderRadius: radii.md
+    borderRadius: radii.lg
   },
   deleteActionPressed: {
     opacity: 0.88

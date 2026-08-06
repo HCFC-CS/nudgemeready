@@ -35,8 +35,11 @@ export function getReminderAt(dateText: string, timeText: string) {
   }
   const { year, month, day } = dateParts;
   const [hour, minute] = timeText.split(":").map(Number);
-  const reminderDate = new Date(year, month - 1, day, hour, minute, 0);
-  if (Number.isNaN(reminderDate.getTime())) {
+  if (!Number.isFinite(hour) || !Number.isFinite(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return undefined;
+  }
+  const reminderDate = makeLocalDate(year, month - 1, day, hour, minute);
+  if (!reminderDate) {
     return undefined;
   }
   return reminderDate.toISOString();
@@ -191,21 +194,24 @@ export function getDateFromInput(dateText: string) {
   if (!dateParts) {
     return undefined;
   }
-  const date = new Date(dateParts.year, dateParts.month - 1, dateParts.day);
-  if (Number.isNaN(date.getTime())) {
-    return undefined;
-  }
-  return date;
+  return makeLocalDate(dateParts.year, dateParts.month - 1, dateParts.day);
 }
 
-export function getCalendarDays(monthDate: Date) {
-  const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-  const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+export function getCalendarDays(monthDate: Date): Array<number | null> {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // JS getDay(): 0=Sun … 6=Sat. Convert so Monday is the first column.
   const mondayStartOffset = (firstDay.getDay() + 6) % 7;
-  return [
-    ...Array.from({ length: mondayStartOffset }, () => 0),
+  const cells: Array<number | null> = [
+    ...Array.from({ length: mondayStartOffset }, () => null),
     ...Array.from({ length: daysInMonth }, (_, index) => index + 1)
   ];
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
+  }
+  return cells;
 }
 
 export function formatMonthTitle(date: Date) {
@@ -218,4 +224,26 @@ export function isSameSelectedDay(day: number, visibleMonth: Date, selectedDate?
     selectedDate?.getMonth() === visibleMonth.getMonth() &&
     selectedDate?.getDate() === day
   );
+}
+
+export function isCalendarToday(day: number, visibleMonth: Date, today = new Date()) {
+  return (
+    today.getFullYear() === visibleMonth.getFullYear() &&
+    today.getMonth() === visibleMonth.getMonth() &&
+    today.getDate() === day
+  );
+}
+
+/** Build a local calendar date and reject rollover (e.g. 31 Feb). */
+export function makeLocalDate(year: number, monthIndex: number, day: number, hour = 0, minute = 0) {
+  const date = new Date(year, monthIndex, day, hour, minute, 0, 0);
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== monthIndex ||
+    date.getDate() !== day
+  ) {
+    return undefined;
+  }
+  return date;
 }

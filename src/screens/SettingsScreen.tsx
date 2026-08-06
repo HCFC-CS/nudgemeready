@@ -15,6 +15,8 @@ import { useCrew } from "../hooks/useCrew";
 import { useHomeSettings } from "../hooks/useHomeSettings";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { type ProfileDraft, useProfile } from "../hooks/useProfile";
+import { useReadyPacks } from "../hooks/useReadyPacks";
+import { READY_PACK_STORE_BILLING_ENABLED } from "../services/readyPackEntitlements";
 import { useVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
 import {
   defaultAppPreferences,
@@ -61,8 +63,10 @@ export function SettingsScreen() {
   const { homeSettings, setEnabled, setThresholdMeters, setChecklistItems } = useHomeSettings();
   const { setEnabled: setVoiceCapture, setReadAloudEnabled } = useVoiceCaptureSettings();
   const { items, clearAllNudgeItems, clearCompletedNudgeItems, clearNudgeItemsByTypes } = useNudgeItems();
+  const { restore } = useReadyPacks();
   const { renameSelfProfile } = useCrew();
   const [isClearingNudges, setIsClearingNudges] = useState(false);
+  const [isRestoringPurchases, setIsRestoringPurchases] = useState(false);
 
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => cloneProfile(profile));
   const [prefsDraft, setPrefsDraft] = useState<AppPreferences>(defaultAppPreferences);
@@ -178,6 +182,19 @@ export function SettingsScreen() {
       if (!granted) {
         setNotice("Contacts permission wasn’t granted. You can allow it in iPhone Settings.");
       }
+    }
+  }
+
+  async function handleImportFromPhoneCalendar(value: boolean) {
+    patchPrefs({ importFromPhoneCalendar: value });
+    if (value) {
+      const { ensureCalendarPermission } = await import("../services/calendarSync");
+      const granted = await ensureCalendarPermission();
+      if (!granted) {
+        setNotice("Calendar permission wasn’t granted. You can allow it in iPhone Settings.");
+        return;
+      }
+      setNotice("Save settings, then phone calendar events will appear as appointments and events.");
     }
   }
 
@@ -328,10 +345,17 @@ export function SettingsScreen() {
           label="Phone contacts"
           value={prefsDraft.contactsEnabled}
           onValueChange={(value) => void handleContacts(value)}
-          note="Use people from your phone Contacts app when linking contacts or adding guests."
+          note="Search people from your phone Contacts by typing a name. Star contacts to keep favorites handy."
+        />
+        <ToggleRow
+          label="Pull phone calendar into nudges"
+          value={prefsDraft.importFromPhoneCalendar}
+          onValueChange={(value) => void handleImportFromPhoneCalendar(value)}
+          note="Appointments you add in the phone Calendar app appear here as appointments or events (yesterday through the next 90 days)."
         />
         <AppText variant="muted">
-          Appointments and events can sync into any writable calendar on this phone — iCloud, Google, Outlook, or Exchange — when “Link to phone / email calendar” is on.
+          Appointments and events can also sync back into any writable calendar on this phone — iCloud, Google,
+          Outlook, or Exchange — when “Link to phone / email calendar” is on for that nudge.
         </AppText>
       </SoftCard>
 
@@ -572,6 +596,44 @@ export function SettingsScreen() {
         >
           {isClearingNudges ? "Clearing…" : "Clear all nudges"}
         </Button>
+      </SoftCard>
+
+      <SoftCard>
+        <AppText variant="heading">ReadyPack purchases</AppText>
+        {READY_PACK_STORE_BILLING_ENABLED ? (
+          <>
+            <AppText variant="muted">
+              Restore ReadyPack purchases you already made on this Apple ID or Google account.
+            </AppText>
+            <Button
+              disabled={isRestoringPurchases}
+              onPress={() => {
+                void (async () => {
+                  setIsRestoringPurchases(true);
+                  try {
+                    const result = await restore();
+                    setNotice(
+                      result.restoredCount > 0
+                        ? `Restored access for ${result.restoredCount} purchase(s).`
+                        : "No purchases to restore yet."
+                    );
+                  } catch {
+                    setNotice("Could not restore purchases right now.");
+                  } finally {
+                    setIsRestoringPurchases(false);
+                  }
+                })();
+              }}
+            >
+              {isRestoringPurchases ? "Restoring…" : "Restore purchases"}
+            </Button>
+          </>
+        ) : (
+          <AppText variant="muted">
+            App Store and Play Billing purchases are not enabled in this version. ReadyPacks that are included install
+            for free — you will not be charged. Restore purchases will appear here when store billing goes live.
+          </AppText>
+        )}
       </SoftCard>
 
       <SoftCard>

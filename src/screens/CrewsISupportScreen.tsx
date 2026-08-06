@@ -7,19 +7,18 @@ import { PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../compone
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useCrew } from "../hooks/useCrew";
-import { useProfile } from "../hooks/useProfile";
 import { crewRoleCopy } from "../types/crew";
 import { colors, radii, shadows, spacing } from "../theme/theme";
 
 export function CrewsISupportScreen() {
   const navigation = useNavigation<any>();
-  const { profile } = useProfile();
   const {
     supportedCrewLinks,
     pendingInvitesForMe,
     switchProfile,
-    acceptInvitation,
-    declineInvitation
+    declineInvitation,
+    isSupporterOnly,
+    enableOwnNudgeWorld
   } = useCrew();
 
   return (
@@ -27,10 +26,27 @@ export function CrewsISupportScreen() {
       <CrewSwitcher />
       <PageHeader
         title="Crews I Support"
-        subtitle="Only crews you’ve joined by invite."
+        subtitle="Only crews you’ve joined by invite — access to that nudgee only."
         showBack
       />
 
+      {isSupporterOnly ? (
+        <SoftCard style={styles.inviteCard}>
+          <AppText variant="heading">Supporting only</AppText>
+          <AppText variant="muted">
+            You can open the people below. You don’t have your own nudges until you set up Nudge me Ready for yourself.
+          </AppText>
+          <PrimaryButton
+            size="compact"
+            onPress={() => {
+              enableOwnNudgeWorld();
+              navigation.navigate("Profile");
+            }}
+          >
+            Set up for myself
+          </PrimaryButton>
+        </SoftCard>
+      ) : null}
       {pendingInvitesForMe.length ? (
         <View style={styles.block}>
           <AppText variant="section">Invites for you</AppText>
@@ -46,19 +62,16 @@ export function CrewsISupportScreen() {
                   {invite.personalMessage}
                 </AppText>
               ) : null}
+              <AppText variant="caption" style={styles.meta}>
+                You’ll review Crew Supporter Terms before joining.
+              </AppText>
               <View style={styles.row}>
                 <PrimaryButton
                   size="compact"
-                  onPress={() => {
-                    acceptInvitation(invite.id, profile.name.trim() || "Me");
-                    switchProfile(invite.targetProfileId);
-                  }}
+                  onPress={() => navigation.navigate("AcceptInvite", { inviteId: invite.id })}
                 >
-                  Accept
+                  Review & accept
                 </PrimaryButton>
-                <SecondaryButton size="compact" onPress={() => navigation.navigate("AcceptInvite", { inviteId: invite.id })}>
-                  Details
-                </SecondaryButton>
                 <SecondaryButton size="compact" onPress={() => declineInvitation(invite.id)}>
                   Decline
                 </SecondaryButton>
