@@ -6,13 +6,33 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "v3"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "v3"
+      }
     },
     "production": {
       "autoIncrement": true,
+      "env": {
+        "APP_VARIANT": "v2"
+      },
+      "ios": {
+        "distribution": "store"
+      }
+    },
+    "v3": {
+      "autoIncrement": true,
+      "distribution": "store",
+      "channel": "v3",
+      "env": {
+        "APP_VARIANT": "v3"
+      },
       "ios": {
         "distribution": "store"
       }
@@ -22,6 +42,11 @@
     "production": {
       "ios": {
         "ascAppId": "6777057778"
+      }
+    },
+    "v3": {
+      "ios": {
+        "ascAppId": "6805037796"
       }
     }
   }
