@@ -139,6 +139,9 @@ function buildSuggestedFields(
   }
   if (type === "list") {
     suggestedFields.listItems = [];
+    if (context.extractedDate) {
+      suggestedFields.dueDate = context.extractedDate;
+    }
   }
   return suggestedFields;
 }

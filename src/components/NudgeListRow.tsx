@@ -106,6 +106,8 @@ export function NudgeListRow({
     >
       <Pressable
         accessibilityRole="checkbox"
+        accessibilityLabel={isDone ? "Undo confirm" : "Confirm — mark sorted"}
+        accessibilityHint={isDone ? "Puts this nudge back on your open list" : "Marks sorted and removes it from your open list"}
         accessibilityState={{ checked: isDone }}
         onPress={onToggleDone}
         disabled={!onToggleDone}
@@ -143,7 +145,7 @@ export function NudgeListRow({
         onPress={onDelete}
         style={({ pressed }) => [styles.deleteAction, pressed && styles.deleteActionPressed]}
       >
-        <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+        <Ionicons name="trash" size={22} color={colors.danger} />
         <AppText style={styles.deleteLabel}>Delete</AppText>
       </Pressable>
       <Animated.View
@@ -262,7 +264,9 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: DELETE_WIDTH,
-    backgroundColor: "#B42318",
+    backgroundColor: colors.dangerSoft,
+    borderWidth: 1,
+    borderColor: colors.danger,
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
@@ -272,7 +276,7 @@ const styles = StyleSheet.create({
     opacity: 0.88
   },
   deleteLabel: {
-    color: "#FFFFFF",
+    color: colors.danger,
     fontWeight: "700",
     fontSize: 12
   },

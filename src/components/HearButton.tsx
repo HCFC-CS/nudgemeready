@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Pressable, StyleSheet } from "react-native";
 
 import { useOptionalVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
-import { isSpeaking, stopSpeaking, toggleSpeakText } from "../services/textToSpeech";
+import { announceVoiceReady, isSpeaking, stopSpeaking, toggleSpeakText } from "../services/textToSpeech";
 import { colors } from "../theme/theme";
 
 export function HearButton({
@@ -37,6 +37,12 @@ export function HearButton({
     if (!hasText) {
       return;
     }
+    if (isSpeaking()) {
+      stopSpeaking();
+      setActive(false);
+      return;
+    }
+    await announceVoiceReady();
     const result = await toggleSpeakText(text, {
       onDone: () => setActive(false)
     });

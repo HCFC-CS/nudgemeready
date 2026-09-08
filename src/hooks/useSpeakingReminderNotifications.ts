@@ -1,10 +1,30 @@
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef } from "react";
+import { Linking } from "react-native";
 
 import { navigateToItemDetails } from "../navigation/navigationRef";
+import {
+  handlePayLaterConfirmResponse,
+  PAY_LATER_CONFIRM_ROLE,
+  PAY_LATER_NOTIFICATION_ROLE
+} from "../services/payLaterReminders";
 import { handleSpeakingReminderNotification } from "../services/speakingReminders";
 import { useNudgeActor } from "./useNudgeActor";
 import { useNudgeItems } from "./useNudgeItems";
+
+function openPayLaterLinkIfPresent(notification: Notifications.Notification) {
+  const data = notification.request.content.data as
+    | { role?: string; payUrl?: string }
+    | undefined;
+  if (
+    (data?.role !== PAY_LATER_NOTIFICATION_ROLE && data?.role !== PAY_LATER_CONFIRM_ROLE) ||
+    !data.payUrl
+  ) {
+    return false;
+  }
+  void Linking.openURL(data.payUrl).catch(() => undefined);
+  return true;
+}
 
 export function useSpeakingReminderNotifications() {
   const { items, isReady } = useNudgeItems();
@@ -20,6 +40,35 @@ export function useSpeakingReminderNotifications() {
 
     const response = Notifications.addNotificationResponseReceivedListener((responseNotification) => {
       handledResponseId.current = responseNotification.notification.request.identifier;
+      const data = responseNotification.notification.request.content.data as
+        | { role?: string; placeId?: string; payUrl?: string }
+        | undefined;
+
+      if (data?.role === PAY_LATER_CONFIRM_ROLE) {
+        void handlePayLaterConfirmResponse(
+          responseNotification.actionIdentifier,
+          data.placeId
+        ).then((handled) => {
+          if (!handled && data.payUrl) {
+            void Linking.openURL(data.payUrl).catch(() => undefined);
+          }
+        });
+        handleSpeakingReminderNotification(
+          responseNotification.notification,
+          itemsRef.current,
+          actor.id
+        );
+        return;
+      }
+
+      if (openPayLaterLinkIfPresent(responseNotification.notification)) {
+        handleSpeakingReminderNotification(
+          responseNotification.notification,
+          itemsRef.current,
+          actor.id
+        );
+        return;
+      }
       const item = handleSpeakingReminderNotification(
         responseNotification.notification,
         itemsRef.current,
@@ -51,6 +100,10 @@ export function useSpeakingReminderNotifications() {
         return;
       }
       handledResponseId.current = responseId;
+      if (openPayLaterLinkIfPresent(last.notification)) {
+        await Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+        return;
+      }
       const data = last.notification.request.content.data as { itemId?: string } | undefined;
       const item = data?.itemId
         ? itemsRef.current.find((candidate) => candidate.id === data.itemId)

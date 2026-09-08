@@ -221,6 +221,57 @@ const packShopCatalogue: PackShopCatalogueEntry[] = [
         johnLewis("night light", "ind-jl-night", "John Lewis · night lights")
       ]
     }
+  },
+  {
+    packId: "ready4-baby",
+    templateIds: ["bag-checklist", "what-helps", "parent-reset"],
+    keywords: /\b(baby|napp|bag|feed|supplies)\b/i,
+    section: {
+      id: "baby-shop",
+      title: "Shop early-days bag extras",
+      hint: HEALTH_SHOP_HINT,
+      links: [
+        amazon("baby changing bag", "baby-amz-bag", "Amazon · changing bags"),
+        amazon("nappy wallet travel", "baby-amz-nappy", "Amazon · nappy wallets"),
+        amazon("muslin cloths", "baby-amz-muslin", "Amazon · muslins"),
+        argos("baby-changing-bag", "baby-argos-bag", "Argos · changing bags"),
+        johnLewis("changing bag", "baby-jl-bag", "John Lewis · changing bags")
+      ]
+    }
+  },
+  {
+    packId: "ready4-moving",
+    templateIds: ["packing", "move-suppliers", "what-helps", "move-day"],
+    keywords: /\b(mov|pack|box|mover|storage)\b/i,
+    section: {
+      id: "moving-shop",
+      title: "Shop packing & move extras",
+      hint: DISCLOSURE_HINT,
+      links: [
+        amazon("removal packing boxes", "move-amz-boxes", "Amazon · packing boxes"),
+        amazon("bubble wrap packing", "move-amz-wrap", "Amazon · bubble wrap"),
+        amazon("furniture blankets", "move-amz-blankets", "Amazon · furniture blankets"),
+        argos("storage-boxes", "move-argos-boxes", "Argos · storage boxes"),
+        ebay("house move boxes", "move-ebay-boxes", "eBay · move boxes")
+      ]
+    }
+  },
+  {
+    packId: "ready4-wedding",
+    templateIds: ["suppliers", "outfits", "what-helps", "guests"],
+    keywords: /\b(wedding|guest|outfit|supplier|venue)\b/i,
+    section: {
+      id: "wedding-shop",
+      title: "Shop wedding planning extras",
+      hint: DISCLOSURE_HINT,
+      links: [
+        amazon("wedding planner binder", "wed-amz-binder", "Amazon · planner binders"),
+        etsy("wedding stationery", "wed-etsy-stat", "Etsy · stationery"),
+        amazon("guest book wedding", "wed-amz-guest", "Amazon · guest books"),
+        johnLewis("wedding gifts", "wed-jl-gifts", "John Lewis · gifts"),
+        etsy("wedding favour ideas", "wed-etsy-favour", "Etsy · favours")
+      ]
+    }
   }
 ];
 

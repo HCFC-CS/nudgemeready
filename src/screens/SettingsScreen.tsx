@@ -1,23 +1,24 @@
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useMemo, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, Linking, Pressable, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { Button } from "../components/Button";
-import { Field, ToggleRow } from "../components/FormControls";
-import { HearButton } from "../components/HearButton";
+import { ToggleRow } from "../components/FormControls";
 import { HomeLocationPicker } from "../components/HomeLocationPicker";
-import { PageHeader, PrimaryButton, SoftCard } from "../components/NudgeComponents";
-import { ProfileAvatarPicker } from "../components/ProfileAvatarPicker";
+import { PageHeader, PrimaryButton, SecondaryButton, SectionHeading, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { SecuritySettingsCard } from "../components/SecuritySettingsCard";
 import { AppText } from "../components/Text";
-import { useCrew } from "../hooks/useCrew";
+import { useAlexaLink } from "../hooks/useAlexaLink";
 import { useHomeSettings } from "../hooks/useHomeSettings";
+import { persistPayLaterEnabled } from "../hooks/usePayLaterMonitor";
 import { useNudgeItems } from "../hooks/useNudgeItems";
-import { type ProfileDraft, useProfile } from "../hooks/useProfile";
+import { useProfile } from "../hooks/useProfile";
 import { useReadyPacks } from "../hooks/useReadyPacks";
 import { READY_PACK_STORE_BILLING_ENABLED } from "../services/readyPackEntitlements";
 import { useVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
+import { formatAlexaLinkCodeForSpeech } from "../services/alexaBridge";
 import {
   defaultAppPreferences,
   loadAppPreferences,
@@ -31,27 +32,15 @@ import {
 import { ensureNotificationPermission } from "../services/notifications";
 import { syncDailySummaryNotification } from "../services/dailySummary";
 import { ensureContactsPermission } from "../services/deviceContacts";
-import {
-  buildLeavingHomeSpeechText,
-  hasReminderPlaces,
-  HOME_THRESHOLD_OPTIONS,
-  saveHomeSettings,
-  type HomeThresholdMeters
-} from "../services/homeSettingsStorage";
-import { colors, spacing } from "../theme/theme";
+import { hasReminderPlaces, saveHomeSettings } from "../services/homeSettingsStorage";
+import { PAY_LATER_PLACES, payLaterKindLabel, type PayLaterPlaceKind } from "../services/payLaterPlaces";
+import { cancelAllPayLaterReminders } from "../services/payLaterReminders";
+import { loadPayLaterSettings } from "../services/payLaterReminderStorage";
+import { colors, radii, spacing } from "../theme/theme";
 
 const timerOptions = ["15", "25", "45", "60"];
 const reminderOptions = ["No reminder", "Morning", "Afternoon", "Evening", "Custom"];
-
-function cloneProfile(profile: ProfileDraft): ProfileDraft {
-  return {
-    name: profile.name,
-    icon: profile.icon,
-    avatarUri: profile.avatarUri,
-    email: profile.email,
-    phone: profile.phone
-  };
-}
+const PAY_LATER_KINDS: PayLaterPlaceKind[] = ["congestion_zone", "toll", "drive_away_parking"];
 
 function clonePrefs(prefs: AppPreferences): AppPreferences {
   return { ...prefs };
@@ -59,33 +48,39 @@ function clonePrefs(prefs: AppPreferences): AppPreferences {
 
 export function SettingsScreen() {
   const navigation = useNavigation<any>();
-  const { profile, saveProfile } = useProfile();
-  const { homeSettings, setEnabled, setThresholdMeters, setChecklistItems } = useHomeSettings();
+  const { profile } = useProfile();
+  const { homeSettings, setEnabled } = useHomeSettings();
   const { setEnabled: setVoiceCapture, setReadAloudEnabled } = useVoiceCaptureSettings();
   const { items, clearAllNudgeItems, clearCompletedNudgeItems, clearNudgeItemsByTypes } = useNudgeItems();
   const { restore } = useReadyPacks();
-  const { renameSelfProfile } = useCrew();
+  const {
+    linkState: alexaLink,
+    busy: alexaBusy,
+    bridgeConfigured: alexaBridgeConfigured,
+    turnOn: turnAlexaOn,
+    turnOff: turnAlexaOff,
+    refreshCode: refreshAlexaCode
+  } = useAlexaLink();
   const [isClearingNudges, setIsClearingNudges] = useState(false);
   const [isRestoringPurchases, setIsRestoringPurchases] = useState(false);
 
-  const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => cloneProfile(profile));
   const [prefsDraft, setPrefsDraft] = useState<AppPreferences>(defaultAppPreferences);
   const [savedPrefsSnapshot, setSavedPrefsSnapshot] = useState<AppPreferences>(defaultAppPreferences);
   const [prefsReady, setPrefsReady] = useState(false);
   const [leavingEnabled, setLeavingEnabled] = useState(homeSettings.enabled);
-  const [thresholdDraft, setThresholdDraft] = useState<HomeThresholdMeters>(homeSettings.thresholdMeters);
-  const [checklistDraft, setChecklistDraft] = useState<string[]>([...homeSettings.checklistItems]);
+  const [payLaterEnabled, setPayLaterEnabled] = useState(false);
+  const [savedPayLaterEnabled, setSavedPayLaterEnabled] = useState(false);
   const [locationMessage, setLocationMessage] = useState<string | null>(null);
+  const [payLaterMessage, setPayLaterMessage] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const [openPayLaterKind, setOpenPayLaterKind] = useState<PayLaterPlaceKind | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      setProfileDraft(cloneProfile(profile));
       setLeavingEnabled(homeSettings.enabled);
-      setThresholdDraft(homeSettings.thresholdMeters);
-      setChecklistDraft([...homeSettings.checklistItems]);
       setNotice("");
       setLocationMessage(null);
+      setPayLaterMessage(null);
       let active = true;
       loadAppPreferences().then((prefs) => {
         if (!active) {
@@ -96,40 +91,35 @@ export function SettingsScreen() {
         setSavedPrefsSnapshot(next);
         setPrefsReady(true);
       });
+      loadPayLaterSettings().then((settings) => {
+        if (!active) {
+          return;
+        }
+        setPayLaterEnabled(settings.enabled);
+        setSavedPayLaterEnabled(settings.enabled);
+      });
       return () => {
         active = false;
       };
-    }, [profile, homeSettings.enabled, homeSettings.thresholdMeters, homeSettings.checklistItems])
+    }, [homeSettings.enabled])
   );
 
   const anythingDirty = useMemo(() => {
     if (!prefsReady) {
       return false;
     }
-    const profileChanged =
-      profileDraft.name !== profile.name ||
-      profileDraft.email !== profile.email ||
-      profileDraft.phone !== profile.phone ||
-      profileDraft.icon !== profile.icon ||
-      profileDraft.avatarUri !== profile.avatarUri;
-    const leavingChanged =
-      leavingEnabled !== homeSettings.enabled ||
-      thresholdDraft !== homeSettings.thresholdMeters ||
-      checklistDraft.join("\n") !== homeSettings.checklistItems.join("\n");
+    const leavingChanged = leavingEnabled !== homeSettings.enabled;
     const prefsChanged = JSON.stringify(prefsDraft) !== JSON.stringify(savedPrefsSnapshot);
-    return profileChanged || leavingChanged || prefsChanged;
+    const payLaterChanged = payLaterEnabled !== savedPayLaterEnabled;
+    return leavingChanged || prefsChanged || payLaterChanged;
   }, [
     prefsReady,
-    profile,
-    profileDraft,
     leavingEnabled,
-    thresholdDraft,
-    checklistDraft,
     homeSettings.enabled,
-    homeSettings.thresholdMeters,
-    homeSettings.checklistItems,
     prefsDraft,
-    savedPrefsSnapshot
+    savedPrefsSnapshot,
+    payLaterEnabled,
+    savedPayLaterEnabled
   ]);
 
   function patchPrefs(patch: Partial<AppPreferences>) {
@@ -164,7 +154,38 @@ export function SettingsScreen() {
       return;
     }
 
-    setLocationMessage(null);
+    setLocationMessage(
+      "Leaving reminders are on. Each place uses its own checklist when GPS detects you leave — not a daily reminder."
+    );
+  }
+
+  async function handlePayLaterReminders(value: boolean) {
+    if (!value) {
+      setPayLaterEnabled(false);
+      setPayLaterMessage(null);
+      return;
+    }
+
+    setPayLaterEnabled(true);
+
+    const hasLocation = await requestLocationReminderPermission();
+    await ensureNotificationPermission();
+    await requestBackgroundLocationPermission();
+
+    if (!prefsDraft.pushNotifications) {
+      patchPrefs({ pushNotifications: true });
+    }
+
+    if (!hasLocation) {
+      setPayLaterMessage(
+        "Toll and parking pay nudges are on. Allow location access when prompted so GPS can notice nearby tolls and charge zones, then ask if you used them."
+      );
+      return;
+    }
+
+    setPayLaterMessage(
+      "When GPS thinks you left a toll, congestion or clean-air zone, or drive-away car park, you’ll be asked “Did you use this?” Pay nudges only after Yes. Save settings to turn this on."
+    );
   }
 
   async function handlePushNotifications(value: boolean) {
@@ -214,193 +235,269 @@ export function SettingsScreen() {
   async function handleSaveAll() {
     const nextHome = {
       ...homeSettings,
-      enabled: leavingEnabled,
-      thresholdMeters: thresholdDraft,
-      checklistItems: checklistDraft
+      enabled: leavingEnabled
     };
-    saveProfile(profileDraft);
-    renameSelfProfile(profileDraft.name);
     setEnabled(leavingEnabled);
-    setThresholdMeters(thresholdDraft);
-    setChecklistItems(checklistDraft);
     setVoiceCapture(prefsDraft.voiceCapture);
     setReadAloudEnabled(prefsDraft.readAloud);
     await saveAppPreferences(prefsDraft);
     await saveHomeSettings(nextHome);
+    await persistPayLaterEnabled(payLaterEnabled);
+    if (!payLaterEnabled) {
+      await cancelAllPayLaterReminders();
+    }
+    setSavedPayLaterEnabled(payLaterEnabled);
     await syncDailySummaryNotification();
     setSavedPrefsSnapshot(clonePrefs(prefsDraft));
     setNotice("All settings saved.");
   }
 
   function handleDiscardAll() {
-    setProfileDraft(cloneProfile(profile));
     setLeavingEnabled(homeSettings.enabled);
-    setThresholdDraft(homeSettings.thresholdMeters);
-    setChecklistDraft([...homeSettings.checklistItems]);
+    setPayLaterEnabled(savedPayLaterEnabled);
     setPrefsDraft(clonePrefs(savedPrefsSnapshot));
     setNotice("Changes discarded.");
   }
 
-  const homePreview = buildLeavingHomeSpeechText(checklistDraft);
-
   return (
     <Screen>
-      <PageHeader title="Make Nudge me Ready yours." />
+      <PageHeader title="Your Settings" subtitle="Reminders and preferences. Account details live in Profile." />
 
       <SoftCard>
-        <AppText variant="heading">Notifications</AppText>
+        <AppText variant="heading">Account</AppText>
+        <AppText variant="muted">
+          {profile.name?.trim() ? profile.name : "Your profile"}
+          {profile.email?.trim() ? ` · ${profile.email}` : ""}
+        </AppText>
+        <SecondaryButton size="compact" onPress={() => navigation.navigate("Profile")}>
+          Edit profile
+        </SecondaryButton>
+      </SoftCard>
+
+      <SoftCard>
+        <SectionHeading
+          title="Notifications"
+          info="Push schedules gentle prompts on this device. Quiet hours hold alerts overnight (9pm–7am) and soften leaving-place and pay-later prompts. Daily summary is a small morning look at the day ahead — not a ‘forget something’ list — and needs Push on."
+        />
         <ToggleRow
           label="Push"
           value={prefsDraft.pushNotifications}
           onValueChange={(value) => void handlePushNotifications(value)}
-          note="Gentle prompts on this device. Off means reminders won’t be scheduled."
         />
         <ToggleRow
           label="Quiet hours"
           value={prefsDraft.quietHours}
           onValueChange={(value) => void handleQuietHours(value)}
-          note="Holds alerts overnight (9pm–7am) and softens leaving-place prompts."
         />
         <ToggleRow
           label="Daily summary"
           value={prefsDraft.dailySummary}
           onValueChange={(value) => void handleDailySummary(value)}
-          note="A small morning look at the day ahead (needs Push on)."
         />
       </SoftCard>
 
       <SoftCard>
-        <AppText variant="heading">Focus timer</AppText>
+        <SectionHeading title="Focus timer" info="Default length used on the Focus tab." />
         <OptionGrid
           options={timerOptions}
           selected={prefsDraft.focusTimer}
           onSelect={(focusTimer) => patchPrefs({ focusTimer })}
           suffix=" min"
         />
-        <AppText variant="caption" style={{ color: colors.mutedText }}>
-          Used as the default length on the Focus tab.
-        </AppText>
       </SoftCard>
 
       <SoftCard>
-        <AppText variant="heading">Leaving places</AppText>
+        <SectionHeading
+          title="Leaving places"
+          info="Four places — Home, Work, School, Safe place. Each has its own distance and checklist. Nudges only when GPS detects you leaving that place (not a daily reminder). Example: Work → laptop & notes; Home → keys, phone & wallet; School → homework & gym kit. These reminders depend on GPS, permissions, and your device. We are not responsible if a prompt does not fire because location was off, battery settings blocked background updates, or the phone was offline. See Terms of Use for the full caveat."
+        />
         <ToggleRow
           label="Leaving reminders"
           value={leavingEnabled}
           onValueChange={(value) => void handleLeavingHomeReminder(value)}
+          helpText="Needs location permission. Set each place below, then Save settings."
         />
         <HomeLocationPicker />
         {locationMessage ? <AppText variant="small">{locationMessage}</AppText> : null}
-        <AppText variant="caption">Distance</AppText>
-        <View style={styles.options}>
-          {HOME_THRESHOLD_OPTIONS.map((option) => (
-            <Button
-              key={option}
-              tone={thresholdDraft === option ? "primary" : "quiet"}
-              style={styles.option}
-              onPress={() => setThresholdDraft(option)}
-            >
-              {option} m
-            </Button>
-          ))}
-        </View>
-        <AppText variant="caption">Checklist</AppText>
-        {checklistDraft.map((item, index) => (
-          <View key={`checklist-${index}`} style={styles.checklistRow}>
-            <View style={styles.checklistField}>
-              <Field
-                label={`Item ${index + 1}`}
-                value={item}
-                onChangeText={(value) =>
-                  setChecklistDraft((current) => current.map((entry, itemIndex) => (itemIndex === index ? value : entry)))
-                }
-                placeholder="phone, keys…"
-              />
-            </View>
-            {checklistDraft.length > 1 ? (
-              <Button
-                tone="quiet"
-                style={styles.removeButton}
-                onPress={() => setChecklistDraft((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-              >
-                Remove
-              </Button>
-            ) : null}
-          </View>
-        ))}
-        <Button tone="quiet" onPress={() => setChecklistDraft((current) => [...current, ""])}>
-          Add item
-        </Button>
-        <View style={styles.previewRow}>
-          <AppText variant="caption" style={{ color: colors.mutedText, flex: 1 }}>
-            Preview: {homePreview}
-          </AppText>
-          <HearButton text={homePreview} />
-        </View>
       </SoftCard>
 
       <SoftCard>
-        <AppText variant="heading">Contacts & calendars</AppText>
+        <SectionHeading
+          title="Tolls, zones & parking"
+          info="GPS watches known tolls, congestion / clean-air zones, and barrierless car parks. When it thinks you left one, it asks “Were you there?” — pay reminders at 6, 12 and 18 hours only if you say Yes. No daily reminders for places you did not use. Nudge me Ready is not responsible if a pay or leaving reminder does not appear. These features only work when you keep location (GPS) on, allow background access, keep Push on, confirm prompts when asked, and have internet available when needed — including when the app is not open. Always check official payment channels yourself. Full details are in the Terms of Use."
+        />
+        <ToggleRow
+          label="Pay-later reminders"
+          value={payLaterEnabled}
+          onValueChange={(value) => void handlePayLaterReminders(value)}
+          helpText="Needs Push and location. Asks only after a GPS visit. Tap Yes for gentle pay nudges."
+        />
+        {payLaterMessage ? <AppText variant="small">{payLaterMessage}</AppText> : null}
+        <AppText variant="caption" style={styles.placeListLabel}>
+          Places watched
+        </AppText>
+        {PAY_LATER_KINDS.map((kind) => {
+          const group = PAY_LATER_PLACES.filter((place) => place.kind === kind);
+          if (!group.length) {
+            return null;
+          }
+          const open = openPayLaterKind === kind;
+          return (
+            <View key={kind} style={styles.dropdown}>
+              <Pressable
+                onPress={() => setOpenPayLaterKind((current) => (current === kind ? null : kind))}
+                style={({ pressed }) => [styles.dropdownHeader, pressed && styles.dropdownPressed]}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: open }}
+                accessibilityLabel={`${payLaterKindLabel(kind)}, ${group.length} places`}
+              >
+                <View style={styles.dropdownHeaderCopy}>
+                  <AppText style={styles.dropdownTitle}>{payLaterKindLabel(kind)}</AppText>
+                  <AppText variant="caption" style={styles.placeMeta}>
+                    {group.length} place{group.length === 1 ? "" : "s"}
+                  </AppText>
+                </View>
+                <Ionicons
+                  name={open ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color={colors.mutedText}
+                />
+              </Pressable>
+              {open
+                ? group.map((place) => (
+                    <Pressable
+                      key={place.id}
+                      accessibilityRole="link"
+                      accessibilityLabel={`Open pay page for ${place.name}`}
+                      onPress={() => void Linking.openURL(place.payUrl)}
+                      style={styles.placeRow}
+                    >
+                      <View style={styles.placeCopy}>
+                        <AppText style={styles.placeName}>{place.name}</AppText>
+                        <AppText variant="caption" style={styles.placeMeta}>
+                          Open pay page
+                        </AppText>
+                      </View>
+                    </Pressable>
+                  ))
+                : null}
+            </View>
+          );
+        })}
+      </SoftCard>
+
+      <SoftCard>
+        <SectionHeading
+          title="Alexa"
+          info="Say “Alexa, open Nudge me Ready”, then “what are my nudges” or “add a nudge …”. Linking is optional and only syncs open nudge titles while Alexa is on. Needs the Alexa skill published to your Amazon account."
+        />
+        {!alexaBridgeConfigured ? (
+          <AppText variant="small">Alexa is not connected yet.</AppText>
+        ) : null}
+        <ToggleRow
+          label="Alexa voice"
+          value={alexaLink.enabled}
+          onValueChange={(value) => {
+            void (async () => {
+              if (value) {
+                await turnAlexaOn();
+              } else {
+                await turnAlexaOff();
+              }
+            })();
+          }}
+          note={
+            alexaBusy ? "Working…" : alexaLink.linkedToAlexa ? "Linked on this account." : undefined
+          }
+        />
+        {alexaLink.enabled && alexaLink.linkCode && !alexaLink.linkedToAlexa ? (
+          <View style={styles.alexaCodeBox}>
+            <AppText variant="caption" style={styles.placeListLabel}>
+              Link code
+            </AppText>
+            <AppText variant="title" style={styles.alexaCode}>
+              {alexaLink.linkCode}
+            </AppText>
+            <AppText variant="muted">
+              Say: Alexa, open Nudge me Ready. Then: link with code{" "}
+              {formatAlexaLinkCodeForSpeech(alexaLink.linkCode)}.
+            </AppText>
+            <Button tone="quiet" onPress={() => void refreshAlexaCode()} disabled={alexaBusy}>
+              New code
+            </Button>
+          </View>
+        ) : null}
+        {alexaLink.enabled && alexaLink.linkedToAlexa ? (
+          <AppText variant="small">Connected.</AppText>
+        ) : null}
+        {alexaLink.lastError ? <AppText variant="small">{alexaLink.lastError}</AppText> : null}
+      </SoftCard>
+
+      <SoftCard>
+        <SectionHeading
+          title="Contacts & calendars"
+          info="Phone contacts: search people from your Contacts by typing a name, and star favourites. Pull phone calendar: imports personal appointments and events into nudges — holidays, DST, and similar general calendar noise are skipped. Appointments and events can also sync back into any writable calendar on this phone (iCloud, Google, Outlook, or Exchange) when “Link to phone / email calendar” is on for that nudge. Contacts and calendars depend on your device permissions and third-party providers — see Terms of Use."
+        />
         <ToggleRow
           label="Phone contacts"
           value={prefsDraft.contactsEnabled}
           onValueChange={(value) => void handleContacts(value)}
-          note="Search people from your phone Contacts by typing a name. Star contacts to keep favorites handy."
         />
         <ToggleRow
           label="Pull phone calendar into nudges"
           value={prefsDraft.importFromPhoneCalendar}
           onValueChange={(value) => void handleImportFromPhoneCalendar(value)}
-          note="Appointments you add in the phone Calendar app appear here as appointments or events (yesterday through the next 90 days)."
         />
-        <AppText variant="muted">
-          Appointments and events can also sync back into any writable calendar on this phone — iCloud, Google,
-          Outlook, or Exchange — when “Link to phone / email calendar” is on for that nudge.
-        </AppText>
       </SoftCard>
 
       <SoftCard>
-        <AppText variant="heading">Voice</AppText>
+        <SectionHeading
+          title="Voice"
+          info="Voice to text shows the mic on fields (speech input needs a development or TestFlight build). Text to voice shows the speaker on fields to hear text read aloud."
+        />
         <ToggleRow
           label="Voice to text"
           value={prefsDraft.voiceCapture}
           onValueChange={(value) => patchPrefs({ voiceCapture: value })}
-          note="Show the mic on fields. Speech input needs a development or TestFlight build."
         />
         <ToggleRow
           label="Text to voice"
           value={prefsDraft.readAloud}
           onValueChange={(value) => patchPrefs({ readAloud: value })}
-          note="Show the speaker on fields to hear text read aloud."
         />
       </SoftCard>
 
       <SecuritySettingsCard />
 
       <SoftCard>
-        <AppText variant="heading">Privacy & support</AppText>
-        <AppText variant="muted">
-          Your data is encrypted on this phone. Read how app lock and permissions work, or get help with
-          sign-in, invites, or TestFlight.
-        </AppText>
+        <SectionHeading
+          title="Privacy & support"
+          info="Your data is encrypted on this phone. Open privacy & support for how app lock and permissions work, or help with sign-in, invites, or TestFlight. Terms of Use cover missed reminders and location features."
+        />
         <Button tone="quiet" onPress={() => navigation.navigate("LegalInfo")}>
           Open privacy & support
+        </Button>
+        <Button tone="quiet" onPress={() => navigation.navigate("TermsOfUse")}>
+          Terms of Use
         </Button>
       </SoftCard>
 
       <SoftCard>
-        <AppText variant="heading">Data and backup</AppText>
+        <SectionHeading
+          title="Data and backup"
+          info="Cloud backup is not available yet. Your data stays on this phone. Clearing nudges cannot be undone."
+        />
         <ToggleRow
           label="Backup Nudge me Ready data"
           value={prefsDraft.cloudBackup}
           onValueChange={(value) => patchPrefs({ cloudBackup: value })}
-          note="Cloud backup is not available yet. Your data stays on this phone."
+          note="Not available yet"
           disabled
         />
-        <AppText variant="muted">
+        <AppText variant="caption" style={styles.placeMeta}>
           {items.length
-            ? `${items.length} nudge${items.length === 1 ? "" : "s"} saved on this device.`
-            : "No nudges saved on this device."}
+            ? `${items.length} nudge${items.length === 1 ? "" : "s"} on this device`
+            : "No nudges on this device"}
         </AppText>
         <Button
           tone="quiet"
@@ -599,71 +696,46 @@ export function SettingsScreen() {
       </SoftCard>
 
       <SoftCard>
-        <AppText variant="heading">ReadyPack purchases</AppText>
+        <SectionHeading
+          title="ReadyPack purchases"
+          info={
+            READY_PACK_STORE_BILLING_ENABLED
+              ? "Restore ReadyPack purchases you already made on this Apple ID or Google account."
+              : "App Store and Play Billing purchases are not enabled in this version. Included ReadyPacks install for free — you will not be charged. Restore purchases will appear here when store billing goes live."
+          }
+        />
         {READY_PACK_STORE_BILLING_ENABLED ? (
-          <>
-            <AppText variant="muted">
-              Restore ReadyPack purchases you already made on this Apple ID or Google account.
-            </AppText>
-            <Button
-              disabled={isRestoringPurchases}
-              onPress={() => {
-                void (async () => {
-                  setIsRestoringPurchases(true);
-                  try {
-                    const result = await restore();
-                    setNotice(
-                      result.restoredCount > 0
-                        ? `Restored access for ${result.restoredCount} purchase(s).`
-                        : "No purchases to restore yet."
-                    );
-                  } catch {
-                    setNotice("Could not restore purchases right now.");
-                  } finally {
-                    setIsRestoringPurchases(false);
-                  }
-                })();
-              }}
-            >
-              {isRestoringPurchases ? "Restoring…" : "Restore purchases"}
-            </Button>
-          </>
+          <Button
+            disabled={isRestoringPurchases}
+            onPress={() => {
+              void (async () => {
+                setIsRestoringPurchases(true);
+                try {
+                  const result = await restore();
+                  setNotice(
+                    result.restoredCount > 0
+                      ? `Restored access for ${result.restoredCount} purchase(s).`
+                      : "No purchases to restore yet."
+                  );
+                } catch {
+                  setNotice("Could not restore purchases right now.");
+                } finally {
+                  setIsRestoringPurchases(false);
+                }
+              })();
+            }}
+          >
+            {isRestoringPurchases ? "Restoring…" : "Restore purchases"}
+          </Button>
         ) : (
-          <AppText variant="muted">
-            App Store and Play Billing purchases are not enabled in this version. ReadyPacks that are included install
-            for free — you will not be charged. Restore purchases will appear here when store billing goes live.
+          <AppText variant="caption" style={styles.placeMeta}>
+            Billing not enabled in this version
           </AppText>
         )}
       </SoftCard>
 
       <SoftCard>
-        <AppText variant="heading">Account</AppText>
-        <Field
-          label="Name"
-          value={profileDraft.name}
-          onChangeText={(name) => setProfileDraft((current) => ({ ...current, name }))}
-          placeholder="Your name"
-        />
-        <Field
-          label="Email"
-          value={profileDraft.email}
-          onChangeText={(email) => setProfileDraft((current) => ({ ...current, email }))}
-          placeholder="you@example.com"
-        />
-        <Field
-          label="Phone"
-          value={profileDraft.phone}
-          onChangeText={(phone) => setProfileDraft((current) => ({ ...current, phone }))}
-          placeholder="Optional"
-        />
-        <ProfileAvatarPicker
-          name={profileDraft.name}
-          icon={profileDraft.icon}
-          avatarUri={profileDraft.avatarUri}
-          onIconChange={(icon) => setProfileDraft((current) => ({ ...current, icon, avatarUri: undefined }))}
-          onAvatarChange={(avatarUri) => setProfileDraft((current) => ({ ...current, avatarUri }))}
-        />
-        <AppText variant="muted">Default reminder preference</AppText>
+        <SectionHeading title="Default reminder" info="Suggested time when you add a new reminder." />
         <OptionGrid
           options={reminderOptions}
           selected={prefsDraft.defaultReminder}
@@ -747,21 +819,62 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     backgroundColor: colors.primary
   },
-  checklistRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: spacing.sm
+  placeListLabel: {
+    marginTop: spacing.sm,
+    color: colors.mutedText,
+    fontWeight: "700"
   },
-  checklistField: {
-    flex: 1
+  dropdown: {
+    marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: radii.md,
+    backgroundColor: colors.ivoryElevated,
+    overflow: "hidden"
   },
-  removeButton: {
+  dropdownHeader: {
     minHeight: 52,
-    marginBottom: spacing.xs
-  },
-  previewRow: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.sm
+  },
+  dropdownPressed: {
+    opacity: 0.88
+  },
+  dropdownHeaderCopy: {
+    flex: 1,
+    gap: 2
+  },
+  dropdownTitle: {
+    color: colors.primaryDark,
+    fontWeight: "700"
+  },
+  placeRow: {
+    minHeight: 48,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderLight
+  },
+  placeCopy: {
+    gap: 2
+  },
+  placeName: {
+    color: colors.primaryDark,
+    fontWeight: "600"
+  },
+  placeMeta: {
+    color: colors.mutedText
+  },
+  alexaCodeBox: {
+    gap: spacing.sm,
+    marginTop: spacing.sm
+  },
+  alexaCode: {
+    letterSpacing: 4,
+    color: colors.primaryDark
   }
 });

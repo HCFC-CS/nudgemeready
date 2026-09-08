@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import { getEncryptedItem, setEncryptedItem } from "../services/encryptedStorage";
+import type { SocialAuthProvider } from "../services/socialSignIn";
 
 const PROFILE_KEY = "do-enough-done:profile";
 
@@ -32,12 +33,18 @@ export const profileIcons: Array<{ id: ProfileIcon; symbol: string; label: strin
   { id: "wave", symbol: "🌊", label: "Wave" }
 ];
 
+export type AuthProvider = SocialAuthProvider | "email";
+
 type Profile = {
   name: string;
   icon: ProfileIcon;
   avatarUri?: string;
   email: string;
   phone: string;
+  /** ISO date YYYY-MM-DD */
+  dateOfBirth?: string;
+  /** How the user started signup (details still stored locally). */
+  authProvider?: AuthProvider;
   /** ISO timestamp set when first-install registration is completed. */
   registeredAt?: string;
   /** When the user accepted Terms of Use */
@@ -57,6 +64,7 @@ type ProfileContextValue = {
   clearAvatar: () => void;
   updateEmail: (email: string) => void;
   updatePhone: (phone: string) => void;
+  updateDateOfBirth: (dateOfBirth: string) => void;
   saveProfile: (next: ProfileDraft) => void;
   completeRegistration: (next: ProfileDraft) => void;
 };
@@ -119,18 +127,33 @@ export function ProfileProvider({ children }: PropsWithChildren) {
     setProfile((current) => ({ ...current, phone }));
   }, []);
 
-  const saveProfile = useCallback((next: ProfileDraft) => {
-    setProfile({
-      name: next.name.trim(),
-      icon: next.icon,
-      avatarUri: next.avatarUri,
-      email: next.email.trim(),
-      phone: next.phone.trim(),
-      registeredAt: next.registeredAt ?? profile.registeredAt,
-      termsOfUseAcceptedAt: next.termsOfUseAcceptedAt ?? profile.termsOfUseAcceptedAt,
-      termsOfUseVersion: next.termsOfUseVersion ?? profile.termsOfUseVersion
-    });
-  }, [profile.registeredAt, profile.termsOfUseAcceptedAt, profile.termsOfUseVersion]);
+  const updateDateOfBirth = useCallback((dateOfBirth: string) => {
+    setProfile((current) => ({ ...current, dateOfBirth }));
+  }, []);
+
+  const saveProfile = useCallback(
+    (next: ProfileDraft) => {
+      setProfile({
+        name: next.name.trim(),
+        icon: next.icon,
+        avatarUri: next.avatarUri,
+        email: next.email.trim(),
+        phone: next.phone.trim(),
+        dateOfBirth: next.dateOfBirth?.trim() || profile.dateOfBirth,
+        authProvider: next.authProvider ?? profile.authProvider,
+        registeredAt: next.registeredAt ?? profile.registeredAt,
+        termsOfUseAcceptedAt: next.termsOfUseAcceptedAt ?? profile.termsOfUseAcceptedAt,
+        termsOfUseVersion: next.termsOfUseVersion ?? profile.termsOfUseVersion
+      });
+    },
+    [
+      profile.authProvider,
+      profile.dateOfBirth,
+      profile.registeredAt,
+      profile.termsOfUseAcceptedAt,
+      profile.termsOfUseVersion
+    ]
+  );
 
   const completeRegistration = useCallback((next: ProfileDraft) => {
     setProfile({
@@ -139,13 +162,21 @@ export function ProfileProvider({ children }: PropsWithChildren) {
       avatarUri: next.avatarUri,
       email: next.email.trim().toLowerCase(),
       phone: next.phone.trim(),
+      dateOfBirth: next.dateOfBirth?.trim(),
+      authProvider: next.authProvider ?? "email",
       registeredAt: new Date().toISOString(),
       termsOfUseAcceptedAt: next.termsOfUseAcceptedAt ?? new Date().toISOString(),
       termsOfUseVersion: next.termsOfUseVersion
     });
   }, []);
 
-  const needsRegistration = isReady && (!profile.registeredAt || !profile.name.trim());
+  // First install, or complete missing mandatory fields (email / date of birth).
+  const needsRegistration =
+    isReady &&
+    (!profile.registeredAt ||
+      !profile.name.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim()) ||
+      !profile.dateOfBirth);
 
   return (
     <ProfileContext.Provider
@@ -159,6 +190,7 @@ export function ProfileProvider({ children }: PropsWithChildren) {
         clearAvatar,
         updateEmail,
         updatePhone,
+        updateDateOfBirth,
         saveProfile,
         completeRegistration
       }}

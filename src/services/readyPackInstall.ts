@@ -44,6 +44,7 @@ export function templateToItem(
       priority: template.priority,
       sourcePackId: pack.id,
       sourceTemplateId: template.id,
+      dueDaysBeforePlannerEvent: template.dueDaysBeforePlannerEvent,
       userEdited: false
     },
     now
@@ -137,17 +138,38 @@ export function uninstallPack(
 
   let removedCount = 0;
   let keptEditedCount = 0;
-  const nextItems = items.filter((item) => {
+  const nextItems: NudgeItem[] = [];
+
+  for (const item of items) {
     if (item.sourcePackId !== packId) {
-      return true;
+      nextItems.push(item);
+      continue;
     }
+
+    // Core / user nudges that only linked a pack must survive uninstall.
+    // Clear the association; never delete the underlying nudge.
+    if (item.nudgeIntent) {
+      keptEditedCount += 1;
+      nextItems.push({
+        ...item,
+        sourcePackId: undefined,
+        sourceTemplateId: undefined
+      });
+      continue;
+    }
+
     if (mode === "unedited_only" && item.userEdited) {
       keptEditedCount += 1;
-      return true;
+      nextItems.push({
+        ...item,
+        sourcePackId: undefined,
+        sourceTemplateId: undefined
+      });
+      continue;
     }
+
     removedCount += 1;
-    return false;
-  });
+  }
 
   const nextInstalled = { ...state.installed };
   delete nextInstalled[packId];

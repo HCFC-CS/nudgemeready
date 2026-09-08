@@ -44,6 +44,11 @@ export type ReadyPackTemplate = {
   /** Days from install date for due/reminder (optional). */
   dueInDays?: number;
   reminderInDays?: number;
+  /**
+   * When the user picks a planner event (exam, deadline, etc.), set the list
+   * due this many days before that event. 0 = same day, 1 = night before.
+   */
+  dueDaysBeforePlannerEvent?: number;
   listItems?: ReadyPackListRow[];
   priority?: "not_urgent" | "soon" | "important" | "needs_attention";
 };

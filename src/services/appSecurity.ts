@@ -21,7 +21,7 @@ const RESET_TOKEN_EXPIRES_KEY = "nudge.security.resetTokenExpires";
 const PBKDF2_ITERATIONS = 100_000;
 const HASH_PREFIX = "pbkdf2$";
 const RESET_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
-const SUPPORT_EMAIL = "support@nudgemeready.app";
+export const SUPPORT_EMAIL = "support@nudgemeready.app";
 
 export type CredentialType = "pin" | "password";
 

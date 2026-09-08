@@ -2,7 +2,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from "react-native";
 
-import type { IoniconName } from "./iconTypes";
 import { SoftCard } from "./NudgeComponents";
 import { AppText } from "./Text";
 import {
@@ -25,10 +24,9 @@ type Props = {
 };
 
 export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editable = true }: Props) {
-  const [category, setCategory] = useState<DocumentCategory>("other");
   const [busy, setBusy] = useState(false);
 
-  async function addFromPicker(kind: "file" | "photo" | "camera") {
+  async function addFromPicker(kind: "file" | "photo" | "camera", category: DocumentCategory) {
     if (!editable || busy) {
       return;
     }
@@ -58,6 +56,32 @@ export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editab
     }
   }
 
+  function askHowToAdd(category: DocumentCategory) {
+    Alert.alert("Add document", documentCategoryLabel(category), [
+      { text: "Cancel", style: "cancel" },
+      { text: "File", onPress: () => void addFromPicker("file", category) },
+      { text: "Photo", onPress: () => void addFromPicker("photo", category) },
+      { text: "Camera", onPress: () => void addFromPicker("camera", category) }
+    ]);
+  }
+
+  function startUpload() {
+    if (!editable || busy) {
+      return;
+    }
+    Alert.alert(
+      "Document type",
+      "What kind of document is this?",
+      [
+        { text: "Cancel", style: "cancel" },
+        ...DOCUMENT_CATEGORIES.map((entry) => ({
+          text: entry.label,
+          onPress: () => askHowToAdd(entry.id)
+        }))
+      ]
+    );
+  }
+
   function confirmRemove(attachment: NudgeAttachment) {
     if (!editable) {
       return;
@@ -79,69 +103,26 @@ export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editab
 
   return (
     <SoftCard>
-      <AppText variant="heading">Important documents</AppText>
-      <AppText variant="small" style={styles.intro}>
-        Keep identity, driving, mobility, access cards, tax certificates, and anything else this nudge needs in one place.
-      </AppText>
+      <AppText variant="heading">Documents</AppText>
 
       {editable ? (
-        <>
-          <AppText variant="caption" style={styles.sectionLabel}>
-            Document type
-          </AppText>
-          <View style={styles.chips}>
-            {DOCUMENT_CATEGORIES.map((entry) => {
-              const selected = category === entry.id;
-              return (
-                <Pressable
-                  key={entry.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={entry.label}
-                  onPress={() => setCategory(entry.id)}
-                  style={({ pressed }) => [
-                    styles.chip,
-                    selected && styles.chipSelected,
-                    pressed && styles.pressed
-                  ]}
-                >
-                  <AppText variant="small" style={selected ? styles.chipLabelSelected : undefined}>
-                    {entry.label}
-                  </AppText>
-                </Pressable>
-              );
-            })}
-          </View>
-          <AppText variant="small" style={styles.hint}>
-            {DOCUMENT_CATEGORIES.find((entry) => entry.id === category)?.hint}
-          </AppText>
-
-          <View style={styles.actions}>
-            <ActionButton
-              icon="document-attach-outline"
-              label="Upload file"
-              disabled={busy}
-              onPress={() => void addFromPicker("file")}
-            />
-            <ActionButton
-              icon="images-outline"
-              label="Photo"
-              disabled={busy}
-              onPress={() => void addFromPicker("photo")}
-            />
-            <ActionButton
-              icon="camera-outline"
-              label="Scan"
-              disabled={busy}
-              onPress={() => void addFromPicker("camera")}
-            />
-          </View>
-          {busy ? <ActivityIndicator color={colors.primaryDark} style={styles.spinner} /> : null}
-        </>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Upload document"
+          disabled={busy}
+          onPress={startUpload}
+          style={({ pressed }) => [styles.uploadBtn, (pressed || busy) && styles.pressed]}
+        >
+          <Ionicons name="cloud-upload-outline" size={20} color={colors.primaryDark} />
+          <AppText>Upload document</AppText>
+        </Pressable>
       ) : null}
+
+      {busy ? <ActivityIndicator color={colors.primaryDark} style={styles.spinner} /> : null}
 
       {attachments.length === 0 ? (
         <AppText variant="small" style={styles.empty}>
-          No documents attached yet.
+          None yet.
         </AppText>
       ) : (
         <View style={styles.list}>
@@ -180,82 +161,20 @@ export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editab
   );
 }
 
-function ActionButton({
-  icon,
-  label,
-  onPress,
-  disabled
-}: {
-  icon: IoniconName;
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [styles.actionBtn, (pressed || disabled) && styles.pressed]}
-    >
-      <Ionicons name={icon} size={18} color={colors.primaryDark} />
-      <AppText variant="small">{label}</AppText>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  intro: {
-    color: colors.mutedText,
-    marginTop: spacing.xs,
-    marginBottom: spacing.sm
-  },
-  sectionLabel: {
-    color: colors.mutedText,
-    marginBottom: spacing.xs
-  },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radii.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 6
-  },
-  chipSelected: {
-    backgroundColor: colors.primarySoft,
-    borderColor: colors.primary
-  },
-  chipLabelSelected: {
-    color: colors.primaryDark
-  },
-  hint: {
-    color: colors.mutedText,
-    marginTop: spacing.xs,
-    marginBottom: spacing.sm
-  },
-  actions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: spacing.sm
-  },
-  actionBtn: {
+  uploadBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
+    alignSelf: "flex-start",
     backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radii.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 10
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm
   },
   spinner: {
     marginBottom: spacing.sm

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
-import { PageHeader, PrimaryButton, SoftCard } from "../components/NudgeComponents";
+import { PageHeader, PrimaryButton, SectionHeading, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useReadyPacks } from "../hooks/useReadyPacks";
@@ -64,6 +64,9 @@ export function ReadyPackPreviewScreen() {
           ? `Installed ${result.createdCount} editable items. You can change or remove them anytime.`
           : "Pack applied. You can switch again from ReadyPacks anytime."
       );
+      if (pack.kind === "content" && result.createdCount > 0) {
+        // Soft handoff — user can open Ready 4 list without hunting.
+      }
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Could not install this ReadyPack.");
     } finally {
@@ -161,8 +164,7 @@ export function ReadyPackPreviewScreen() {
 
       {templates.length > 0 ? (
         <SoftCard style={styles.card}>
-          <AppText variant="heading">What you will get</AppText>
-          <AppText variant="muted">Everything stays editable after install.</AppText>
+          <SectionHeading title="What you will get" info="Everything stays editable after install." />
           {templates.map((template) => (
             <View key={template.id} style={styles.row}>
               <AppText variant="body">{template.title}</AppText>
@@ -242,6 +244,27 @@ export function ReadyPackPreviewScreen() {
       {notice ? (
         <SoftCard style={styles.card}>
           <AppText variant="body">{notice}</AppText>
+          {isInstalled && pack.kind === "content" ? (
+            <>
+              <PrimaryButton
+                size="compact"
+                onPress={() => navigation.navigate("PackPlanner", { packId: pack.id })}
+              >
+                Open planner
+              </PrimaryButton>
+              <PrimaryButton
+                size="compact"
+                onPress={() =>
+                  navigation.navigate("Tabs", {
+                    screen: "Today",
+                    params: { typeFilter: "ready4" }
+                  })
+                }
+              >
+                View in Nudges → Ready4
+              </PrimaryButton>
+            </>
+          ) : null}
         </SoftCard>
       ) : null}
 
@@ -286,6 +309,14 @@ export function ReadyPackPreviewScreen() {
                 }}
               >
                 Update pack
+              </PrimaryButton>
+            ) : null}
+            {pack.kind === "content" ? (
+              <PrimaryButton
+                onPress={() => navigation.navigate("PackPlanner", { packId: pack.id })}
+                accessibilityLabel={`Open ${pack.title} planner`}
+              >
+                Open planner
               </PrimaryButton>
             ) : null}
             <PrimaryButton disabled={busy} onPress={handleUninstall} accessibilityLabel={`Uninstall ${pack.title}`}>

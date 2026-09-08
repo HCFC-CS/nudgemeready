@@ -1,40 +1,44 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { BrandMark, HeartDivider } from "../components/BrandMark";
-import { SoftCard, PrimaryButton, SecondaryButton } from "../components/NudgeComponents";
+import { HorizonEntryCard } from "../components/HorizonEntryCard";
+import { SoftCard, PageHeader, PrimaryButton, SecondaryButton, SectionHeading } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
-import type { IoniconName } from "../components/iconTypes";
 import { useAppSecurity } from "../hooks/useAppSecurity";
 import { useCrew } from "../hooks/useCrew";
+import { useNudgeHorizon } from "../hooks/useNudgeHorizon";
+import { useNudgeItems } from "../hooks/useNudgeItems";
+import { useProfile } from "../hooks/useProfile";
+import { useReadyPacks } from "../hooks/useReadyPacks";
+import { useRewardBank } from "../hooks/useRewardBank";
+import { getPlannerConfig } from "../services/ready4PlannerConfigs";
 import {
   dismissSecurityLockPrompt,
   loadSecurityLockPromptState
 } from "../services/securityLockPrompt";
-import { colors, radii, shadows, spacing } from "../theme/theme";
+import { colors, radii, spacing } from "../theme/theme";
 
-type HomeCard = {
-  title: string;
-  route: string;
-  icon: IoniconName;
-  accent: string;
-};
-
-function TileIcon({ name, accent, withHeart }: { name: IoniconName; accent: string; withHeart?: boolean }) {
-  return (
-    <View style={styles.iconWrap}>
-      <Ionicons name={name} size={28} color={accent} />
-      {withHeart ? <Ionicons name="heart" size={10} color={colors.accent} style={styles.heartAccent} /> : null}
-    </View>
-  );
+function greetingForNow(date = new Date()) {
+  const hour = date.getHours();
+  if (hour < 12) {
+    return "Good morning";
+  }
+  if (hour < 18) {
+    return "Good afternoon";
+  }
+  return "Good evening";
 }
 
 export function HomeScreen() {
   const navigation = useNavigation<any>();
+  const { profile } = useProfile();
   const { isSupporterOnly, activeProfile, enableOwnNudgeWorld } = useCrew();
+  const { items: nudges } = useNudgeItems();
+  const { packs, isInstalled } = useReadyPacks();
+  const { wallet, nextReward, pointsToNext } = useRewardBank();
+  const { homePeek, isReady: horizonReady } = useNudgeHorizon();
   const { settings, isReady: securityReady } = useAppSecurity();
   const [showLockTip, setShowLockTip] = useState(false);
 
@@ -57,50 +61,52 @@ export function HomeScreen() {
     };
   }, [securityReady, settings.lockEnabled, settings.hasCredential]);
 
-  const cards: HomeCard[] = isSupporterOnly
-    ? [
-        {
-          title: activeProfile.isSelf ? "Crews I Support" : `${activeProfile.name}'s nudges`,
-          route: activeProfile.isSelf ? "CrewsISupport" : "Today",
-          icon: activeProfile.isSelf ? "heart-outline" : "notifications-outline",
-          accent: colors.primary
-        },
-        { title: "Focus", route: "Focus", icon: "disc-outline", accent: colors.primary },
-        { title: "Completed", route: "Done", icon: "checkmark-circle-outline", accent: colors.accent }
-      ]
-    : [
-        { title: "Focus", route: "Focus", icon: "disc-outline", accent: colors.primary },
-        { title: "My Nudges", route: "Today", icon: "notifications-outline", accent: colors.primary },
-        { title: "ReadyPacks", route: "ReadyPacks", icon: "cube-outline", accent: colors.softGold },
-        { title: "My Crew", route: "MyCrew", icon: "people-outline", accent: colors.primary },
-        { title: "Completed", route: "Done", icon: "checkmark-circle-outline", accent: colors.accent }
-      ];
+  const installedPacks = useMemo(
+    () => packs.filter((pack) => pack.kind === "content" && isInstalled(pack.id)).slice(0, 6),
+    [packs, isInstalled]
+  );
+
+  const firstName = (profile.name || activeProfile.name || "").split(" ")[0];
+
+  function openPeekEntry(sourceKind: string, sourceId: string, packId?: string | null) {
+    if (sourceKind === "nudge") {
+      const draft = nudges.find((item) => item.id === sourceId);
+      if (draft) {
+        navigation.navigate("ItemDetails", { draft });
+      }
+      return;
+    }
+    if (sourceKind === "planner") {
+      navigation.navigate("PackPlanner", { packId: packId ?? "ready4-study" });
+      return;
+    }
+    if (sourceKind === "budget") {
+      navigation.navigate("BudgetItem", { itemId: sourceId });
+    }
+  }
+
+  function openInstalledPack(packId: string) {
+    if (getPlannerConfig(packId)) {
+      navigation.navigate("PackPlanner", { packId });
+      return;
+    }
+    navigation.navigate("ReadyPackPreview", { packId });
+  }
 
   return (
     <Screen>
-      <View style={styles.hero}>
-        <BrandMark size={64} />
-        <AppText variant="title" style={styles.brandTitle}>
-          Nudge me Ready
-        </AppText>
-        <AppText variant="muted" style={styles.subtitle}>
-          {isSupporterOnly
-            ? activeProfile.isSelf
-              ? "You’re here to support someone. Open your invite or Crews I Support."
-              : `Supporting ${activeProfile.name}. Their nudges only — until you set up the app for yourself.`
-            : "Your calm starting point."}
-        </AppText>
-        <HeartDivider />
-      </View>
+      <PageHeader title="Home" showBack={false} />
+      <AppText variant="caption" style={styles.greeting}>
+        {greetingForNow()}
+        {firstName ? `, ${firstName}` : ""}
+      </AppText>
 
       {isSupporterOnly ? (
         <SoftCard style={styles.banner}>
-          <AppText variant="heading">Crew access only</AppText>
-          <AppText variant="muted">
-            {activeProfile.isSelf
-              ? "A crew invite gives you access to that person’s nudges only. You don’t get your own world unless you set up Nudge me Ready for yourself."
-              : `This invite gives you access to ${activeProfile.name}’s world. You don’t get your own nudges unless you set up Nudge me Ready for yourself.`}
-          </AppText>
+          <SectionHeading
+            title="Supporting others"
+            info="You can open the people you support. Set up the app for yourself if you want your own nudges."
+          />
           <PrimaryButton
             size="compact"
             onPress={() => {
@@ -115,11 +121,10 @@ export function HomeScreen() {
 
       {!isSupporterOnly && showLockTip ? (
         <SoftCard style={styles.banner}>
-          <AppText variant="heading">Protect your nudges</AppText>
-          <AppText variant="muted">
-            Keep a passcode on this phone, turn on app lock, and store your recovery code offline — that
-            covers a lost phone and casual snooping.
-          </AppText>
+          <SectionHeading
+            title="Protect your nudges"
+            info="Keep a passcode on this phone and turn on app lock when you are ready."
+          />
           <PrimaryButton size="compact" onPress={() => navigation.navigate("Settings")}>
             Turn on app lock
           </PrimaryButton>
@@ -134,94 +139,132 @@ export function HomeScreen() {
         </SoftCard>
       ) : null}
 
-      <View style={styles.grid}>
-        {cards.map((item) => (
-          <Pressable
-            key={item.title}
-            accessibilityRole="button"
-            accessibilityLabel={item.title}
-            onPress={() => navigation.navigate(item.route)}
-            style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
-          >
-            <TileIcon
-              name={item.icon}
-              accent={item.accent}
-              withHeart={item.title.includes("Nudge") || item.title.includes("Crew")}
-            />
-            <AppText variant="heading" style={styles.tileTitle}>
-              {item.title}
-            </AppText>
-          </Pressable>
-        ))}
-      </View>
+      <SoftCard style={styles.card}>
+        <AppText variant="heading">What's coming up</AppText>
+        {horizonReady ? (
+          <>
+            <AppText variant="muted">{homePeek.todaySummary}</AppText>
+            {homePeek.next ? (
+              <HorizonEntryCard
+                entry={homePeek.next}
+                compact
+                showLeaveBy
+                onPress={() =>
+                  openPeekEntry(homePeek.next!.sourceKind, homePeek.next!.sourceId, homePeek.next!.packId)
+                }
+              />
+            ) : null}
+          </>
+        ) : (
+          <AppText variant="muted">Loading…</AppText>
+        )}
+        <PrimaryButton onPress={() => navigation.navigate("ComingUp")}>See what's coming up</PrimaryButton>
+      </SoftCard>
 
-      {!isSupporterOnly ? (
-        <SoftCard style={styles.banner}>
-          <AppText variant="heading">Need a ready-made start?</AppText>
-          <AppText variant="muted">
-            Ready 4 packs add calm routines and checklists you can edit — home, wellbeing, travel, study and
-            more.
+      {nextReward ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open Reward Bank"
+          onPress={() => navigation.navigate("RewardBank")}
+          style={({ pressed }) => [styles.rewardTap, pressed && styles.pressed]}
+        >
+          <AppText variant="small" style={styles.rewardLine}>
+            {pointsToNext > 0
+              ? `${wallet.availablePoints} pts · ${pointsToNext} to “${nextReward.title}”`
+              : `${wallet.availablePoints} pts · “${nextReward.title}” is ready to claim`}
           </AppText>
-          <PrimaryButton size="compact" onPress={() => navigation.navigate("ReadyPacks")}>
-            Browse ReadyPacks
-          </PrimaryButton>
-        </SoftCard>
+        </Pressable>
       ) : null}
+
+      <SoftCard style={styles.card}>
+        <View style={styles.headerRow}>
+          <AppText variant="heading">My Ready4 packs</AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Browse ReadyPacks"
+            onPress={() => navigation.navigate("ReadyPacks")}
+            hitSlop={8}
+          >
+            <AppText style={styles.link}>{installedPacks.length ? "Browse" : "Explore"}</AppText>
+          </Pressable>
+        </View>
+        {installedPacks.length ? (
+          <View style={styles.packRow}>
+            {installedPacks.map((pack) => (
+              <Pressable
+                key={pack.id}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  getPlannerConfig(pack.id) ? `Open ${pack.title} planner` : `Open ${pack.title}`
+                }
+                onPress={() => openInstalledPack(pack.id)}
+                style={({ pressed }) => [styles.packChip, pressed && styles.pressed]}
+              >
+                <AppText variant="caption" style={styles.packLabel} numberOfLines={1}>
+                  {pack.title}
+                </AppText>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <AppText variant="muted">Install a Ready4 pack when you want a specialist planner.</AppText>
+        )}
+      </SoftCard>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    alignItems: "center",
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-    gap: spacing.xs
-  },
-  brandTitle: {
-    textAlign: "center",
-    fontFamily: "Georgia",
-    fontWeight: "600"
-  },
-  subtitle: {
-    textAlign: "center"
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    justifyContent: "space-between"
-  },
-  tile: {
-    width: "48%",
-    minHeight: 112,
-    borderRadius: radii.lg,
-    backgroundColor: colors.card,
-    padding: spacing.md,
-    gap: spacing.sm,
-    ...shadows.sm
-  },
-  tilePressed: {
-    opacity: 0.9
-  },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  heartAccent: {
-    position: "absolute",
-    right: 4,
-    bottom: 4
-  },
-  tileTitle: {
-    fontSize: 16
+  greeting: {
+    color: colors.accent,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+    marginBottom: spacing.sm
   },
   banner: {
-    marginTop: spacing.md,
-    gap: spacing.sm
+    gap: spacing.sm,
+    marginBottom: spacing.sm
+  },
+  card: {
+    gap: spacing.sm,
+    marginBottom: spacing.sm
+  },
+  rewardTap: {
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.xs
+  },
+  rewardLine: {
+    color: colors.primaryDark,
+    fontWeight: "600"
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  link: {
+    color: colors.link,
+    fontWeight: "700"
+  },
+  packRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  packChip: {
+    maxWidth: "48%",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.borderLight
+  },
+  packLabel: {
+    color: colors.primaryDark,
+    fontWeight: "600"
+  },
+  pressed: {
+    opacity: 0.88
   }
 });

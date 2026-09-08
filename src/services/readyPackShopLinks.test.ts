@@ -21,7 +21,10 @@ describe("readyPackShopLinks", () => {
         "ready4-emergencies",
         "ready4-study",
         "ready4-family",
-        "ready4-independence"
+        "ready4-independence",
+        "ready4-baby",
+        "ready4-moving",
+        "ready4-wedding"
       ])
     );
     expect(packIds).not.toContain("ready4-travel");

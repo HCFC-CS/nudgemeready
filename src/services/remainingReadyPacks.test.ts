@@ -26,8 +26,8 @@ function assertCoachAvoidsMedicalActions(prompt: string): void {
 }
 
 describe("Ready 4 Edition 1 catalogue", () => {
-  it("has exactly 15 content packs", () => {
-    expect(ready4ContentPacks).toHaveLength(15);
+  it("has 18 content packs (Edition 1 + Baby, Moving, Wedding)", () => {
+    expect(ready4ContentPacks).toHaveLength(18);
   });
 
   it("includes Home and Wellbeing as the two free packs", () => {
@@ -64,6 +64,7 @@ describe("Ready 4 Edition 1 catalogue", () => {
 describe("Ready 4 health disclaimers", () => {
   it("marks medication and emergencies with organisational health note", () => {
     expect(healthPacks.map((pack) => pack.id).sort()).toEqual([
+      "ready4-baby",
       "ready4-emergencies",
       "ready4-medication"
     ]);
@@ -86,10 +87,39 @@ describe("Ready 4 pack modules", () => {
     return pack.content.templates.map((template) => template.id);
   }
 
-  it("Ready 4 Study covers assignment and exam flow", () => {
+  it("Ready 4 Study covers assignment, exam, budget and overwhelm flow", () => {
     const pack = ready4ContentPacks.find((row) => row.id === "ready4-study")!;
     expect(templateIds(pack)).toEqual(
-      expect.arrayContaining(["assignment-planner", "exam-countdown", "revision-planner"])
+      expect.arrayContaining([
+        "assignment-planner",
+        "exam-countdown",
+        "revision-planner",
+        "weekly-budget",
+        "overwhelm",
+        "what-helps"
+      ])
+    );
+  });
+
+  it("Ready 4 Moving covers search-to-settle stages", () => {
+    const pack = ready4ContentPacks.find((row) => row.id === "ready4-moving")!;
+    expect(templateIds(pack)).toEqual(
+      expect.arrayContaining([
+        "what-helps",
+        "move-budget",
+        "house-search",
+        "viewing-prep",
+        "offer-progress",
+        "move-suppliers",
+        "settle-in"
+      ])
+    );
+  });
+
+  it("Ready 4 Wedding covers legal, venue and after-wedding stages", () => {
+    const pack = ready4ContentPacks.find((row) => row.id === "ready4-wedding")!;
+    expect(templateIds(pack)).toEqual(
+      expect.arrayContaining(["legal-docs", "venue-shortlist", "outfits", "after-wedding", "what-helps"])
     );
   });
 

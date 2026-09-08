@@ -20,22 +20,33 @@ export function PackProvenanceBanner({
 
   const pack = getPack(sourcePackId);
   const title = pack?.title ?? "ReadyPack";
+  const canOpen = Boolean(pack);
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`From ${title}. Open ReadyPack preview.`}
-      onPress={() => navigation.navigate("ReadyPackPreview", { packId: sourcePackId })}
+      accessibilityLabel={
+        canOpen ? `From ${title}. Open ReadyPack preview.` : `From ${title}. Pack is no longer in the catalogue.`
+      }
+      disabled={!canOpen}
+      onPress={() => {
+        if (canOpen) {
+          navigation.navigate("ReadyPackPreview", { packId: sourcePackId });
+        }
+      }}
       style={styles.wrap}
     >
       <View style={styles.chip}>
         <AppText variant="caption" style={styles.label}>
           From {title}
           {userEdited ? " · edited by you" : ""}
+          {!canOpen ? " · no longer in catalogue" : ""}
         </AppText>
-        <AppText variant="caption" style={styles.link}>
-          View pack
-        </AppText>
+        {canOpen ? (
+          <AppText variant="caption" style={styles.link}>
+            View pack
+          </AppText>
+        ) : null}
       </View>
     </Pressable>
   );

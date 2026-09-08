@@ -246,7 +246,7 @@ export function getAdhdDistractionSections(item: {
   title: string;
   notes?: string;
 }): DistractionSection[] {
-  if (item.sourcePackId !== "adhd-starter") {
+  if (item.sourcePackId !== "adhd-starter" && item.sourcePackId !== "ready4-wellbeing") {
     return [];
   }
 

@@ -15,7 +15,9 @@ export const brand = {
   taupeLight: "#C9C2B8",
   ivoryElevated: "#E6E0D8",
   softRose: "#A65D5D",
-  softRoseMuted: "#E8D4D4"
+  softRoseMuted: "#E8D4D4",
+  calmGreen: "#3F7A5A",
+  calmGreenSoft: "#D7E8DE"
 } as const;
 
 export const colors = {
@@ -30,7 +32,7 @@ export const colors = {
   surface: brand.warmIvory,
   surfaceMuted: brand.taupeLight,
   text: brand.midnightBlue,
-  mutedText: brand.midnightBlueMuted,
+  mutedText: brand.charcoal,
   accent: brand.softGold,
   primary: brand.babyBlue,
   primaryDark: brand.midnightBlue,
@@ -45,6 +47,8 @@ export const colors = {
   progress: brand.softGold,
   danger: brand.softRose,
   dangerSoft: brand.softRoseMuted,
+  done: brand.calmGreen,
+  doneSoft: brand.calmGreenSoft,
   ivoryElevated: brand.ivoryElevated,
   fab: brand.babyBlue,
   link: brand.softGold,
@@ -116,11 +120,11 @@ export const radii = {
 
 export const typography = {
   title: 28,
-  heading: 17,
+  heading: 18,
   section: 14,
   body: 16,
-  small: 13,
-  caption: 11,
+  small: 14,
+  caption: 15,
   timer: 56,
   fontFamily: {
     regular: "System",

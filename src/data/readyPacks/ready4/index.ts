@@ -13,8 +13,12 @@ export { ready4PetsPack } from "./pets";
 export { ready4DigitalLifePack } from "./digitalLife";
 export { ready4LifeAdminPack } from "./lifeAdmin";
 export { ready4EmergenciesPack } from "./emergencies";
+export { ready4BabyPack } from "./baby";
+export { ready4MovingPack } from "./moving";
+export { ready4WeddingPack } from "./wedding";
 
 import { ready4AppointmentsPack } from "./appointments";
+import { ready4BabyPack } from "./baby";
 import { ready4DigitalLifePack } from "./digitalLife";
 import { ready4EmergenciesPack } from "./emergencies";
 import { ready4FamilyPack } from "./family";
@@ -23,15 +27,17 @@ import { ready4HomePack } from "./home";
 import { ready4IndependencePack } from "./independence";
 import { ready4LifeAdminPack } from "./lifeAdmin";
 import { ready4MedicationPack } from "./medication";
+import { ready4MovingPack } from "./moving";
 import { ready4PetsPack } from "./pets";
 import { ready4ShoppingPack } from "./shopping";
 import { ready4StudyPack } from "./study";
 import { ready4TravelPack } from "./travel";
+import { ready4WeddingPack } from "./wedding";
 import { ready4WellbeingPack } from "./wellbeing";
 import { ready4WorkPack } from "./work";
 import type { ReadyPack } from "../../../types/readyPacks";
 
-/** Edition 1 Ready 4 content catalogue (order matches commercial Volume 2). */
+/** Ready 4 content catalogue — Edition 1 plus Baby / Moving / Wedding from user flows. */
 export const ready4ContentPacks: ReadyPack[] = [
   ready4StudyPack,
   ready4HomePack,
@@ -47,5 +53,8 @@ export const ready4ContentPacks: ReadyPack[] = [
   ready4PetsPack,
   ready4DigitalLifePack,
   ready4LifeAdminPack,
-  ready4EmergenciesPack
+  ready4EmergenciesPack,
+  ready4BabyPack,
+  ready4MovingPack,
+  ready4WeddingPack
 ];

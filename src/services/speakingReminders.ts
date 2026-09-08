@@ -98,8 +98,8 @@ export async function syncSpeakingReminderNotifications(item: NudgeItem): Promis
     ids.push(
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Still waiting",
-          body: `${item.title} has not been marked done yet.`,
+          title: "Gentle check-in",
+          body: `${item.title} is still open if you need it — no pressure.`,
           data: {
             itemId: item.id,
             role: "nudger",

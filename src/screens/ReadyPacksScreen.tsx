@@ -3,7 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import { StyleSheet, View } from "react-native";
 
 import { FilterScroll, MenuTile } from "../components/ModernUI";
-import { PageHeader, SoftCard } from "../components/NudgeComponents";
+import { PageHeader, SecondaryButton, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useReadyPacks } from "../hooks/useReadyPacks";
@@ -12,6 +12,7 @@ import {
   isCatalogueKindVisible,
   READY_PACK_COSMETICS_ENABLED
 } from "../services/readyPackFeatureFlags";
+import { getPlannerConfig } from "../services/ready4PlannerConfigs";
 import { colors, spacing } from "../theme/theme";
 import type { IoniconName } from "../components/iconTypes";
 import type { ReadyPackKind } from "../types/readyPacks";
@@ -57,8 +58,8 @@ export function ReadyPacksScreen() {
         title="ReadyPacks"
         subtitle={
           READY_PACK_STORE_BILLING_ENABLED
-            ? "Ready 4 life systems — preview before you install."
-            : "Ready 4 life systems. Included in this version — App Store purchases are not enabled yet."
+            ? "Ready-made reminders and checklists you can edit. Pick a topic and we'll add them for you."
+            : "Ready-made reminders and checklists you can edit. All included — choose a topic to get started."
         }
       />
       {filters.length > 1 ? (
@@ -75,6 +76,15 @@ export function ReadyPacksScreen() {
             reminders and checklists.
           </AppText>
         </SoftCard>
+      ) : null}
+      {packs.some((pack) => isInstalled(pack.id) && getPlannerConfig(pack.id)) ? (
+        <SecondaryButton
+          size="compact"
+          onPress={() => navigation.navigate("PlannerHub")}
+          style={styles.hubBtn}
+        >
+          Combined Ready4 today & this week
+        </SecondaryButton>
       ) : null}
       {!isReady ? (
         <SoftCard>
@@ -112,6 +122,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm
   },
   note: {
+    marginTop: spacing.sm
+  },
+  hubBtn: {
     marginTop: spacing.sm
   }
 });

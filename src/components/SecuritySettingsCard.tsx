@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 
 import { useAppSecurity } from "../hooks/useAppSecurity";
@@ -8,7 +8,7 @@ import { resetSecurityLockPrompt } from "../services/securityLockPrompt";
 import { colors, radii, spacing } from "../theme/theme";
 import { Button } from "./Button";
 import { Field, ToggleRow } from "./FormControls";
-import { SoftCard } from "./NudgeComponents";
+import { SectionHeading, SoftCard } from "./NudgeComponents";
 import { RecoveryCodeSaveCard } from "./RecoveryCodeSaveCard";
 import { AppText } from "./Text";
 
@@ -19,7 +19,6 @@ export function SecuritySettingsCard() {
     biometricsAvailable,
     hasFaceId,
     turnOnLock,
-    turnOffLock,
     updateBiometrics,
     updateLockOnBackground,
     lockNow,
@@ -30,7 +29,6 @@ export function SecuritySettingsCard() {
   const [credentialType, setCredentialType] = useState<CredentialType>("password");
   const [credential, setCredential] = useState("");
   const [confirmCredential, setConfirmCredential] = useState("");
-  const [disableCredential, setDisableCredential] = useState("");
   const [recoveryCredential, setRecoveryCredential] = useState("");
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [emailCredential, setEmailCredential] = useState("");
@@ -93,34 +91,6 @@ export function SecuritySettingsCard() {
     }
   }
 
-  async function handleDisable() {
-    setError("");
-    setMessage("");
-    Alert.alert(
-      "Turn off app lock?",
-      "Anyone with this phone will be able to open your nudges without Face ID, PIN, or password.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Turn off",
-          style: "destructive",
-          onPress: () => {
-            void (async () => {
-              try {
-                await turnOffLock(disableCredential);
-                setDisableCredential("");
-                setShownRecoveryCode("");
-                setMessage("App lock turned off.");
-              } catch (caught) {
-                setError(caught instanceof Error ? caught.message : "Could not turn off app lock.");
-              }
-            })();
-          }
-        }
-      ]
-    );
-  }
-
   async function handleBiometrics(value: boolean) {
     setError("");
     try {
@@ -174,11 +144,10 @@ export function SecuritySettingsCard() {
 
   return (
     <SoftCard>
-      <AppText variant="heading">Security</AppText>
-      <AppText variant="muted">
-        Keep a passcode on this phone, turn on app lock, and store your recovery code offline. Your notes,
-        appointments, crew details, and settings are encrypted on device.
-      </AppText>
+      <SectionHeading
+        title="Security"
+        info="Keep a passcode on this phone, turn on app lock, and store your recovery code offline. Your notes, appointments, crew details, and settings are encrypted on device."
+      />
 
       {devicePasscodeOn === false ? (
         <AppText variant="caption" style={styles.warning}>
@@ -252,7 +221,7 @@ export function SecuritySettingsCard() {
             voiceEnabled={false}
           />
           <AppText variant="caption" style={styles.hint}>
-            Used to email yourself a one-time reset link if you forget your sign-in.
+            Used for automated reset emails from support@nudgemeready.app if you forget your sign-in.
           </AppText>
 
           {biometricsAvailable ? (
@@ -371,28 +340,10 @@ export function SecuritySettingsCard() {
             Create new recovery code
           </Button>
 
-          <Field
-            label={`${activeLabel === "password" ? "Password" : "PIN"} to turn off`}
-            value={disableCredential}
-            onChangeText={(value) =>
-              setDisableCredential(
-                settings.credentialType === "pin"
-                  ? value.replace(/\D/g, "").slice(0, 8)
-                  : value.slice(0, 64)
-              )
-            }
-            placeholder={settings.credentialType === "password" ? "Current password" : "Current PIN"}
-            keyboardType={settings.credentialType === "password" ? "default" : "number-pad"}
-            voiceEnabled={false}
-            secureTextEntry
-          />
-          <Button
-            tone="warning"
-            onPress={() => void handleDisable()}
-            disabled={disableCredential.length < (settings.credentialType === "password" ? 8 : 4)}
-          >
-            Turn off app lock
-          </Button>
+          <AppText variant="caption" style={styles.hint}>
+            A password or PIN is required to use the app. You can change it after proving your current
+            sign-in via Forgot password on the lock screen, or recreate your recovery code above.
+          </AppText>
         </View>
       )}
 

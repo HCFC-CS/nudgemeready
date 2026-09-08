@@ -1,12 +1,7 @@
 import { useMemo } from "react";
-import { Linking, StyleSheet, View } from "react-native";
 
-import { withAffiliate } from "../services/affiliateLinks";
 import { getCardLinksForOccasion, getGiftLinksForOccasion } from "../services/giftLinks";
-import { spacing } from "../theme/theme";
-import { AffiliateDisclosure } from "./AffiliateDisclosure";
-import { SecondaryButton } from "./NudgeComponents";
-import { AppText } from "./Text";
+import { SubtleOutboundLinks } from "./SubtleOutboundLinks";
 
 export function GiftIdeaLinks({
   title,
@@ -27,25 +22,16 @@ export function GiftIdeaLinks({
   }
 
   return (
-    <View style={styles.container}>
-      <AppText variant="small">{variant === "card" ? "Find a card" : "Shop for gifts"}</AppText>
-      {links.map((link) => (
-        <SecondaryButton
-          key={link.id}
-          onPress={() => {
-            void Linking.openURL(withAffiliate(link.url));
-          }}
-        >
-          {link.label}
-        </SecondaryButton>
-      ))}
-      <AffiliateDisclosure compact />
-    </View>
+    <SubtleOutboundLinks
+      sections={[
+        {
+          id: variant,
+          title: variant === "card" ? "Cards" : "Gifts",
+          links
+        }
+      ]}
+      summaryLabel={variant === "card" ? "Card ideas" : "Gift ideas"}
+      previewCount={3}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.xs
-  }
-});

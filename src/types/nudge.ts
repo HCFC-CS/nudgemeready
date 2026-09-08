@@ -136,8 +136,14 @@ export interface NudgeItem {
   sourcePackId?: string;
   /** Template id within the ReadyPack. */
   sourceTemplateId?: string;
+  /** Planner event this list date is anchored to (e.g. exam). */
+  anchorPlannerItemId?: string;
+  /** Days before the anchored planner event for this list’s due date. */
+  dueDaysBeforePlannerEvent?: number;
   /** True once the user has customised a pack-sourced item. */
   userEdited?: boolean;
+  /** Core “What do you want to do?” intent — never requires a Ready4 pack. */
+  nudgeIntent?: import("./nudgeIntents").NudgeIntent;
 }
 
 export type NudgeItemInput = Partial<
