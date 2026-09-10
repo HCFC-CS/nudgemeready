@@ -46,9 +46,18 @@ Maps the [Master Ready4 Platform Spec](./Ready4_Master_Platform_Spec.md) to the 
 | Money / Rewards / Crew / Packs | Menu |
 | Everything / Calendar / Documents | Menu hubs (browse engines already on items) |
 
-## Phase 2+
+## Master-prompt phases (NMR audit)
 
-See [NMR master spec audit](./NMR_Master_Spec_Audit.md). Next: Why is this hard / missed-item adaptation → affiliate categories / Saved Things → optional wellbeing as nudges (never a diet app).
+See [NMR master spec audit](./NMR_Master_Spec_Audit.md) for the vs-spec tables.
+
+| Phase | Theme | Status |
+| --- | --- | --- |
+| 1 | Shared motivation (glance, Keep saving, find-it labels) | **Shipped** |
+| 2 | Adapt the task (Why hard, stalled-item card, Make it smaller, weekly review) | **Shipped** |
+| 3 | Find-it depth (pack affiliate ranking, Saved Things, compare 3) | **Shipped** |
+| 4 | Optional wellbeing as core nudges (not a diet app) | **Shipped** |
+
+Still out of scope unless asked: dream-list images, 5/10/20 points, calorie/barcode trackers, 10-tab bar, cloud sync.
 
 ## File anchors
 
