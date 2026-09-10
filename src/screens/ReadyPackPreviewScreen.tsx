@@ -5,6 +5,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { PageHeader, PrimaryButton, SectionHeading, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
+import { READY_4_LABEL, READY_4_PACK_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useReadyPacks } from "../hooks/useReadyPacks";
 import {
   getPackAccessLabel,
@@ -30,7 +31,7 @@ export function ReadyPackPreviewScreen() {
   if (!preview) {
     return (
       <Screen>
-        <PageHeader title="ReadyPack" subtitle="This pack could not be found." />
+        <PageHeader title={READY_4_PACK_LABEL} subtitle="This pack could not be found." />
         <PrimaryButton onPress={() => navigation.goBack()}>Back</PrimaryButton>
       </Screen>
     );
@@ -62,13 +63,13 @@ export function ReadyPackPreviewScreen() {
       setNotice(
         pack.kind === "content"
           ? `Installed ${result.createdCount} editable items. You can change or remove them anytime.`
-          : "Pack applied. You can switch again from ReadyPacks anytime."
+          : `Pack applied. You can switch again from ${READY_PACKS_SHOP_LABEL} anytime.`
       );
       if (pack.kind === "content" && result.createdCount > 0) {
-        // Soft handoff — user can open Ready 4 list without hunting.
+        // Soft handoff — user can open Ready4 list without hunting.
       }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Could not install this ReadyPack.");
+      setNotice(error instanceof Error ? error.message : `Could not install this ${READY_4_PACK_LABEL}.`);
     } finally {
       setBusy(false);
     }
@@ -95,7 +96,7 @@ export function ReadyPackPreviewScreen() {
 
   function handleUninstall() {
     Alert.alert(
-      "Remove ReadyPack?",
+      `Remove ${READY_4_PACK_LABEL}?`,
       "Unrelated reminders stay. You can keep items you have edited, or remove everything from this pack.",
       [
         { text: "Cancel", style: "cancel" },
@@ -261,7 +262,7 @@ export function ReadyPackPreviewScreen() {
                   })
                 }
               >
-                View in Nudges → Ready4
+                View in Nudges → {READY_4_LABEL}
               </PrimaryButton>
             </>
           ) : null}

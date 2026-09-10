@@ -3,7 +3,7 @@
 **Product:** Nudge Me Ready  
 **Platform:** iOS (primary), Expo / React Native  
 **Version focus:** 0.2.0 TestFlight  
-**Edition alignment:** Catalogue Edition 1 (Ready 4 content packs)  
+**Edition alignment:** Catalogue Edition 1 (Ready4 content packs)  
 **Last updated:** 2026-08-06
 
 ---
@@ -12,7 +12,7 @@
 
 Nudge Me Ready is a supportive reminder, routine and shared-care companion. It helps people prepare, remember and complete everyday life tasks without shame, guilt or medical diagnosis.
 
-It is more than a timer: it combines **smart nudges**, **ReadyPack life systems**, **Crew support**, optional **voice**, **calendar/contacts**, and **on-device privacy**.
+It is more than a timer: it combines **smart nudges**, **Ready4 life systems**, **Crew support**, optional **voice**, **calendar/contacts**, and **on-device privacy**.
 
 ### Mission (Edition 1)
 
@@ -33,7 +33,7 @@ From `AGENTS.md` and Edition 1 brand book:
 | Never shame | Copy, empty states and missed reminders stay warm and restart-friendly |
 | No guilt language | No streaks-as-punishment; rest is valid |
 | Warm & clear | Plain language; short sentences |
-| All reminders editable | Every installed ReadyPack item can be edited, snoozed, rescheduled or dismissed |
+| All reminders editable | Every installed Ready4 pack item can be edited, snoozed, rescheduled or dismissed |
 | No penalty for pause | Snooze / dismiss / skip without loss of dignity |
 | Privacy | On-device storage; encryption; optional app lock |
 | Accessibility | Large tap targets, VoiceOver-friendly labels, voice capture, calm colour system |
@@ -56,7 +56,7 @@ From `AGENTS.md` and Edition 1 brand book:
 | Students | Study pack, Focus, calendar |
 | Older adults / independence | Independence, Appointments, Emergencies (organisational) |
 | Carers / supporters | Crew invite, supporter-only mode, Ask for Help |
-| Anyone with high cognitive load | Ready 4 systems instead of blank-slate planners |
+| Anyone with high cognitive load | Ready4 systems instead of blank-slate planners |
 
 **Not a medical device.** Does not diagnose, prescribe, change medication, or replace emergency services.
 
@@ -75,7 +75,7 @@ From `AGENTS.md` and Edition 1 brand book:
 | Actions | edit, complete, snooze, reschedule, dismiss, attach documents/photos |
 | Energy / effort | optional low–high / tiny–large fields |
 | Speaking text | optional spoken reminder phrasing |
-| Provenance | ReadyPack installs can show pack origin banner |
+| Provenance | Ready4 pack installs can show pack origin banner |
 
 **Primary surfaces:** Home, Today (My Nudges), Capture (+nudge), Focus, type browse screens, Item Details.
 
@@ -83,19 +83,19 @@ From `AGENTS.md` and Edition 1 brand book:
 
 **Tabs:** Home · Today · Capture (+nudge) · Focus · More  
 
-**Key stacks:** Splash (register / unlock) · ItemDetails · Add / Voice add · Help · Projects / Lists / Chores / Reminders / Routines / Events / Appointments / Notes / Occasions · Done · MyCrew / Invite / Accept / Crews I Support · ReadyPacks / Preview · Profile · Settings · Legal / Terms / Crew terms · DevAdmin (dev only)
+**Key stacks:** Splash (register / unlock) · ItemDetails · Add / Voice add · Help · Projects / Lists / Chores / Reminders / Routines / Events / Appointments / Notes / Occasions · Done · MyCrew / Invite / Accept / Crews I Support · Ready4Packs / Preview · Profile · Settings · Legal / Terms / Crew terms · DevAdmin (dev only)
 
-### 4.3 ReadyPacks — **Shipped (content)**
+### 4.3 Ready4Packs — **Shipped (content)**
 
 | Kind | Status |
 | --- | --- |
-| Content packs (Ready 4 × 15) | Live catalogue |
+| Content packs (Ready4 × 15) | Live catalogue |
 | Theme / voice / character cosmetics | In data; largely gated off for market honesty |
 | AI Coach prompts on packs | Stored on packs; full Coach UI not market-ready |
 | Achievements / badges UI | Gated |
 | Bundles / Premium subscription | Edition 1 commercial; not store-live while RevenueCat keys empty |
 
-See [02 — Ready 4 Catalogue](./02-Ready4_Catalogue_Edition_1.md).
+See [02 — Ready4 Catalogue](./02-Ready4_Catalogue_Edition_1.md).
 
 ### 4.4 Crew (shared support) — **Shipped**
 
@@ -175,11 +175,11 @@ In-app Legal, Terms of Use, Crew supporter terms, privacy / support URLs, health
 | Area | Screens / entry | Job |
 | --- | --- | --- |
 | Onboarding | Splash | Register profile, optional lock, recovery code |
-| Hub | Home | Brand hub, lock tip, ReadyPacks CTA, tiles |
+| Hub | Home | Brand hub, lock tip, Ready4Packs CTA, tiles |
 | Day | Today | Open nudges for self or supported person |
 | Create | Capture, type screens, Item Details | Add and edit any nudge type |
 | Focus | Focus | One task concentration |
-| Packs | ReadyPacks, Preview | Browse, preview templates, install |
+| Packs | Ready4Packs, Preview | Browse, preview templates, install |
 | People | My Crew, Invite, Accept, Crews I Support | Shared care |
 | Self | Profile, Settings | Identity, notifications, security, calendars |
 | Trust | Legal, Terms, Crew terms | Policies and disclosures |
@@ -204,7 +204,7 @@ In-app Legal, Terms of Use, Crew supporter terms, privacy / support URLs, health
 | Edition 1 volume theme | Shipped now? |
 | --- | --- |
 | Volume 1 Brand & platform | Principles reflected in product |
-| Volume 2 Ready 4 packs (15) | **Yes** — content templates live |
+| Volume 2 Ready4 packs (15) | **Yes** — content templates live |
 | Volume 2 Bundles | Spec only — not purchasable yet |
 | Volume 3 Subscriptions / Premium / GTM | Commercial planning; billing keys empty on TestFlight |
 | Volume 4 NHS / Education / Workplace / White-label | Future editions — not in consumer 0.2.0 |
@@ -219,15 +219,15 @@ In-app Legal, Terms of Use, Crew supporter terms, privacy / support URLs, health
 - Guaranteed cloud backup  
 - Cryptographic unlock of all data solely via app lock (lock is access control; data key model is device-local)  
 - Live paid IAP until RevenueCat + App Store products configured  
-- Situation packs (ADHD Starter etc.) as live catalogue — archived, replaced by Ready 4 taxonomy  
+- Situation packs (ADHD Starter etc.) as live catalogue — archived, replaced by Ready4 taxonomy  
 
 ---
 
 ## 9. Success criteria for TestFlight 0.2.0
 
 1. Fresh install → register → optional app lock → recovery code shared offline  
-2. Install free Ready 4 Home & Wellbeing; edit and complete items without shame copy  
-3. Install a paid Ready 4 pack with billing off — no charge, honest copy  
+2. Install free Ready4 Home & Wellbeing; edit and complete items without shame copy  
+3. Install a paid Ready4 pack with billing off — no charge, honest copy  
 4. Create appointment with guest + calendar link  
 5. Invite Crew; supporter accepts with terms understanding  
 6. Lock / unlock / forgot path works  
@@ -240,7 +240,7 @@ In-app Legal, Terms of Use, Crew supporter terms, privacy / support URLs, health
 | Topic | Source of truth |
 | --- | --- |
 | Product principles | `AGENTS.md` |
-| Ready 4 content | `src/data/readyPacks/ready4/*` |
+| Ready4 content | `src/data/readyPacks/ready4/*` |
 | Entitlements / billing honesty | `src/services/readyPackEntitlements.ts`, `iapRevenueCat.ts` |
 | Security UX | `SecuritySettingsCard`, `RecoveryCodeSaveCard`, Splash |
 | Commercial catalogue narrative | Edition 1 volumes under `exports/catalogue-edition-1/` |

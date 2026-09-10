@@ -8,6 +8,7 @@ import { PageHeader } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { compareNudgesByDate, isReady4PackItem } from "../services/nudgeItems";
+import { READY_4_PACKS_LABEL } from "../content/ready4Copy";
 import { spacing } from "../theme/theme";
 import type { NudgeItem, NudgeItemType } from "../types/nudge";
 
@@ -42,7 +43,7 @@ const filters: WorldFilter[] = [
 
 const filterLabels: Record<WorldFilter, string> = {
   All: "All",
-  Ready4: "Ready 4 packs",
+  Ready4: READY_4_PACKS_LABEL,
   Tasks: "Tasks",
   Projects: "Projects",
   Lists: "Lists",

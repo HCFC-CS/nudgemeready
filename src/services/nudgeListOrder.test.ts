@@ -18,7 +18,7 @@ function stub(partial: Partial<NudgeItem> & Pick<NudgeItem, "id" | "title">): Nu
 }
 
 describe("isReady4PackItem", () => {
-  it("detects Ready 4 pack provenance", () => {
+  it("detects Ready4 pack provenance", () => {
     expect(isReady4PackItem(stub({ id: "1", title: "A", sourcePackId: "ready4-study" }))).toBe(true);
     expect(isReady4PackItem(stub({ id: "2", title: "B", sourcePackId: "holiday-planner" }))).toBe(false);
     expect(isReady4PackItem(stub({ id: "3", title: "C" }))).toBe(false);

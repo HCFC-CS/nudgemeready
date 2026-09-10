@@ -1,4 +1,4 @@
-# Product Spec — Ready 4 Family
+# Product Spec — Ready4 Family
 
 | Field | Value |
 | --- | --- |
@@ -45,9 +45,9 @@ TestFlight with empty RevenueCat keys: installs without charge; UI must stay hon
 
 ### Customers also buy (Edition 1)
 
-- Ready 4 Home
-- Ready 4 Shopping
-- Ready 4 Study
+- Ready4 Home
+- Ready4 Shopping
+- Ready4 Study
 
 ---
 
@@ -158,7 +158,7 @@ TestFlight with empty RevenueCat keys: installs without charge; UI must stay hon
 
 ## 8. Acceptance criteria (QA)
 
-- [ ] Pack appears in ReadyPacks catalogue with correct free/paid labelling
+- [ ] Pack appears in Ready4Packs catalogue with correct free/paid labelling
 - [ ] Preview lists all 6 templates
 - [ ] Install creates editable nudges matching template titles
 - [ ] Checklist items appear where specified

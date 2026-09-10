@@ -145,7 +145,7 @@ export function getItemsByType(items: NudgeItem[], type: NudgeItemType): NudgeIt
   );
 }
 
-/** True when the item was installed from an Edition 1 Ready 4 content pack. */
+/** True when the item was installed from an Edition 1 Ready4 content pack. */
 export function isReady4PackItem(item: Pick<NudgeItem, "sourcePackId">): boolean {
   return Boolean(item.sourcePackId?.startsWith("ready4-"));
 }

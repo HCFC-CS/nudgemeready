@@ -19,7 +19,7 @@ export const screenshotTargets: ScreenshotTarget[] = [
   { id: "MyWorld", filename: "07-everything", label: "Everything" },
   { id: "ComingUp", filename: "08-coming-up", label: "What's coming up" },
   { id: "RewardBank", filename: "09-reward-bank", label: "Reward Bank" },
-  { id: "ReadyPacks", filename: "10-ready-packs", label: "ReadyPacks" },
+  { id: "ReadyPacks", filename: "10-ready-packs", label: "Ready4Packs" },
   { id: "Done", filename: "11-done", label: "Completed" },
   { id: "ItemDetails", filename: "12-item-details", label: "Item Details" },
   { id: "Help", filename: "13-ask-for-help", label: "Ask for Help" },

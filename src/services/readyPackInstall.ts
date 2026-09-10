@@ -1,4 +1,5 @@
 import { createItem } from "./nudgeItems";
+import { READY_4_PACK_LABEL } from "../content/ready4Copy";
 import { canInstallPack, type ReadyPackEntitlementLedger } from "./readyPackEntitlements";
 import type { NudgeItem, NudgeListItem } from "../types/nudge";
 import type {
@@ -84,10 +85,10 @@ export function installPack(
 ): InstallResult {
   const entitlement = canInstallPack(pack, ledger);
   if (!entitlement.allowed) {
-    throw new Error(entitlement.reason ?? "Not entitled to install this ReadyPack.");
+    throw new Error(entitlement.reason ?? `Not entitled to install this ${READY_4_PACK_LABEL}.`);
   }
   if (state.installed[pack.id]) {
-    throw new Error("This ReadyPack is already installed. Uninstall it first or use update.");
+    throw new Error(`This ${READY_4_PACK_LABEL} is already installed. Uninstall it first or use update.`);
   }
 
   const templateItemIds: Record<string, string> = {};

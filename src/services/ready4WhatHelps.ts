@@ -1,5 +1,5 @@
 /**
- * Soft triage (`what-helps`) → sibling template ids for Ready 4 packs.
+ * Soft triage (`what-helps`) → sibling template ids for Ready4 packs.
  * Matching is case-insensitive substring against the checklist row title.
  */
 const WHAT_HELPS_ROUTES: Record<string, Array<{ match: RegExp; templateIds: string[] }>> = {

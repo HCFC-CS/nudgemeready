@@ -11,6 +11,7 @@ import { useCrew } from "../hooks/useCrew";
 import { useNudgeHorizon } from "../hooks/useNudgeHorizon";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useProfile } from "../hooks/useProfile";
+import { READY_4_LABEL, READY_4_PACKS_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useReadyPacks } from "../hooks/useReadyPacks";
 import { useRewardBank } from "../hooks/useRewardBank";
 import { getPlannerConfig } from "../services/ready4PlannerConfigs";
@@ -178,10 +179,10 @@ export function HomeScreen() {
 
       <SoftCard style={styles.card}>
         <View style={styles.headerRow}>
-          <AppText variant="heading">My Ready4 packs</AppText>
+          <AppText variant="heading">My {READY_4_PACKS_LABEL}</AppText>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Browse ReadyPacks"
+            accessibilityLabel={`Browse ${READY_PACKS_SHOP_LABEL}`}
             onPress={() => navigation.navigate("ReadyPacks")}
             hitSlop={8}
           >
@@ -207,7 +208,7 @@ export function HomeScreen() {
             ))}
           </View>
         ) : (
-          <AppText variant="muted">Install a Ready4 pack when you want a specialist planner.</AppText>
+          <AppText variant="muted">Install a {READY_4_LABEL} pack when you want a specialist planner.</AppText>
         )}
       </SoftCard>
     </Screen>

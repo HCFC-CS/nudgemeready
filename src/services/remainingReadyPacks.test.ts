@@ -25,7 +25,7 @@ function assertCoachAvoidsMedicalActions(prompt: string): void {
   expect(withoutAvoidance).not.toMatch(/\bdiagnos(?:e|is|ing)\b/i);
 }
 
-describe("Ready 4 Edition 1 catalogue", () => {
+describe("Ready4 Edition 1 catalogue", () => {
   it("has 18 content packs (Edition 1 + Baby, Moving, Wedding)", () => {
     expect(ready4ContentPacks).toHaveLength(18);
   });
@@ -61,7 +61,7 @@ describe("Ready 4 Edition 1 catalogue", () => {
   );
 });
 
-describe("Ready 4 health disclaimers", () => {
+describe("Ready4 health disclaimers", () => {
   it("marks medication and emergencies with organisational health note", () => {
     expect(healthPacks.map((pack) => pack.id).sort()).toEqual([
       "ready4-baby",
@@ -82,12 +82,12 @@ describe("Ready 4 health disclaimers", () => {
   });
 });
 
-describe("Ready 4 pack modules", () => {
+describe("Ready4 pack modules", () => {
   function templateIds(pack: ReadyPack): string[] {
     return pack.content.templates.map((template) => template.id);
   }
 
-  it("Ready 4 Study covers assignment, exam, budget and overwhelm flow", () => {
+  it("Ready4 Study covers assignment, exam, budget and overwhelm flow", () => {
     const pack = ready4ContentPacks.find((row) => row.id === "ready4-study")!;
     expect(templateIds(pack)).toEqual(
       expect.arrayContaining([
@@ -101,7 +101,7 @@ describe("Ready 4 pack modules", () => {
     );
   });
 
-  it("Ready 4 Moving covers search-to-settle stages", () => {
+  it("Ready4 Moving covers search-to-settle stages", () => {
     const pack = ready4ContentPacks.find((row) => row.id === "ready4-moving")!;
     expect(templateIds(pack)).toEqual(
       expect.arrayContaining([
@@ -116,19 +116,19 @@ describe("Ready 4 pack modules", () => {
     );
   });
 
-  it("Ready 4 Wedding covers legal, venue and after-wedding stages", () => {
+  it("Ready4 Wedding covers legal, venue and after-wedding stages", () => {
     const pack = ready4ContentPacks.find((row) => row.id === "ready4-wedding")!;
     expect(templateIds(pack)).toEqual(
       expect.arrayContaining(["legal-docs", "venue-shortlist", "outfits", "after-wedding", "what-helps"])
     );
   });
 
-  it("Ready 4 Work includes Top 3 focus", () => {
+  it("Ready4 Work includes Top 3 focus", () => {
     const pack = ready4ContentPacks.find((row) => row.id === "ready4-work")!;
     expect(templateIds(pack)).toContain("top-3");
   });
 
-  it("Ready 4 Pets includes daily care and vet prep", () => {
+  it("Ready4 Pets includes daily care and vet prep", () => {
     const pack = ready4ContentPacks.find((row) => row.id === "ready4-pets")!;
     expect(templateIds(pack)).toEqual(expect.arrayContaining(["daily-care", "vet-planner"]));
   });

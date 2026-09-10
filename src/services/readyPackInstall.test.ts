@@ -22,26 +22,26 @@ import type { ReadyPackInstallState } from "../types/readyPacks";
 
 const emptyState = (): ReadyPackInstallState => ({ installed: {} });
 
-describe("Ready 4 catalogue", () => {
-  it("lists 15 Ready 4 content packs plus cosmetics", () => {
+describe("Ready4 catalogue", () => {
+  it("lists 15 Ready4 content packs plus cosmetics", () => {
     expect(listContentPacks()).toHaveLength(18);
     expect(listPacks("theme").length).toBeGreaterThanOrEqual(7);
     expect(listPacks("voice").length).toBeGreaterThanOrEqual(5);
     expect(listPacks("character").length).toBeGreaterThanOrEqual(11);
-    expect(getPack("ready4-travel")?.title).toBe("Ready 4 Travel");
-    expect(getPack("ready4-home")?.title).toBe("Ready 4 Home");
+    expect(getPack("ready4-travel")?.title).toBe("Ready4 Travel");
+    expect(getPack("ready4-home")?.title).toBe("Ready4 Home");
     expect(getPack("holiday-planner")).toBeUndefined();
   });
 
-  it("titles every content pack Ready 4 …", () => {
+  it("titles every content pack Ready4 …", () => {
     for (const pack of listContentPacks()) {
-      expect(pack.title.startsWith("Ready 4 ")).toBe(true);
+      expect(pack.title.startsWith("Ready4 ")).toBe(true);
       expect(pack.id.startsWith("ready4-")).toBe(true);
     }
   });
 });
 
-describe("Ready 4 Travel", () => {
+describe("Ready4 Travel", () => {
   it("includes core travel templates", () => {
     const titles = ready4TravelPack.content.templates.map((template) => template.title);
     expect(titles).toContain("Check passport expiry");
@@ -65,7 +65,7 @@ describe("Ready 4 Travel", () => {
   });
 });
 
-describe("Ready 4 Home", () => {
+describe("Ready4 Home", () => {
   it("is free to install", () => {
     expect(isPackFree(ready4HomePack)).toBe(true);
     expect(canInstallPack(ready4HomePack, defaultEntitlementLedger()).allowed).toBe(true);

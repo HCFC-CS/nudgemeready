@@ -1,4 +1,4 @@
-# Product Spec — Ready 4 Travel
+# Product Spec — Ready4 Travel
 
 | Field | Value |
 | --- | --- |
@@ -45,9 +45,9 @@ TestFlight with empty RevenueCat keys: installs without charge; UI must stay hon
 
 ### Customers also buy (Edition 1)
 
-- Ready 4 Appointments
-- Ready 4 Finance
-- Ready 4 Shopping
+- Ready4 Appointments
+- Ready4 Finance
+- Ready4 Shopping
 
 ---
 
@@ -232,7 +232,7 @@ TestFlight with empty RevenueCat keys: installs without charge; UI must stay hon
 
 ## 8. Acceptance criteria (QA)
 
-- [ ] Pack appears in ReadyPacks catalogue with correct free/paid labelling
+- [ ] Pack appears in Ready4Packs catalogue with correct free/paid labelling
 - [ ] Preview lists all 12 templates
 - [ ] Install creates editable nudges matching template titles
 - [ ] Checklist items appear where specified

@@ -6,6 +6,7 @@ import { MenuTile } from "../components/ModernUI";
 import { PageHeader, PrimaryButton, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
+import { READY_4_TODAY_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useCrew } from "../hooks/useCrew";
 import { useReadyPacks } from "../hooks/useReadyPacks";
 import { getPlannerConfig } from "../services/ready4PlannerConfigs";
@@ -57,7 +58,7 @@ export function MoreScreen() {
 
     if (hasPlannerPack) {
       base.push({
-        label: "Ready4 today & this week",
+        label: READY_4_TODAY_LABEL,
         subtitle: "Combined view across your pack planners",
         route: "PlannerHub",
         icon: "calendar-outline",
@@ -74,7 +75,7 @@ export function MoreScreen() {
         accent: colors.softGold
       },
       {
-        label: "ReadyPacks",
+        label: READY_PACKS_SHOP_LABEL,
         subtitle: "Specialist planners and checklists",
         route: "ReadyPacks",
         icon: "cube-outline",

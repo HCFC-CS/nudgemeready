@@ -1,4 +1,4 @@
-# Product Spec — Ready 4 Medication
+# Product Spec — Ready4 Medication
 
 | Field | Value |
 | --- | --- |
@@ -44,9 +44,9 @@ TestFlight with empty RevenueCat keys: installs without charge; UI must stay hon
 
 ### Customers also buy (Edition 1)
 
-- Ready 4 Appointments
-- Ready 4 Wellbeing
-- Ready 4 Emergencies
+- Ready4 Appointments
+- Ready4 Wellbeing
+- Ready4 Emergencies
 
 ---
 
@@ -151,7 +151,7 @@ TestFlight with empty RevenueCat keys: installs without charge; UI must stay hon
 
 ## 8. Acceptance criteria (QA)
 
-- [ ] Pack appears in ReadyPacks catalogue with correct free/paid labelling
+- [ ] Pack appears in Ready4Packs catalogue with correct free/paid labelling
 - [ ] Preview lists all 6 templates
 - [ ] Install creates editable nudges matching template titles
 - [ ] Checklist items appear where specified

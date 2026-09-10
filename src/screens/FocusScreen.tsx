@@ -128,7 +128,7 @@ export function FocusScreen() {
         ) : (
           <>
             <AppText variant="heading">Nothing open right now</AppText>
-            <AppText variant="muted">Add a nudge, or browse Ready 4 packs for a gentle start.</AppText>
+            <AppText variant="muted">Add a nudge, or browse Ready4 packs for a gentle start.</AppText>
             <SecondaryButton size="compact" onPress={() => navigation.navigate("Capture")}>
               Add a nudge
             </SecondaryButton>

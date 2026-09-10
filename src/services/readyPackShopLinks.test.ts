@@ -10,7 +10,7 @@ import {
 describe("readyPackShopLinks", () => {
   const packIds = listPacksWithShopLinks();
 
-  it("covers Ready 4 packs that offer shop links", () => {
+  it("covers Ready4 packs that offer shop links", () => {
     expect(packIds).toEqual(
       expect.arrayContaining([
         "ready4-home",

@@ -1,4 +1,4 @@
-# Product Spec — Ready 4 Home
+# Product Spec — Ready4 Home
 
 | Field | Value |
 | --- | --- |
@@ -43,9 +43,9 @@ Reduces mental load by providing editable, shame-free structure for this life ar
 
 ### Customers also buy (Edition 1)
 
-- Ready 4 Shopping
-- Ready 4 Finance
-- Ready 4 Family
+- Ready4 Shopping
+- Ready4 Finance
+- Ready4 Family
 
 ---
 
@@ -162,7 +162,7 @@ Reduces mental load by providing editable, shame-free structure for this life ar
 
 ## 8. Acceptance criteria (QA)
 
-- [ ] Pack appears in ReadyPacks catalogue with correct free/paid labelling
+- [ ] Pack appears in Ready4Packs catalogue with correct free/paid labelling
 - [ ] Preview lists all 6 templates
 - [ ] Install creates editable nudges matching template titles
 - [ ] Checklist items appear where specified

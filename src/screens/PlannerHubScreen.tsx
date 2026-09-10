@@ -5,6 +5,7 @@ import { PlannerItemCard } from "../components/PlannerItemCard";
 import { PageHeader, PrimaryButton, SecondaryButton, SectionHeading, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
+import { READY_4_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useReady4Planner } from "../hooks/useReady4Planner";
 import { groupItemsByDay } from "../services/ready4PlannerEngine";
 import { colors, spacing } from "../theme/theme";
@@ -55,7 +56,7 @@ export function PlannerHubScreen() {
     <Screen showTabMenu={false}>
       <PageHeader
         title="Today & this week"
-        subtitle="What you actually need to do — across your Ready4 planners."
+        subtitle={`What you actually need to do — across your ${READY_4_LABEL} planners.`}
         showBack
         helpText="Pack planners hold the detail. This view pulls today's and this week's items together. Nothing here shames you for moving things."
       />
@@ -65,10 +66,10 @@ export function PlannerHubScreen() {
       {installedConfigs.length === 0 ? (
         <SoftCard style={styles.card}>
           <SectionHeading
-            title="No Ready4 planners yet"
-            info="Install a Ready4 pack to open its specialist planner. You can still browse ReadyPacks anytime."
+            title={`No ${READY_4_LABEL} planners yet`}
+            info={`Install a ${READY_4_LABEL} pack to open its specialist planner. You can still browse ${READY_PACKS_SHOP_LABEL} anytime.`}
           />
-          <SecondaryButton onPress={() => navigation.navigate("ReadyPacks")}>Browse ReadyPacks</SecondaryButton>
+          <SecondaryButton onPress={() => navigation.navigate("ReadyPacks")}>Browse {READY_PACKS_SHOP_LABEL}</SecondaryButton>
         </SoftCard>
       ) : (
         <SoftCard style={styles.card}>

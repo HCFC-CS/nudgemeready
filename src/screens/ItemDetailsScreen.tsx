@@ -40,6 +40,7 @@ import { AppText } from "../components/Text";
 import { VoiceFieldActions } from "../components/VoiceFieldActions";
 import type { MockContact } from "../data/mockData";
 import { ItemEditProvider, useItemEdit } from "../hooks/useItemEdit";
+import { READY_4_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useCrew } from "../hooks/useCrew";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useReady4Planner } from "../hooks/useReady4Planner";
@@ -554,12 +555,12 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
       return;
     }
     if (!resolved.itemId) {
-      setNotice("That tool is not installed yet. Re-open ReadyPacks and update this pack if needed.");
+      setNotice(`That tool is not installed yet. Re-open ${READY_PACKS_SHOP_LABEL} and update this pack if needed.`);
       return;
     }
     const target = items.find((item) => item.id === resolved.itemId);
     if (!target) {
-      setNotice("Could not find that tool just now. Try Nudges → Ready4, or open ReadyPacks from Menu.");
+      setNotice(`Could not find that tool just now. Try Nudges → ${READY_4_LABEL}, or open ${READY_PACKS_SHOP_LABEL} from Menu.`);
       return;
     }
     navigation.navigate("ItemDetails", { draft: target });

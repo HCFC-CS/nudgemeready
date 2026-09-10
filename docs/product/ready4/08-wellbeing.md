@@ -1,4 +1,4 @@
-# Product Spec — Ready 4 Wellbeing
+# Product Spec — Ready4 Wellbeing
 
 | Field | Value |
 | --- | --- |
@@ -41,9 +41,9 @@ Reduces mental load by providing editable, shame-free structure for this life ar
 
 ### Customers also buy (Edition 1)
 
-- Ready 4 Medication
-- Ready 4 Independence
-- Ready 4 Emergencies
+- Ready4 Medication
+- Ready4 Independence
+- Ready4 Emergencies
 
 ---
 
@@ -148,7 +148,7 @@ Reduces mental load by providing editable, shame-free structure for this life ar
 
 ## 8. Acceptance criteria (QA)
 
-- [ ] Pack appears in ReadyPacks catalogue with correct free/paid labelling
+- [ ] Pack appears in Ready4Packs catalogue with correct free/paid labelling
 - [ ] Preview lists all 6 templates
 - [ ] Install creates editable nudges matching template titles
 - [ ] Checklist items appear where specified

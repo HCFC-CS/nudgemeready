@@ -6,6 +6,7 @@ import { Button } from "../components/Button";
 import { PageHeader, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
+import { READY_4_PACKS_LABEL } from "../content/ready4Copy";
 import { getAffiliateDisclosureLong } from "../services/affiliateLinks";
 import { isDevAdminAvailable } from "../services/devAdmin";
 import { colors, spacing } from "../theme/theme";
@@ -91,7 +92,7 @@ export function LegalInfoScreen() {
       </SoftCard>
 
       <SoftCard>
-        <AppText variant="heading">Health-related ReadyPacks</AppText>
+        <AppText variant="heading">Health-related {READY_4_PACKS_LABEL}</AppText>
         <AppText variant="muted">
           Packs that touch wellbeing or organisation around medication and emergencies are organisational support
           only. They do not diagnose, prescribe, or change medication. Always follow advice from your clinician.

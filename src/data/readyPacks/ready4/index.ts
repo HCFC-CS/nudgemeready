@@ -37,7 +37,7 @@ import { ready4WellbeingPack } from "./wellbeing";
 import { ready4WorkPack } from "./work";
 import type { ReadyPack } from "../../../types/readyPacks";
 
-/** Ready 4 content catalogue — Edition 1 plus Baby / Moving / Wedding from user flows. */
+/** Ready4 content catalogue — Edition 1 plus Baby / Moving / Wedding from user flows. */
 export const ready4ContentPacks: ReadyPack[] = [
   ready4StudyPack,
   ready4HomePack,

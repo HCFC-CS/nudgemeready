@@ -1,4 +1,4 @@
-# Ready 4 Study — Template process flows
+# Ready4 Study — Template process flows
 
 **Pack:** `ready4-study` · **Source:** `src/data/readyPacks/ready4/study.ts`  
 **Install mapping:** `templateToItem()` in `src/services/readyPackInstall.ts`
@@ -11,7 +11,7 @@ This document shows, for every template: **what is captured**, **how the app tre
 
 ```mermaid
 flowchart TD
-  A[Install Ready 4 Study] --> B[8 editable nudges created]
+  A[Install Ready4 Study] --> B[8 editable nudges created]
   B --> C[what-helps: pick today's focus]
   C --> D{Choice}
   D -->|Assignment| E[assignment-planner + assignment-steps]
@@ -305,7 +305,7 @@ sequenceDiagram
 
 ## 6. Related docs
 
-- [Product spec — Ready 4 Study](./01-study.md)
-- [Ready 4 catalogue](../02-Ready4_Catalogue_Edition_1.md)
+- [Product spec — Ready4 Study](./01-study.md)
+- [Ready4 catalogue](../02-Ready4_Catalogue_Edition_1.md)
 - [Process flows (platform)](../04-Process_Flows.md)
 - Spreadsheet export: `exports/ready4-templates-csv/ready4-study.csv`

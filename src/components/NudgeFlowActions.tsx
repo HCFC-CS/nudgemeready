@@ -5,7 +5,7 @@ import { colors, radii, spacing } from "../theme/theme";
 import { AppText } from "./Text";
 
 /**
- * Shared Ready 4 / nudge completion actions:
+ * Shared Ready4 / nudge completion actions:
  * Save · Sorted · Later · Ask · Remove
  */
 export function NudgeFlowActions({

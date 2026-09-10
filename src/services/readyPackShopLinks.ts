@@ -65,7 +65,7 @@ type PackShopCatalogueEntry = {
   section: PackShopSection;
 };
 
-/** Lean Edition 1 Ready 4 shop sections. Travel keeps its dedicated airport UI. */
+/** Lean Edition 1 Ready4 shop sections. Travel keeps its dedicated airport UI. */
 const packShopCatalogue: PackShopCatalogueEntry[] = [
   {
     packId: "ready4-home",
@@ -276,8 +276,8 @@ const packShopCatalogue: PackShopCatalogueEntry[] = [
 ];
 
 /**
- * Partner shop sections for ReadyPack item detail screens.
- * Ready 4 Travel keeps its dedicated airport / stay link UI.
+ * Partner shop sections for Ready4 item detail screens.
+ * Ready4 Travel keeps its dedicated airport / stay link UI.
  */
 export function getReadyPackShopSections(item: {
   sourcePackId?: string;

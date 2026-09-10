@@ -39,9 +39,9 @@ You can refuse or revoke these in your phone Settings.
 - **Crew invite links** can include invite details needed for someone to join your crew on their device. Only share invites with people you trust.
 - **Partner / shop links** in the App may open third-party websites (for example shops or travel booking). Affiliate programmes are only active when partner IDs are configured; until then links work as ordinary websites. We do not receive your payment card details from those sites.
 
-## Health-related ReadyPacks
+## Health-related Ready4 packs
 
-Some ReadyPacks help organise wellbeing routines (for example reminders or appointment notes). They are **organisational support only**. They do not diagnose conditions, prescribe treatment, or change medication. Always follow advice from your clinician or other qualified professional.
+Some Ready4 packs help organise wellbeing routines (for example reminders or appointment notes). They are **organisational support only**. They do not diagnose conditions, prescribe treatment, or change medication. Always follow advice from your clinician or other qualified professional.
 
 ## Security
 

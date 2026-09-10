@@ -87,4 +87,4 @@ One Budget Engine, one Checklist Engine, one Reward Engine — load pack-specifi
 
 Not primarily a task-management app. A **life initiation, organisation and support system** that moves people from “I know I need to do it” to “I know the next small step.”
 
-Full pack module lists (Home, Finance, Study, Medication, Work, Family, Travel, Wellbeing, Shopping, Independence, Appointments, Moving, Wedding, Baby, Party) and detailed field models live in Edition 1 product docs under `docs/product/ready4/` and in this repository’s ReadyPack catalogue (`src/data/readyPacks/ready4/`).
+Full pack module lists (Home, Finance, Study, Medication, Work, Family, Travel, Wellbeing, Shopping, Independence, Appointments, Moving, Wedding, Baby, Party) and detailed field models live in Edition 1 product docs under `docs/product/ready4/` and in this repository’s Ready4 catalogue (`src/data/readyPacks/ready4/`).

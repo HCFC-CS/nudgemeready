@@ -10,6 +10,7 @@ import { PageHeader, PrimaryButton, SecondaryButton, SectionHeading, SoftCard } 
 import { Screen } from "../components/Screen";
 import { SecuritySettingsCard } from "../components/SecuritySettingsCard";
 import { AppText } from "../components/Text";
+import { READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useAlexaLink } from "../hooks/useAlexaLink";
 import { useHomeSettings } from "../hooks/useHomeSettings";
 import { persistPayLaterEnabled } from "../hooks/usePayLaterMonitor";
@@ -697,11 +698,11 @@ export function SettingsScreen() {
 
       <SoftCard>
         <SectionHeading
-          title="ReadyPack purchases"
+          title={`${READY_PACKS_SHOP_LABEL} purchases`}
           info={
             READY_PACK_STORE_BILLING_ENABLED
-              ? "Restore ReadyPack purchases you already made on this Apple ID or Google account."
-              : "App Store and Play Billing purchases are not enabled in this version. Included ReadyPacks install for free — you will not be charged. Restore purchases will appear here when store billing goes live."
+              ? `Restore ${READY_PACKS_SHOP_LABEL} purchases you already made on this Apple ID or Google account.`
+              : `App Store and Play Billing purchases are not enabled in this version. Included ${READY_PACKS_SHOP_LABEL} install for free — you will not be charged. Restore purchases will appear here when store billing goes live.`
           }
         />
         {READY_PACK_STORE_BILLING_ENABLED ? (

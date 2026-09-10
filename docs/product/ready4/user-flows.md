@@ -1,4 +1,4 @@
-# Ready 4 — User flow alignment
+# Ready4 — User flow alignment
 
 Source Excel files (OneDrive `READY4 USERFLOWS`) drive the pack journeys. Shared verbs on every nudge:
 
@@ -27,13 +27,13 @@ Source Excel files (OneDrive `READY4 USERFLOWS`) drive the pack journeys. Shared
 
 ## Journey pattern (all packs)
 
-1. Enter pack (install) → templates become editable nudges under **Ready 4 packs**
+1. Enter pack (install) → templates become editable nudges under **Ready4 packs**
 2. Choose what helps (soft triage list where present) → **Open** jumps to the matching tool
 3. Act with **Save / Sorted / Later / Ask / Remove** — no shame, no streaks
 4. Tick checklist steps (autosave) on lists and routines
-5. Ongoing home = My Nudges → Ready 4 packs (grouped by pack)
+5. Ongoing home = My Nudges → Ready4 packs (grouped by pack)
 
-After install, **View in My Nudges → Ready 4 packs** opens the Ready 4 filter directly.
+After install, **View in My Nudges → Ready4 packs** opens the Ready4 filter directly.
 
 Pack versions at **1.1.0+** add flow-aligned templates (Study budget/overwhelm, Moving search stages, Wedding legal/venue/after, Home/Finance/Digital Life triage). Use **Update pack** on already-installed packs to add new unedited templates.
 

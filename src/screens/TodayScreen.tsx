@@ -13,6 +13,7 @@ import { AppText } from "../components/Text";
 import { SearchBar } from "../components/ModernUI";
 import type { IoniconName } from "../components/iconTypes";
 import { getPack } from "../data/readyPacks/catalogue";
+import { READY_4_LABEL, READY_4_PACKS_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useCrew } from "../hooks/useCrew";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useRewardBank } from "../hooks/useRewardBank";
@@ -49,7 +50,7 @@ const VIEW_BUCKET_OPTIONS = [
 ] as const;
 
 const TODAY_HELP =
-  "Your nudges are listed in date and time order. Tick Confirm when something is sorted — it leaves this open list. Use Show to narrow the list. Ready 4 packs are optional templates.";
+  `Your nudges are listed in date and time order. Tick Confirm when something is sorted — it leaves this open list. Use Show to narrow the list. ${READY_4_PACKS_LABEL} are optional templates.`;
 
 
 function matchesViewBucket(item: NudgeItem, bucket: ViewBucket) {
@@ -168,7 +169,7 @@ export function TodayScreen() {
     return [...groups.entries()]
       .map(([packId, packItems]) => ({
         packId,
-        title: getPack(packId)?.title ?? packId.replace(/^ready4-/, "Ready 4 "),
+        title: getPack(packId)?.title ?? packId.replace(/^ready4-/, `${READY_4_LABEL} `),
         items: packItems.sort(compareNudgesByDate)
       }))
       .sort((a, b) => {
@@ -228,7 +229,7 @@ export function TodayScreen() {
               </AppText>
               <HelpTip title="Nudges" text={TODAY_HELP} />
             </View>
-            <AppText variant="muted">{showReady4 ? `${ready4Count} Ready 4 packs` : `${openCount} open`}</AppText>
+            <AppText variant="muted">{showReady4 ? `${ready4Count} ${READY_4_PACKS_LABEL}` : `${openCount} open`}</AppText>
           </View>
           <ProfileAvatar size={48} />
         </View>
@@ -238,11 +239,11 @@ export function TodayScreen() {
 
       <View style={styles.chipRow}>
         <CuteChip
-          label={ready4Count ? `Ready4 · ${ready4Count}` : "Ready4"}
+          label={ready4Count ? `${READY_4_LABEL} · ${ready4Count}` : READY_4_LABEL}
           icon="cube-outline"
           selected={showReady4}
           onPress={() => setShowReady4((current) => !current)}
-          accessibilityLabel="Ready 4 packs"
+          accessibilityLabel={READY_4_PACKS_LABEL}
         />
       </View>
 
@@ -316,7 +317,7 @@ export function TodayScreen() {
               ? "No matches"
               : showReady4
                 ? ready4Count === 0
-                  ? "No Ready 4 yet"
+                  ? `No ${READY_4_LABEL} yet`
                   : "Nothing here"
                 : statusFilter === "open"
                   ? "Nothing open"
@@ -337,7 +338,7 @@ export function TodayScreen() {
               onPress={() => navigation.navigate("ReadyPacks")}
               style={styles.emptyAction}
             >
-              <AppText style={styles.emptyActionLabel}>ReadyPacks</AppText>
+              <AppText style={styles.emptyActionLabel}>{READY_PACKS_SHOP_LABEL}</AppText>
             </Pressable>
           ) : null}
         </View>

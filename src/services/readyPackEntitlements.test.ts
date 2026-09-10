@@ -39,7 +39,7 @@ describe("readyPackEntitlements store honesty", () => {
   it("labels packs without productId as free", () => {
     const pack = getPack("ready4-home")!;
     expect(isPackFree(pack)).toBe(true);
-    expect(getPackAccessLabel(pack, { canInstall: true, allowAll: false })).toMatch(/Free ReadyPack/i);
+    expect(getPackAccessLabel(pack, { canInstall: true, allowAll: false })).toMatch(/Free Ready4 pack/i);
   });
 
   it("refuses fake local purchases while billing is disabled", async () => {
