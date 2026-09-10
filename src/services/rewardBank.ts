@@ -25,7 +25,7 @@ function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function normalizeWallet(parsed: Partial<RewardWallet> | null | undefined): RewardWallet {
+export function normalizeWallet(parsed: Partial<RewardWallet> | null | undefined): RewardWallet {
   const base = createDefaultRewardWallet();
   if (!parsed) {
     return base;
@@ -37,12 +37,16 @@ function normalizeWallet(parsed: Partial<RewardWallet> | null | undefined): Rewa
       ? parsed.rewards.map((entry) => ({
           id: String(entry.id),
           points: Math.max(1, Number(entry.points) || 1),
-          title: String(entry.title || "Reward").trim() || "Reward"
+          title: migrateDefaultRewardTitle(String(entry.title || "Reward").trim() || "Reward")
         }))
       : base.rewards,
     claims: Array.isArray(parsed.claims) ? parsed.claims : [],
     ledger: Array.isArray(parsed.ledger) ? parsed.ledger : []
   };
+}
+
+function migrateDefaultRewardTitle(title: string) {
+  return title === "£10 guilt-free treat" ? "£10 treat" : title;
 }
 
 export async function loadRewardWallet(): Promise<RewardWallet> {
@@ -124,6 +128,21 @@ export function setCustomRewards(wallet: RewardWallet, rewards: RewardDefinition
   return {
     ...wallet,
     rewards: cleaned.length ? cleaned : createDefaultRewardWallet().rewards
+  };
+}
+
+export function getBigGoal(wallet: RewardWallet): {
+  reward: RewardDefinition | null;
+  pointsToGo: number;
+} {
+  const sorted = [...wallet.rewards].sort((a, b) => a.points - b.points);
+  const big = sorted[sorted.length - 1] ?? null;
+  if (!big) {
+    return { reward: null, pointsToGo: 0 };
+  }
+  return {
+    reward: big,
+    pointsToGo: Math.max(0, big.points - wallet.availablePoints)
   };
 }
 

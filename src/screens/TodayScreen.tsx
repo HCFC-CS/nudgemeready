@@ -8,6 +8,7 @@ import { CrewSwitcher } from "../components/CrewSwitcher";
 import { HelpTip } from "../components/HelpTip";
 import { NudgeListRow, nudgeRowMeta } from "../components/NudgeListRow";
 import { ProfileAvatar } from "../components/ProfileAvatar";
+import { RewardGlance } from "../components/RewardGlance";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { SearchBar } from "../components/ModernUI";
@@ -234,6 +235,8 @@ export function TodayScreen() {
           <ProfileAvatar size={48} />
         </View>
       </View>
+
+      <RewardGlance />
 
       <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search…" />
 

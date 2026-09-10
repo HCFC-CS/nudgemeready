@@ -18,6 +18,7 @@ export type AppPreferences = {
   preferredCalendarId?: string;
   /** When true, phone Calendar events are pulled into the app as appointments/events. */
   importFromPhoneCalendar: boolean;
+  shopSuggestions: boolean;
 };
 
 export const defaultAppPreferences: AppPreferences = {
@@ -34,7 +35,8 @@ export const defaultAppPreferences: AppPreferences = {
   voiceCapture: true,
   readAloud: true,
   preferredCalendarId: undefined,
-  importFromPhoneCalendar: false
+  importFromPhoneCalendar: false,
+  shopSuggestions: true
 };
 
 export async function loadAppPreferences(): Promise<AppPreferences> {

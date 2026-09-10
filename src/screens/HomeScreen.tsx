@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { HorizonEntryCard } from "../components/HorizonEntryCard";
+import { RewardGlance } from "../components/RewardGlance";
 import { SoftCard, PageHeader, PrimaryButton, SecondaryButton, SectionHeading } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
@@ -13,7 +14,6 @@ import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useProfile } from "../hooks/useProfile";
 import { READY_4_LABEL, READY_4_PACKS_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useReadyPacks } from "../hooks/useReadyPacks";
-import { useRewardBank } from "../hooks/useRewardBank";
 import { getPlannerConfig } from "../services/ready4PlannerConfigs";
 import {
   dismissSecurityLockPrompt,
@@ -38,7 +38,6 @@ export function HomeScreen() {
   const { isSupporterOnly, activeProfile, enableOwnNudgeWorld } = useCrew();
   const { items: nudges } = useNudgeItems();
   const { packs, isInstalled } = useReadyPacks();
-  const { wallet, nextReward, pointsToNext } = useRewardBank();
   const { homePeek, isReady: horizonReady } = useNudgeHorizon();
   const { settings, isReady: securityReady } = useAppSecurity();
   const [showLockTip, setShowLockTip] = useState(false);
@@ -162,20 +161,7 @@ export function HomeScreen() {
         <PrimaryButton onPress={() => navigation.navigate("ComingUp")}>See what's coming up</PrimaryButton>
       </SoftCard>
 
-      {nextReward ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open Reward Bank"
-          onPress={() => navigation.navigate("RewardBank")}
-          style={({ pressed }) => [styles.rewardTap, pressed && styles.pressed]}
-        >
-          <AppText variant="small" style={styles.rewardLine}>
-            {pointsToNext > 0
-              ? `${wallet.availablePoints} pts · ${pointsToNext} to “${nextReward.title}”`
-              : `${wallet.availablePoints} pts · “${nextReward.title}” is ready to claim`}
-          </AppText>
-        </Pressable>
-      ) : null}
+      <RewardGlance />
 
       <SoftCard style={styles.card}>
         <View style={styles.headerRow}>
@@ -229,14 +215,6 @@ const styles = StyleSheet.create({
   card: {
     gap: spacing.sm,
     marginBottom: spacing.sm
-  },
-  rewardTap: {
-    marginBottom: spacing.sm,
-    paddingVertical: spacing.xs
-  },
-  rewardLine: {
-    color: colors.primaryDark,
-    fontWeight: "600"
   },
   headerRow: {
     flexDirection: "row",

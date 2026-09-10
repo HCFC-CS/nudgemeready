@@ -28,6 +28,8 @@ Maps the [Master Ready4 Platform Spec](./Ready4_Master_Platform_Spec.md) to the 
 | Universal Nudge Horizon | `nudgeHorizonEngine` + ComingUp + Home peek | **Shipped** |
 | List dates from planner events | `listPlannerAnchor` + ListPlannerDateLink | **Shipped** (Study exam lists) |
 | Gift registries / suppliers / local services | Thin / missing | Phase 3 |
+| Reward glance on Today / Focus + Keep saving | Compact next + bigger goal | **Shipped (Phase 1)** |
+| Help me find it / I already have this / shop toggle | SubtleOutboundLinks + Settings | **Shipped (Phase 1)** |
 | 10-destination tab bar | 5 tabs: Home → Nudges → Add → Menu → Focus | Deferred |
 | Packs without planner configs | All catalogue content packs have planner configs | **Shipped** |
 | Documents / Calendar hubs | Thin Menu hubs over item attachments / calendar-linked nudges | **Shipped** (light) |
@@ -46,7 +48,7 @@ Maps the [Master Ready4 Platform Spec](./Ready4_Master_Platform_Spec.md) to the 
 
 ## Phase 2+
 
-Ready4 Planner deepen (non-Study packs, calendar colour filters) → Calendar / lists / docs / crew deepen → Affiliate categories / registries / local services → Adaptive nudges.
+See [NMR master spec audit](./NMR_Master_Spec_Audit.md). Next: Why is this hard / missed-item adaptation → affiliate categories / Saved Things → optional wellbeing as nudges (never a diet app).
 
 ## File anchors
 
@@ -54,6 +56,6 @@ Ready4 Planner deepen (non-Study packs, calendar colour filters) → Calendar / 
 - Packs: `src/data/readyPacks/`, `src/hooks/useReadyPacks.tsx`  
 - Planner: `src/types/ready4Planner.ts`, `src/services/ready4Planner*.ts`, `src/hooks/useReady4Planner.tsx`  
 - Horizon: `src/types/nudgeHorizon.ts`, `src/services/nudgeHorizonEngine.ts`, `src/hooks/useNudgeHorizon.ts`, `ComingUpScreen`  
-- Rewards: `src/services/rewardBank.ts`, `src/hooks/useRewardBank.tsx`  
+- Rewards: `src/services/rewardBank.ts`, `src/hooks/useRewardBank.tsx`, `src/components/RewardGlance.tsx`  
 - Breakdowns: `src/services/taskBreakdowns.ts`  
 - List↔planner dates: `src/services/listPlannerAnchor.ts`  

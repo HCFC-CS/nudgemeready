@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { CompletionRewardCard } from "../components/CompletionRewardCard";
 import { MakeItSmallerCard } from "../components/MakeItSmallerCard";
+import { RewardGlance } from "../components/RewardGlance";
 import { CategoryChip, PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
@@ -115,6 +116,8 @@ export function FocusScreen() {
         showBack={false}
         helpText="One nudge at a time. Start when ready. Pause, Sorted, Break, or Next anytime — no penalty."
       />
+
+      <RewardGlance />
 
       <SoftCard>
         {selectedItem ? (

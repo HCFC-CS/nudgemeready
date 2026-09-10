@@ -12,6 +12,7 @@ import {
   claimReward,
   createDefaultRewardWallet,
   earnPoints,
+  getBigGoal,
   getNextReward,
   loadRewardWallet,
   saveRewardWallet,
@@ -24,6 +25,8 @@ type RewardBankContextValue = {
   isReady: boolean;
   nextReward: RewardDefinition | null;
   pointsToNext: number;
+  bigGoal: RewardDefinition | null;
+  pointsToBigGoal: number;
   earn: (input: {
     difficulty: RewardDifficulty;
     title: string;
@@ -81,6 +84,7 @@ export function RewardBankProvider({ children }: PropsWithChildren) {
   }, []);
 
   const next = useMemo(() => getNextReward(wallet), [wallet]);
+  const big = useMemo(() => getBigGoal(wallet), [wallet]);
 
   const value = useMemo(
     () => ({
@@ -88,11 +92,23 @@ export function RewardBankProvider({ children }: PropsWithChildren) {
       isReady,
       nextReward: next.reward,
       pointsToNext: next.pointsToNext,
+      bigGoal: big.reward,
+      pointsToBigGoal: big.pointsToGo,
       earn,
       claim,
       replaceRewards
     }),
-    [wallet, isReady, next.reward, next.pointsToNext, earn, claim, replaceRewards]
+    [
+      wallet,
+      isReady,
+      next.reward,
+      next.pointsToNext,
+      big.reward,
+      big.pointsToGo,
+      earn,
+      claim,
+      replaceRewards
+    ]
   );
 
   return <RewardBankContext.Provider value={value}>{children}</RewardBankContext.Provider>;

@@ -1,7 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { loadAppPreferences } from "../services/appPreferencesStorage";
 import { withAffiliate } from "../services/affiliateLinks";
 import { openExternalUrl } from "../services/openExternalUrl";
 import { colors, radii, spacing } from "../theme/theme";
@@ -29,7 +30,7 @@ const DEFAULT_PREVIEW = 3;
  */
 export function SubtleOutboundLinks({
   sections,
-  summaryLabel = "Optional ideas",
+  summaryLabel = "Help me find it",
   showAffiliateNote = true,
   previewCount = DEFAULT_PREVIEW
 }: {
@@ -40,13 +41,27 @@ export function SubtleOutboundLinks({
 }) {
   const [open, setOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [alreadyHave, setAlreadyHave] = useState(false);
+  const [shopSuggestions, setShopSuggestions] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    void loadAppPreferences().then((prefs) => {
+      if (active) {
+        setShopSuggestions(prefs.shopSuggestions !== false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const totalLinks = useMemo(
     () => sections.reduce((sum, section) => sum + section.links.length, 0),
     [sections]
   );
 
-  if (!sections.length || totalLinks === 0) {
+  if (!shopSuggestions || alreadyHave || !sections.length || totalLinks === 0) {
     return null;
   }
 
@@ -127,6 +142,16 @@ export function SubtleOutboundLinks({
             );
           })}
           {showAffiliateNote ? <AffiliateDisclosure compact /> : null}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setAlreadyHave(true)}
+            hitSlop={8}
+            style={styles.moreBtn}
+          >
+            <AppText variant="caption" style={styles.moreLabel}>
+              I already have this
+            </AppText>
+          </Pressable>
         </View>
       ) : null}
     </View>

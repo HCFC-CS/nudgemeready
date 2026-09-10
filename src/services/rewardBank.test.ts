@@ -4,9 +4,12 @@ import {
   claimReward,
   createDefaultRewardWallet,
   earnPoints,
+  getBigGoal,
   getNextReward,
+  normalizeWallet,
   setCustomRewards
 } from "./rewardBank";
+import { DEFAULT_REWARD_DEFINITIONS } from "../types/rewards";
 
 describe("rewardBank", () => {
   it("earns +1 / +2 / +3 and never goes negative on earn", () => {
@@ -59,6 +62,22 @@ describe("rewardBank", () => {
     const next = getNextReward(wallet);
     expect(next.reward?.points).toBe(5);
     expect(next.pointsToNext).toBe(4);
+  });
+
+  it("reports a bigger goal separately from the next reward", () => {
+    const wallet = createDefaultRewardWallet();
+    const big = getBigGoal(wallet);
+    expect(big.reward?.title).toBe("Day out or experience");
+    expect(big.reward?.points).toBe(100);
+    expect(big.pointsToGo).toBe(100);
+  });
+
+  it("rewrites the old guilt-framed default treat title", () => {
+    const wallet = normalizeWallet({
+      rewards: [{ id: "treat-10", points: 10, title: "£10 guilt-free treat" }]
+    });
+    expect(wallet.rewards[0]?.title).toBe("£10 treat");
+    expect(DEFAULT_REWARD_DEFINITIONS.every((entry) => !/guilt/i.test(entry.title))).toBe(true);
   });
 
   it("allows custom rewards", () => {

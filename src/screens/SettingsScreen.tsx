@@ -298,6 +298,18 @@ export function SettingsScreen() {
       </SoftCard>
 
       <SoftCard>
+        <SectionHeading
+          title="Shop and booking ideas"
+          info="Quiet Help me find it links on some nudges. Completing a nudge never requires a purchase. Turn this off if you would rather not see partner ideas."
+        />
+        <ToggleRow
+          label="Show shop and booking ideas"
+          value={prefsDraft.shopSuggestions}
+          onValueChange={(value) => patchPrefs({ shopSuggestions: value })}
+        />
+      </SoftCard>
+
+      <SoftCard>
         <SectionHeading title="Focus timer" info="Default length used on the Focus tab." />
         <OptionGrid
           options={timerOptions}

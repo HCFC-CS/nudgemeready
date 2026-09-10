@@ -38,7 +38,7 @@ export const DID_SOMETHING_LIST_TITLE = "Things I Did That Weren't On The List";
 
 export const DEFAULT_REWARD_DEFINITIONS: RewardDefinition[] = [
   { id: "coffee", points: 5, title: "Favourite coffee" },
-  { id: "treat-10", points: 10, title: "£10 guilt-free treat" },
+  { id: "treat-10", points: 10, title: "£10 treat" },
   { id: "lunch", points: 15, title: "Takeaway or lunch out" },
   { id: "treat-25", points: 25, title: "£25 treat" },
   { id: "hobby", points: 40, title: "Beauty, hobby or clothing treat" },
@@ -54,6 +54,16 @@ export function pointsForDifficulty(difficulty: RewardDifficulty): number {
     return 2;
   }
   return 1;
+}
+
+export function difficultyFromEffort(effort?: string): RewardDifficulty {
+  if (effort === "large") {
+    return "really_hard";
+  }
+  if (effort === "medium") {
+    return "hard";
+  }
+  return "normal";
 }
 
 export function difficultyLabel(difficulty: RewardDifficulty): string {

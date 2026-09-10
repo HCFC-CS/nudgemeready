@@ -54,6 +54,7 @@ import { defaultEventPrepSteps } from "../services/eventPrepTimeline";
 import { getLocationLabel } from "../services/placeSearch";
 import { formatDateInput, formatTimeInput, getReminderAt, getReminderParts } from "../services/reminderDates";
 import { createItem, getChildrenForParent } from "../services/nudgeItems";
+import { difficultyFromEffort } from "../types/rewards";
 import {
   buildBreakdownListItems,
   buildStepReminderSchedule,
@@ -404,6 +405,15 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
   function finishItem(goToDoneScreen: boolean) {
     if (!editable) {
       return;
+    }
+    if (draft.status !== "done") {
+      earn({
+        difficulty: difficultyFromEffort(draft.estimatedEffort),
+        title: title.trim() || draft.title,
+        kind: "task",
+        packId: draft.sourcePackId,
+        sourceItemId: draft.id
+      });
     }
     saveItem(buildSavedItem("done"));
     if (goToDoneScreen) {

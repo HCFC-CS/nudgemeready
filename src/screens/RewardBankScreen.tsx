@@ -12,7 +12,7 @@ import type { RewardDefinition } from "../types/rewards";
 
 export function RewardBankScreen() {
   const navigation = useNavigation<any>();
-  const { wallet, nextReward, pointsToNext, claim, replaceRewards } = useRewardBank();
+  const { wallet, nextReward, pointsToNext, bigGoal, pointsToBigGoal, claim, replaceRewards } = useRewardBank();
   const [editing, setEditing] = useState(false);
   const [draftRewards, setDraftRewards] = useState<RewardDefinition[]>(wallet.rewards);
   const [notice, setNotice] = useState("");
@@ -39,10 +39,10 @@ export function RewardBankScreen() {
       setNotice(`Need ${reward.points - wallet.availablePoints} more points for that.`);
       return;
     }
-    Alert.alert("Claim this reward?", reward.title, [
-      { text: "Not yet", style: "cancel" },
+    Alert.alert("You've earned this", reward.title, [
+      { text: "Keep saving", style: "cancel" },
       {
-        text: "Yes, claim",
+        text: "Claim reward",
         onPress: () => {
           try {
             claim(reward.id);
@@ -71,6 +71,13 @@ export function RewardBankScreen() {
             {pointsToNext > 0
               ? `${pointsToNext} to go for “${nextReward.title}”`
               : `You can claim “${nextReward.title}” when you like`}
+          </AppText>
+        ) : null}
+        {bigGoal && bigGoal.id !== nextReward?.id ? (
+          <AppText variant="muted">
+            {pointsToBigGoal > 0
+              ? `Bigger goal: ${wallet.availablePoints} / ${bigGoal.points} · “${bigGoal.title}”`
+              : `Bigger goal “${bigGoal.title}” is within reach. Claim or keep saving.`}
           </AppText>
         ) : null}
         <SecondaryButton size="compact" onPress={() => navigation.navigate("DidSomething")}>

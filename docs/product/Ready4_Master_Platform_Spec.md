@@ -57,7 +57,7 @@ Difficulty may vary by day. No negative scoring. No shame language. No failure s
 
 ```text
 5  Favourite coffee
-10 £10 guilt-free treat
+10 £10 treat
 15 Takeaway or lunch out
 25 £25 treat
 40 Beauty, hobby or clothing treat
