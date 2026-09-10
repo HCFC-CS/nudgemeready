@@ -56,9 +56,9 @@ Maps the master product prompt (10 Sep 2026) onto the Expo 54 local-first app. *
 
 | Requirement | Status | Notes |
 | --- | --- | --- |
-| Optional health goals, calories, macros, hydration, recipes, meal planner | **MISSING** | Ready4 Wellbeing/Medication are organisational templates only. |
-| NutritionProvider, barcode, Mifflin-St Jeor | **MISSING** | |
-| No points for weight loss / restriction | **ALREADY EXISTS** | Nothing to gamify — keep this invariant if health is added later. |
+| Optional health goals, calories, macros, hydration, recipes, meal planner | **PARTIALLY EXISTS** | Core **Have a drink / I ate something / Move a little** lists. No calories, macros, recipes, or meal planner. |
+| NutritionProvider, barcode, Mifflin-St Jeor | **MISSING** | No real nutrition data source — do not invent one. |
+| No points for weight loss / restriction | **ALREADY EXISTS** | Earn path blocks weight/deficit/skipped-meal titles. Logging a drink or a walk still earns. |
 
 Do **not** start a health tracker in this pass. Product principle: NMR is not a dieting app. Health is Phase 4+, optional, organisational, and must reuse nudges/rewards/lists.
 
@@ -90,7 +90,7 @@ Do **not** start a health tracker in this pass. Product principle: NMR is not a 
 1. **Do not create a second wallet, nudge store, calendar, or affiliate tracker.**
 2. **Do not rename Sorted → Done** in this pass — it would fight the shipped calm language.
 3. **Do not inflate points to 5/10/20** — current +1/+2/+3 is readable and already earned everywhere.
-4. **Do not build calories/hydration/weight now.** Optional later, never medical, never rewarded for restriction.
+4. **Do not build a calorie/weight tracker.** Optional wellbeing is ordinary nudges and lists only. Never medical, never rewarded for restriction.
 5. **Do not merge PlannerItem into NudgeItem** as a breaking migration. Link them; Horizon already unifies the timeline.
 
 ## Implementation plan (priority)
@@ -110,13 +110,13 @@ Extend Reward Bank and find-it **in place**:
 
 Why is this hard; missed-item “this doesn’t seem to be working”; Make it smaller on every item type with default tiny steps; weekly review from the existing ledger. Still no second engine.
 
-### Phase 3 — find-it depth (this pass)
+### Phase 3 — find-it depth
 
 Pack `affiliateCategories` feeding the existing `withAffiliate` helper; Saved Things; 3-item compare; ranking tests. Still one engine.
 
-### Phase 4 — optional wellbeing (not a diet app)
+### Phase 4 — optional wellbeing (this pass)
 
-Hydration / meal-check lists as **nudges and lists**, points only for logging/movement, never for weight or deficit. NutritionProvider only if a real data source exists.
+Hydration / meal-check / movement lists as **core nudges** (no Ready4 pack required). Points only for logging/movement, never for weight or deficit. No NutritionProvider — there is no real data source.
 
 ### Deferred / out of scope
 

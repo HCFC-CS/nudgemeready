@@ -11,7 +11,7 @@ Individual product specifications for each **Edition 1 Ready4** content pack. Ge
 | 5 | [Ready4 Work](./05-work.md) | `ready4-work` | `ready.pack.ready4_work` | 6 |
 | 6 | [Ready4 Family](./06-family.md) | `ready4-family` | `ready.pack.ready4_family` | 6 |
 | 7 | [Ready4 Travel](./07-travel.md) | `ready4-travel` | `ready.pack.ready4_travel` | 12 |
-| 8 | [Ready4 Wellbeing](./08-wellbeing.md) | `ready4-wellbeing` | **Free** | 6 |
+| 8 | [Ready4 Wellbeing](./08-wellbeing.md) | `ready4-wellbeing` | **Free** | 7 |
 | 9 | [Ready4 Shopping](./09-shopping.md) | `ready4-shopping` | `ready.pack.ready4_shopping` | 6 |
 | 10 | [Ready4 Independence](./10-independence.md) | `ready4-independence` | `ready.pack.ready4_independence` | 6 |
 | 11 | [Ready4 Appointments](./11-appointments.md) | `ready4-appointments` | `ready.pack.ready4_appointments` | 6 |

@@ -4,8 +4,10 @@ import {
   claimReward,
   createDefaultRewardWallet,
   earnPoints,
+  formatRewardEarnNotice,
   getBigGoal,
   getNextReward,
+  isRestrictionRewardTitle,
   normalizeWallet,
   setCustomRewards
 } from "./rewardBank";
@@ -86,5 +88,28 @@ describe("rewardBank", () => {
     ]);
     expect(wallet.rewards).toHaveLength(1);
     expect(wallet.rewards[0]?.title).toBe("Cinema night");
+  });
+
+  it("never awards points for weight loss or meal skipping", () => {
+    expect(isRestrictionRewardTitle("Lost 2kg")).toBe(true);
+    expect(isRestrictionRewardTitle("calorie deficit day")).toBe(true);
+    expect(isRestrictionRewardTitle("Skipped lunch")).toBe(true);
+    expect(isRestrictionRewardTitle("I had a drink")).toBe(false);
+    expect(isRestrictionRewardTitle("Short walk")).toBe(false);
+    let wallet = createDefaultRewardWallet();
+    wallet = earnPoints(wallet, {
+      difficulty: "really_hard",
+      title: "Weight loss — skipped dinner",
+      kind: "did_something"
+    });
+    expect(wallet.availablePoints).toBe(0);
+    expect(wallet.ledger).toHaveLength(0);
+    wallet = earnPoints(wallet, {
+      difficulty: "normal",
+      title: "Short walk",
+      kind: "tiny_step"
+    });
+    expect(wallet.availablePoints).toBe(1);
+    expect(formatRewardEarnNotice(0, "Lost 2kg", "+{points}")).toMatch(/don't award points for weight/i);
   });
 });

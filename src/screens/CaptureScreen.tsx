@@ -69,7 +69,14 @@ export function CaptureScreen() {
       createdBy: actor,
       nudgeIntent: action.intent,
       sourcePackId: action.packId,
-      sourceTemplateId: action.templateId
+      sourceTemplateId: action.templateId,
+      notes: action.notes,
+      repeatRule: action.repeatRule,
+      listItems: action.listItems?.map((title, index) => ({
+        id: `wellbeing-${index}`,
+        title,
+        status: "open" as const
+      }))
     });
     navigation.navigate("ItemDetails", { draft });
   }

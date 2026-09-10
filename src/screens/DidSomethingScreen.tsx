@@ -9,6 +9,7 @@ import { useNudgeActor } from "../hooks/useNudgeActor";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useRewardBank } from "../hooks/useRewardBank";
 import { createItem } from "../services/nudgeItems";
+import { formatRewardEarnNotice } from "../services/rewardBank";
 import { colors, radii, spacing } from "../theme/theme";
 import {
   DID_SOMETHING_LIST_TITLE,
@@ -60,11 +61,13 @@ export function DidSomethingScreen({ navigation }: { navigation: any }) {
     });
     setTitle("");
     setDifficulty("normal");
-    setNotice(`Saved. +${points} — that counts.`);
-    Alert.alert("Well done", `+${points} added to your Reward Bank.`, [
-      { text: "Stay here", style: "cancel" },
-      { text: "Reward Bank", onPress: () => navigation.navigate("RewardBank") }
-    ]);
+    setNotice(formatRewardEarnNotice(points, trimmed, `Saved. +{points} — that counts.`));
+    if (points > 0) {
+      Alert.alert("Well done", `+${points} added to your Reward Bank.`, [
+        { text: "Stay here", style: "cancel" },
+        { text: "Reward Bank", onPress: () => navigation.navigate("RewardBank") }
+      ]);
+    }
   }
 
   return (

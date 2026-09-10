@@ -32,7 +32,7 @@ const PACK_AFFILIATE: Record<string, ReadyPackAffiliateConfig> = {
   "ready4-wellbeing": {
     sectionTitle: "Shop gentle wellbeing extras",
     hint: HEALTH_SHOP_HINT,
-    templateIds: ["hydration", "movement", "sleep-routine", "morning-reset"],
+    templateIds: ["hydration", "meal-check", "movement", "sleep-routine", "morning-reset"],
     keywords: ["water", "yoga", "sleep", "journal", "shop", "supplies", "wellbeing"],
     categories: [
       { id: "water", title: "water bottles", query: "insulated water bottle", partners: ["amazon", "argos"] },

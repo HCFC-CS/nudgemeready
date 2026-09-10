@@ -1,4 +1,4 @@
-import type { NudgeItemType } from "../types/nudge";
+import type { NudgeItemType, NudgeRepeatRule } from "../types/nudge";
 import type {
   CoreNudgeAction,
   NudgeIntent,
@@ -7,6 +7,7 @@ import type {
 import { CORE_NUDGE_ACTIONS, coreActionsForIntent, getIntentCategory } from "./coreNudgeActions";
 import { extensionsForInstalledPacks } from "./ready4NudgeExtensions";
 import { classifyCaptureText } from "./classifyCaptureText";
+import { matchCoreWellbeing } from "../data/coreWellbeingNudges";
 
 export type UnifiedNudgeAction = {
   id: string;
@@ -16,6 +17,9 @@ export type UnifiedNudgeAction = {
   packId?: string;
   itemType?: NudgeItemType;
   defaultTitle?: string;
+  notes?: string;
+  listItems?: string[];
+  repeatRule?: NudgeRepeatRule;
   templateId?: string;
   route?: string;
   kind: "create" | "route" | "crew";
@@ -40,6 +44,9 @@ function fromCore(action: CoreNudgeAction): UnifiedNudgeAction {
     source: "core",
     itemType: action.itemType,
     defaultTitle: action.defaultTitle,
+    notes: action.notes,
+    listItems: action.listItems,
+    repeatRule: action.repeatRule,
     route: action.route,
     kind: action.kind
   };
@@ -78,17 +85,25 @@ export function resolveSomethingElse(
   installedPackIds: string[]
 ): SomethingElseResult {
   const classification = classifyCaptureText(text);
-  const intent = inferIntentFromText(text, classification.type);
+  const wellbeing = matchCoreWellbeing(text);
+  const intent = inferIntentFromText(text, wellbeing ? "list" : classification.type);
   const installed = new Set(installedPackIds);
   const packHint = detectPackHint(text);
   const packId = packHint && installed.has(packHint) ? packHint : undefined;
 
   return {
     intent,
-    title: classification.title || text.trim(),
-    itemType: classification.type,
+    title: wellbeing?.title || classification.title || text.trim(),
+    itemType: wellbeing ? "list" : classification.type,
     packId,
-    suggestedFields: classification.suggestedFields
+    suggestedFields: wellbeing
+      ? {
+          ...classification.suggestedFields,
+          notes: wellbeing.notes,
+          listItems: wellbeing.listItems,
+          repeatRule: wellbeing.repeatRule
+        }
+      : classification.suggestedFields
   };
 }
 

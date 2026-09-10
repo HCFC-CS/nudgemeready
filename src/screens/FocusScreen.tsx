@@ -14,6 +14,7 @@ import { useRewardBank } from "../hooks/useRewardBank";
 import { loadAppPreferences } from "../services/appPreferencesStorage";
 import { compareNudgesByDate, isReady4PackItem } from "../services/nudgeItems";
 import { moveNudgeToTomorrow } from "../services/nudgeAdaptation";
+import { formatRewardEarnNotice } from "../services/rewardBank";
 import { whyHardActionNotice } from "../services/whyHardToday";
 import { colors, spacing } from "../theme/theme";
 import type { NudgeItem } from "../types/nudge";
@@ -215,7 +216,13 @@ export function FocusScreen() {
                   packId: selectedItem.sourcePackId,
                   sourceItemId: selectedItem.id
                 });
-                setTimerNotice(`Marked sorted. +${points} — well done for starting.`);
+                setTimerNotice(
+                  formatRewardEarnNotice(
+                    points,
+                    selectedItem.title,
+                    "Marked sorted. +{points} — well done for starting."
+                  )
+                );
               } else {
                 setTimerNotice("Marked sorted. Well done for starting.");
               }

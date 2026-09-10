@@ -74,4 +74,13 @@ describe("resolveSomethingElse", () => {
     expect(without.packId).toBeUndefined();
     expect(withPack.packId).toBe("ready4-moving");
   });
+
+  it("turns a drink-of-water phrase into a core list, not a diet log", () => {
+    const result = resolveSomethingElse("remind me to drink water", []);
+    expect(result.packId).toBeUndefined();
+    expect(result.itemType).toBe("list");
+    expect(result.title).toMatch(/drink of water/i);
+    expect(result.suggestedFields.listItems?.some((item) => /skip today/i.test(item))).toBe(true);
+    expect(`${result.title} ${result.suggestedFields.notes}`).not.toMatch(/calorie|deficit|weight loss/i);
+  });
 });

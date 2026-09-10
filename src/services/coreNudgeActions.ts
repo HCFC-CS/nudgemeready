@@ -1,4 +1,5 @@
 import type { CoreNudgeAction, NudgeIntent, NudgeIntentCategory } from "../types/nudgeIntents";
+import { CORE_WELLBEING_NUDGES } from "../data/coreWellbeingNudges";
 
 export const NUDGE_INTENT_CATEGORIES: NudgeIntentCategory[] = [
   {
@@ -66,6 +67,20 @@ export const CORE_NUDGE_ACTIONS: CoreNudgeAction[] = [
   { id: "submit-something", intent: "do", kind: "create", label: "Submit something", itemType: "task", defaultTitle: "Submit ", icon: "cloud-upload-outline" },
   { id: "collect-something", intent: "do", kind: "create", label: "Collect something", itemType: "task", defaultTitle: "Collect ", icon: "download-outline" },
   { id: "return-something", intent: "do", kind: "create", label: "Return something", itemType: "task", defaultTitle: "Return ", icon: "return-down-back-outline" },
+  ...CORE_WELLBEING_NUDGES.map(
+    (entry): CoreNudgeAction => ({
+      id: entry.actionId,
+      intent: "do",
+      kind: "create",
+      label: entry.label,
+      itemType: "list",
+      defaultTitle: entry.title,
+      notes: entry.notes,
+      listItems: entry.listItems,
+      repeatRule: entry.repeatRule,
+      icon: entry.kind === "hydration" ? "water-outline" : entry.kind === "meal" ? "restaurant-outline" : "walk-outline"
+    })
+  ),
   { id: "focus-one", intent: "do", kind: "route", label: "Just one thing (Focus)", route: "Focus", icon: "disc-outline" },
 
   // Book & go

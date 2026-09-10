@@ -25,6 +25,10 @@ function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function migrateDefaultRewardTitle(title: string) {
+  return title === "£10 guilt-free treat" ? "£10 treat" : title;
+}
+
 export function normalizeWallet(parsed: Partial<RewardWallet> | null | undefined): RewardWallet {
   const base = createDefaultRewardWallet();
   if (!parsed) {
@@ -45,8 +49,21 @@ export function normalizeWallet(parsed: Partial<RewardWallet> | null | undefined
   };
 }
 
-function migrateDefaultRewardTitle(title: string) {
-  return title === "£10 guilt-free treat" ? "£10 treat" : title;
+export const RESTRICTION_REWARD_NOTICE =
+  "We don't award points for weight or skipping meals. Looking after yourself still counts.";
+
+/** Never gamify restriction, weigh-ins, or calorie deficit. Logging a drink or a short walk is fine. */
+export function isRestrictionRewardTitle(title: string): boolean {
+  return /\b(weight\s*loss|lost\s+\d+\s*(lb|lbs|kg|kilos?|pounds?)|calorie\s*deficit|under\s*calories?|hit\s+(my\s+)?(macros?|calories?)|skipped\s+(breakfast|lunch|dinner|a\s+meal)|didn'?t eat|fasted\b|weighed\s+in|\bbmi\b|starve[ds]?)\b/i.test(
+    title
+  );
+}
+
+export function formatRewardEarnNotice(points: number, title: string, awardedMessage: string): string {
+  if (isRestrictionRewardTitle(title)) {
+    return RESTRICTION_REWARD_NOTICE;
+  }
+  return awardedMessage.replace("{points}", String(points));
 }
 
 export async function loadRewardWallet(): Promise<RewardWallet> {
@@ -76,6 +93,9 @@ export function earnPoints(
     at?: Date;
   }
 ): RewardWallet {
+  if (isRestrictionRewardTitle(input.title)) {
+    return wallet;
+  }
   const points = pointsForDifficulty(input.difficulty);
   const event: RewardEarnEvent = {
     id: createId("earn"),

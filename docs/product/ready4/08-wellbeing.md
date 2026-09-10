@@ -67,7 +67,7 @@ Reduces mental load by providing editable, shame-free structure for this life ar
 
 ---
 
-## 5. Shipped templates (6)
+## 5. Shipped templates (7)
 
 ### Morning reset
 
@@ -82,19 +82,33 @@ Reduces mental load by providing editable, shame-free structure for this life ar
   - One kind intention for the day
   - Eat or drink something
 
-### Hydration nudge
+### Have a drink of water
 
 - **Template id:** `hydration`
-- **Type:** `reminder`
+- **Type:** `list`
 - **Repeat:** daily
-- **Notes:** A quiet reminder only. No streak pressure.
-- **Speaking text:** A quiet reminder to have some water.
+- **Notes:** A quiet check-in, not a target. Not a hydration tracker or medical advice.
+- **Checklist:**
+  - I had a drink
+  - I'll have a sip when I remember
+  - Skip today — that's fine
 
-### Movement choices
+### I ate something
+
+- **Template id:** `meal-check`
+- **Type:** `list`
+- **Notes:** A gentle meal check. Not a calorie log.
+- **Checklist:**
+  - I ate something
+  - I had a drink
+  - I wasn't hungry and that's okay
+  - Skip today — that's fine
+
+### Move a little
 
 - **Template id:** `movement`
 - **Type:** `list`
-- **Notes:** Whatever feels doable. Rest days are valid.
+- **Notes:** Whatever feels doable. Rest days are valid. Not a fitness or weight-loss programme.
 - **Checklist:**
   - Short walk
   - Stretch
@@ -149,7 +163,7 @@ Reduces mental load by providing editable, shame-free structure for this life ar
 ## 8. Acceptance criteria (QA)
 
 - [ ] Pack appears in Ready4Packs catalogue with correct free/paid labelling
-- [ ] Preview lists all 6 templates
+- [ ] Preview lists all 7 templates
 - [ ] Install creates editable nudges matching template titles
 - [ ] Checklist items appear where specified
 - [ ] Speaking text present where specified

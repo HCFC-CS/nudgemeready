@@ -1,5 +1,5 @@
 import type { IoniconName } from "../components/iconTypes";
-import type { NudgeItemType } from "./nudge";
+import type { NudgeItemType, NudgeRepeatRule } from "./nudge";
 
 /** Six core “What do you want to do?” categories — always available. */
 export type NudgeIntent =
@@ -21,6 +21,9 @@ export type CoreNudgeAction = {
   itemType?: NudgeItemType;
   /** Prefill title for the draft. */
   defaultTitle?: string;
+  notes?: string;
+  listItems?: string[];
+  repeatRule?: NudgeRepeatRule;
   /** Navigate to an existing screen instead of ItemDetails. */
   route?: string;
   icon?: IoniconName;

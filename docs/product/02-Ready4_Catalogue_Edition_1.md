@@ -237,7 +237,7 @@ Morning reset · Hydration · Movement · Mindfulness pause · Sleep routine · 
 
 ### Templates (shipped)
 
-Morning reset · Hydration nudge · Movement choices · Mindfulness pause · Sleep wind-down · Gratitude / good thing note  
+Morning reset · Have a drink of water · I ate something · Move a little · Mindfulness pause · Sleep wind-down · Gratitude / good thing note  
 
 **IAP:** Free included pack  
 
