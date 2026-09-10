@@ -5,13 +5,29 @@ Use this so **0.2.0 testers keep using v2**, while you (and a small v3 group) in
 | | **v2 (testers)** | **v3 (new work)** |
 | --- | --- | --- |
 | Home screen name | Nudge me Ready | Nudge me Ready v3 |
-| Version | 0.2.0 | 0.3.0 |
+| Version | 0.2.0 | 0.3.1 |
 | Bundle ID | `com.helencunliffe.nudgeme` | `com.helencunliffe.nudgeme.v3` |
 | URL scheme | `nudge-me://` | `nudge-me-v3://` |
 | EAS profile | `production` | `v3` |
 | Existing TestFlight builds | Leave as-is | New App Store Connect app |
 
 v2 and v3 can both sit on the same iPhone because the bundle IDs differ. Data is **not** shared between them.
+
+## What is in v3 0.3.1
+
+This drop is the current feature branch (`cursor/ready4-platform-audit-fixes`). Leave **v2 0.2.0** testers on the original TestFlight app.
+
+Please try:
+
+- Add something you don’t want to forget from empty Home or Nudges
+- Voice or Something else: “remind me to take the bins out tomorrow evening” — it should save with a time, then sit on Nudges
+- First save may ask to turn on quiet phone reminders
+- Later / Sorted / Smaller / Ask on a Nudges row
+- Home leads with What’s coming up; **Show my appointments here** if you want phone calendar
+- Ask for help and Crew stay on this phone (they do not share your list live)
+- Reward glance, why-this-is-hard, Help me find it, and optional drink / meal / move lists
+
+Push reminders need **Settings → Push** on a real iPhone. They will not fire in a web preview.
 
 ---
 
