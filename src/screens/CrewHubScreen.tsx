@@ -245,7 +245,10 @@ export function CrewHubScreen() {
               </>
             ) : null}
             {!myCrewMembers.length ? (
-              <EmptyState title="No one here yet" message="Invite someone you trust when you want support." />
+              <EmptyState
+                title="No one here yet"
+                message="Invite someone you trust when you want support. Crew stays on this phone for now — they will not see your list on their own phone yet."
+              />
             ) : null}
           </View>
         </>
