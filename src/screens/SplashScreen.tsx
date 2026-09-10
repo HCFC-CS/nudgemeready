@@ -262,7 +262,7 @@ export function SplashScreen({ navigation, route }: Props) {
     setMessage("");
   }
 
-  function enterApp(screen: "Today" | "Capture" = "Today") {
+  function enterApp(screen: "Home" | "Today" | "Capture" = "Home") {
     if (needsUnlock) return;
     if (needsRegistration) {
       setStep("register");
@@ -752,11 +752,11 @@ export function SplashScreen({ navigation, route }: Props) {
               <>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => enterApp("Today")}
+                  onPress={() => enterApp("Home")}
                   style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}
                 >
                   <Ionicons name="sunny-outline" size={22} color={colors.onPrimary} />
-                  <AppText style={styles.primaryLabel}>Nudges ready</AppText>
+                  <AppText style={styles.primaryLabel}>See my day</AppText>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"

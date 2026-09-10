@@ -35,7 +35,7 @@ export function MoreScreen() {
     const base: MenuLink[] = [
       {
         label: "Crew",
-        subtitle: "People supporting you, people you support, and invites",
+        subtitle: "People on this phone — invites and Ask send a message",
         route: "CrewHub",
         icon: "people-outline",
         accent: colors.primary

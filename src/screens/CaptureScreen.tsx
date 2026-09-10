@@ -1,12 +1,13 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { BackButton, PageHeader, PrimaryButton, SecondaryButton, SoftCard, VoiceCaptureButton } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useNudgeActor } from "../hooks/useNudgeActor";
+import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useReadyPacks } from "../hooks/useReadyPacks";
 import { NUDGE_INTENT_CATEGORIES } from "../services/coreNudgeActions";
 import {
@@ -15,14 +16,27 @@ import {
   type UnifiedNudgeAction
 } from "../services/nudgeIntentCatalog";
 import { createItem } from "../services/nudgeItems";
+import {
+  applyDefaultWhen,
+  canQuickSave,
+  formatNudgeWhen
+} from "../services/quickCapture";
+import {
+  enableGentleNudges,
+  markGentleNudgeAskOffered,
+  shouldOfferGentleNudgeAsk
+} from "../services/notificationAsk";
+import { resyncTimedNudges } from "../services/speakingReminders";
 import { colors, radii, spacing } from "../theme/theme";
 import type { NudgeIntent } from "../types/nudgeIntents";
+import type { NudgeItem } from "../types/nudge";
 
 type Step = "home" | "intent" | "somethingElse";
 
 export function CaptureScreen() {
   const navigation = useNavigation<any>();
   const actor = useNudgeActor();
+  const { saveItem, items } = useNudgeItems();
   const { packs, isInstalled } = useReadyPacks();
   const [step, setStep] = useState<Step>("home");
   const [activeIntent, setActiveIntent] = useState<NudgeIntent | null>(null);
@@ -53,6 +67,59 @@ export function CaptureScreen() {
     setSomethingElseText("");
   }
 
+  function goToNudges() {
+    navigation.navigate("Tabs", { screen: "Today" });
+  }
+
+  async function offerAfterSave(item: NudgeItem) {
+    const when = formatNudgeWhen(item.reminderDate ?? item.startDate ?? item.dueDate);
+    const ask = await shouldOfferGentleNudgeAsk();
+    const change = {
+      text: "Change",
+      onPress: () => navigation.navigate("ItemDetails", { draft: item })
+    };
+    if (!ask) {
+      Alert.alert("Saved", `“${item.title}” is on your list. We’ll nudge you ${when}.`, [
+        change,
+        { text: "OK" }
+      ]);
+      return;
+    }
+    Alert.alert(
+      "Saved",
+      `“${item.title}” is on your list. We’ll nudge you ${when}. Would you like a quiet reminder on this phone when it’s time?`,
+      [
+        change,
+        {
+          text: "Not now",
+          style: "cancel",
+          onPress: () => void markGentleNudgeAskOffered()
+        },
+        {
+          text: "Yes, remind me",
+          onPress: () => {
+            void (async () => {
+              const ok = await enableGentleNudges();
+              if (ok) {
+                await resyncTimedNudges(items.concat(item));
+              }
+            })();
+          }
+        }
+      ]
+    );
+  }
+
+  function finishDraft(draft: NudgeItem) {
+    if (!canQuickSave(draft.title)) {
+      navigation.navigate("ItemDetails", { draft });
+      return;
+    }
+    saveItem(draft);
+    goToNudges();
+    void offerAfterSave(draft);
+  }
+
   function handleAction(action: UnifiedNudgeAction) {
     if (action.kind === "route" || action.kind === "crew") {
       if (action.route === "Focus") {
@@ -63,6 +130,13 @@ export function CaptureScreen() {
       return;
     }
 
+    const fields = applyDefaultWhen(
+      {
+        notes: action.notes,
+        repeatRule: action.repeatRule
+      },
+      action.itemType ?? "task"
+    );
     const draft = createItem({
       title: (action.defaultTitle ?? "").trim(),
       type: action.itemType ?? "task",
@@ -72,13 +146,17 @@ export function CaptureScreen() {
       sourceTemplateId: action.templateId,
       notes: action.notes,
       repeatRule: action.repeatRule,
+      dueDate: fields.dueDate,
+      startDate: fields.startDate,
+      reminderDate: fields.reminderDate,
+      speakingReminderText: (action.defaultTitle ?? "").trim() || undefined,
       listItems: action.listItems?.map((title, index) => ({
         id: `wellbeing-${index}`,
         title,
         status: "open" as const
       }))
     });
-    navigation.navigate("ItemDetails", { draft });
+    finishDraft(draft);
   }
 
   function createFromSomethingElse(rawText: string, voiceNoteUrl?: string) {
@@ -98,7 +176,8 @@ export function CaptureScreen() {
       reminderDate: resolved.suggestedFields.reminderDate,
       repeatRule: resolved.suggestedFields.repeatRule,
       contactName: resolved.suggestedFields.contactName,
-      notes: text,
+      speakingReminderText: resolved.title,
+      notes: resolved.suggestedFields.notes || text,
       voiceNoteUrl: voiceNoteUrl || undefined,
       listItems: resolved.suggestedFields.listItems?.map((title, index) => ({
         id: `list-${index}`,
@@ -107,7 +186,7 @@ export function CaptureScreen() {
       }))
     });
     setSomethingElseText("");
-    navigation.navigate("ItemDetails", { draft });
+    finishDraft(draft);
   }
 
   if (step === "somethingElse") {
@@ -132,10 +211,10 @@ export function CaptureScreen() {
             disabled={!somethingElseText.trim()}
             onPress={() => createFromSomethingElse(somethingElseText)}
           >
-            Create nudge
+            Save nudge
           </PrimaryButton>
           <AppText variant="caption" style={styles.hint}>
-            Ready4 packs only link in if you have them installed. Everyday nudges always work.
+            If you say when, it is saved straight away. You can change it anytime.
           </AppText>
         </SoftCard>
       </Screen>

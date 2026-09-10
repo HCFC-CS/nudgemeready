@@ -13,7 +13,7 @@ export type RootStackParamList = {
   VoiceAddTask: undefined;
   /** @deprecated Redirects to Capture. */
   TaskBuddy: { taskId?: string; task?: TaskItem } | undefined;
-  Help: undefined;
+  Help: { itemTitle?: string } | undefined;
   /** Alias → CrewHub */
   Circle: undefined;
   MyWorld: undefined;

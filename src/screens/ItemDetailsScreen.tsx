@@ -554,7 +554,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
   }
 
   function askForHelp() {
-    navigation.navigate("Help");
+    navigation.navigate("Help", { itemTitle: title.trim() || draft.title });
   }
 
   function renderStepRemindersCard() {

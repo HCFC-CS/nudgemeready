@@ -21,6 +21,8 @@ export type AppPreferences = {
   shopSuggestions: boolean;
   /** ISO week key (e.g. 2026-W37) for which the weekly review card was dismissed. */
   weeklyReviewDismissedWeek?: string;
+  /** Once true, we do not ask again to turn on lock-screen nudges. */
+  notificationAskOffered?: boolean;
 };
 
 export const defaultAppPreferences: AppPreferences = {
@@ -39,7 +41,8 @@ export const defaultAppPreferences: AppPreferences = {
   preferredCalendarId: undefined,
   importFromPhoneCalendar: false,
   shopSuggestions: true,
-  weeklyReviewDismissedWeek: undefined
+  weeklyReviewDismissedWeek: undefined,
+  notificationAskOffered: false
 };
 
 export async function loadAppPreferences(): Promise<AppPreferences> {

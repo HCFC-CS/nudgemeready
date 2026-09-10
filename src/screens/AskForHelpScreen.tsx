@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import type { RouteProp } from "@react-navigation/native";
 
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
@@ -11,11 +12,14 @@ import { useCrew } from "../hooks/useCrew";
 import { sendHelpRequest } from "../services/helpRequests";
 import { colors, spacing } from "../theme/theme";
 import type { CrewMember } from "../types/crew";
+import type { RootStackParamList } from "../types/navigation";
 
 const helpOptions = ["Encourage me", "Remind me", "Stay with me", "Help break it down"];
 
 export function AskForHelpScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<RootStackParamList, "Help">>();
+  const itemTitle = route.params?.itemTitle?.trim();
   const { myCrewMembers } = useCrew();
   const [selectedHelp, setSelectedHelp] = useState(helpOptions[0]);
   const [selectedPerson, setSelectedPerson] = useState(myCrewMembers[0]?.id ?? "");
@@ -40,7 +44,8 @@ export function AskForHelpScreen() {
         personId: person.id,
         personName: person.name,
         personContact: person.phone ?? person.email,
-        helpType: selectedHelp
+        helpType: selectedHelp,
+        nudgeTitle: itemTitle
       });
       setSent(result.ok || result.queued);
       setStatusMessage(result.message);
@@ -51,8 +56,12 @@ export function AskForHelpScreen() {
 
   return (
     <Screen showTabMenu={false}>
-      <PageHeader title="Ask for help" showBack helpText="Your Crew are the people you trust. Ask gently — no pressure on them or you." />
-      <AppText variant="muted">Choose the kind of support that would feel useful right now.</AppText>
+      <PageHeader title="Ask for help" showBack helpText="This opens a message on this phone. Your Crew do not see your nudges on their own phone yet." />
+      {itemTitle ? (
+        <AppText variant="muted">About “{itemTitle}”.</AppText>
+      ) : (
+        <AppText variant="muted">Choose the kind of support that would feel useful right now.</AppText>
+      )}
 
       <Card>
         <AppText variant="heading">What would help?</AppText>
@@ -74,7 +83,7 @@ export function AskForHelpScreen() {
         <AppText variant="heading">Send to</AppText>
         {myCrewMembers.length === 0 ? (
           <View style={styles.emptyCrew}>
-            <AppText variant="muted">Your Crew is empty. Invite someone when you are ready.</AppText>
+            <AppText variant="muted">Your Crew is empty. Invite someone when you are ready. Asking for help sends a message from this phone — it does not share your list live.</AppText>
             <SecondaryButton size="compact" onPress={() => navigation.navigate("CrewHub")}>
               Open Crew
             </SecondaryButton>

@@ -159,6 +159,10 @@ function cleanTitle(input: string) {
     .replace(/\bmonthly\b/i, "")
     .replace(/\btomorrow\b/i, "")
     .replace(/\btoday\b/i, "")
+    .replace(/\btonight\b/i, "")
+    .replace(/\bthis (morning|afternoon|evening)\b/i, "")
+    .replace(/\bin the morning\b/i, "")
+    .replace(/\b(evening|afternoon)\b/i, "")
     .replace(/\b(tuesday|monday|wednesday|thursday|friday|saturday|sunday)\b/i, "")
     .replace(/\b\d{1,2}(:\d{2})?\s?(am|pm)\b/i, "")
     .replace(/\s+/g, " ")
@@ -184,7 +188,7 @@ function extractDate(text: string) {
   if (text.includes("tomorrow")) {
     return offsetDate(1);
   }
-  if (text.includes("today")) {
+  if (text.includes("today") || text.includes("tonight")) {
     return offsetDate(0);
   }
   const weekday = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].find((day) =>
@@ -204,20 +208,33 @@ function extractDate(text: string) {
 }
 
 function extractTime(text: string) {
-  const match = text.match(/\b(\d{1,2})(?::(\d{2}))?\s?(am|pm)\b/);
-  if (!match) {
-    return undefined;
+  const meridiem = text.match(/\b(\d{1,2})(?::(\d{2}))?\s?(am|pm)\b/);
+  if (meridiem) {
+    let hour = Number(meridiem[1]);
+    const minute = Number(meridiem[2] ?? 0);
+    const suffix = meridiem[3];
+    if (suffix === "pm" && hour < 12) {
+      hour += 12;
+    }
+    if (suffix === "am" && hour === 12) {
+      hour = 0;
+    }
+    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
   }
-  let hour = Number(match[1]);
-  const minute = Number(match[2] ?? 0);
-  const meridiem = match[3];
-  if (meridiem === "pm" && hour < 12) {
-    hour += 12;
+  const twentyFour = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+  if (twentyFour) {
+    return `${String(Number(twentyFour[1])).padStart(2, "0")}:${twentyFour[2]}`;
   }
-  if (meridiem === "am" && hour === 12) {
-    hour = 0;
+  if (/\btonight\b/.test(text) || /\bevening\b/.test(text)) {
+    return "19:00";
   }
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  if (/\bafternoon\b/.test(text)) {
+    return "14:00";
+  }
+  if (/\bthis morning\b/.test(text) || /\bin the morning\b/.test(text) || /\bevery morning\b/.test(text)) {
+    return "09:00";
+  }
+  return undefined;
 }
 
 function extractRepeatRule(text: string): NudgeRepeatRule {
@@ -238,25 +255,47 @@ function extractContactName(input: string) {
   return match?.[2];
 }
 
-function combineDateAndTime(date?: string, time?: string) {
+function combineDateAndTime(date?: string, time?: string, now = new Date()) {
   if (!date && !time) {
     return undefined;
   }
-  return `${date ?? offsetDate(0)}T${time ?? "09:00"}:00.000`;
+  const day = date ?? offsetDate(0, now);
+  const clock = time ?? "09:00";
+  const [year, month, dayNum] = day.split("-").map(Number);
+  const [hour, minute] = clock.split(":").map(Number);
+  const at = new Date(year, month - 1, dayNum, hour, minute, 0, 0);
+  if (Number.isNaN(at.getTime())) {
+    return undefined;
+  }
+  if (at.getTime() <= now.getTime()) {
+    if (!time) {
+      const laterToday = new Date(now);
+      laterToday.setHours(18, 0, 0, 0);
+      laterToday.setSeconds(0, 0);
+      if (laterToday.getTime() > now.getTime()) {
+        return laterToday.toISOString();
+      }
+      laterToday.setDate(laterToday.getDate() + 1);
+      laterToday.setHours(9, 0, 0, 0);
+      return laterToday.toISOString();
+    }
+    at.setDate(at.getDate() + 1);
+  }
+  return at.toISOString();
 }
 
-function offsetDate(days: number) {
-  const date = new Date();
+function offsetDate(days: number, now = new Date()) {
+  const date = new Date(now);
   date.setDate(date.getDate() + days);
   return toIsoDate(date);
 }
 
-function nextWeekdayDate(weekday: string) {
+function nextWeekdayDate(weekday: string, now = new Date()) {
   const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   const target = weekdays.indexOf(weekday);
-  const date = new Date();
+  const date = new Date(now);
   const current = date.getDay();
-  const diff = (target - current + 7) % 7 || 7;
+  const diff = (target - current + 7) % 7;
   date.setDate(date.getDate() + diff);
   return toIsoDate(date);
 }

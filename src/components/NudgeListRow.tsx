@@ -48,7 +48,10 @@ export function NudgeListRow({
   isDone,
   onPress,
   onToggleDone,
-  onDelete
+  onDelete,
+  onLater,
+  onAsk,
+  onSmaller
 }: {
   title: string;
   type: NudgeItemType;
@@ -57,6 +60,9 @@ export function NudgeListRow({
   onPress?: () => void;
   onToggleDone?: () => void;
   onDelete?: () => void;
+  onLater?: () => void;
+  onAsk?: () => void;
+  onSmaller?: () => void;
 }) {
   const icon = typeIcons[type] ?? "ellipse-outline";
   const translateX = useRef(new Animated.Value(0)).current;
@@ -128,6 +134,22 @@ export function NudgeListRow({
             {meta.filter(Boolean).join(" · ")}
           </AppText>
         ) : null}
+        {!isDone && (onLater || onSmaller || onAsk || onToggleDone) ? (
+          <View style={styles.actions}>
+            {onLater ? (
+              <RowAction label="Later" onPress={onLater} />
+            ) : null}
+            {onToggleDone ? (
+              <RowAction label="Sorted" onPress={onToggleDone} />
+            ) : null}
+            {onSmaller ? (
+              <RowAction label="Smaller" onPress={onSmaller} />
+            ) : null}
+            {onAsk ? (
+              <RowAction label="Ask" onPress={onAsk} />
+            ) : null}
+          </View>
+        ) : null}
       </View>
       {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.accent} /> : null}
     </Pressable>
@@ -176,6 +198,21 @@ export function EmptyStateLight({ title, message }: { title: string; message: st
   );
 }
 
+function RowAction({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={(event) => {
+        event.stopPropagation?.();
+        onPress();
+      }}
+      style={({ pressed }) => [styles.actionChip, pressed && styles.rowPressed]}
+    >
+      <AppText style={styles.actionLabel}>{label}</AppText>
+    </Pressable>
+  );
+}
 function getDueMeta(item: NudgeItem) {
   const date = item.startDate ?? item.dueDate ?? item.reminderDate;
   if (!date) {
@@ -244,6 +281,27 @@ const styles = StyleSheet.create({
   },
   meta: {
     marginTop: 1
+  },
+  actions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: spacing.xs
+  },
+  actionChip: {
+    minHeight: 32,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.card,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  actionLabel: {
+    color: colors.primaryDark,
+    fontWeight: "700",
+    fontSize: 12
   },
   check: {
     width: 26,

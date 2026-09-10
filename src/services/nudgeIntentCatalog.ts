@@ -7,6 +7,7 @@ import type {
 import { CORE_NUDGE_ACTIONS, coreActionsForIntent, getIntentCategory } from "./coreNudgeActions";
 import { extensionsForInstalledPacks } from "./ready4NudgeExtensions";
 import { classifyCaptureText } from "./classifyCaptureText";
+import { applyDefaultWhen } from "./quickCapture";
 import { matchCoreWellbeing } from "../data/coreWellbeingNudges";
 
 export type UnifiedNudgeAction = {
@@ -91,19 +92,24 @@ export function resolveSomethingElse(
   const packHint = detectPackHint(text);
   const packId = packHint && installed.has(packHint) ? packHint : undefined;
 
-  return {
-    intent,
-    title: wellbeing?.title || classification.title || text.trim(),
-    itemType: wellbeing ? "list" : classification.type,
-    packId,
-    suggestedFields: wellbeing
+  const suggestedFields = applyDefaultWhen(
+    wellbeing
       ? {
           ...classification.suggestedFields,
           notes: wellbeing.notes,
           listItems: wellbeing.listItems,
           repeatRule: wellbeing.repeatRule
         }
-      : classification.suggestedFields
+      : classification.suggestedFields,
+    wellbeing ? "list" : classification.type
+  );
+
+  return {
+    intent,
+    title: wellbeing?.title || classification.title || text.trim(),
+    itemType: wellbeing ? "list" : classification.type,
+    packId,
+    suggestedFields
   };
 }
 

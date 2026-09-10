@@ -32,6 +32,7 @@ import {
 } from "../services/locationReminders";
 import { ensureNotificationPermission } from "../services/notifications";
 import { syncDailySummaryNotification } from "../services/dailySummary";
+import { resyncTimedNudges } from "../services/speakingReminders";
 import { ensureContactsPermission } from "../services/deviceContacts";
 import { hasReminderPlaces, saveHomeSettings } from "../services/homeSettingsStorage";
 import { PAY_LATER_PLACES, payLaterKindLabel, type PayLaterPlaceKind } from "../services/payLaterPlaces";
@@ -193,8 +194,9 @@ export function SettingsScreen() {
     patchPrefs({ pushNotifications: value });
     if (value) {
       await ensureNotificationPermission();
+      await resyncTimedNudges(items);
     }
-    await syncDailySummaryNotification();
+    await syncDailySummaryNotification(items);
   }
 
   async function handleContacts(value: boolean) {
@@ -230,7 +232,7 @@ export function SettingsScreen() {
       patchPrefs({ pushNotifications: true, dailySummary: true });
       await ensureNotificationPermission();
     }
-    await syncDailySummaryNotification();
+    await syncDailySummaryNotification(items);
   }
 
   async function handleSaveAll() {
@@ -248,7 +250,7 @@ export function SettingsScreen() {
       await cancelAllPayLaterReminders();
     }
     setSavedPayLaterEnabled(payLaterEnabled);
-    await syncDailySummaryNotification();
+    await syncDailySummaryNotification(items);
     setSavedPrefsSnapshot(clonePrefs(prefsDraft));
     setNotice("All settings saved.");
   }
@@ -278,7 +280,7 @@ export function SettingsScreen() {
       <SoftCard>
         <SectionHeading
           title="Notifications"
-          info="Push schedules gentle prompts on this device. Quiet hours hold alerts overnight (9pm–7am) and soften leaving-place and pay-later prompts. Daily summary is a small morning look at the day ahead — not a ‘forget something’ list — and needs Push on."
+          info="Push schedules gentle prompts on this device. Quiet hours hold alerts overnight (9pm–7am). Daily summary names what is due today at 8am — or stays quiet if nothing is waiting."
         />
         <ToggleRow
           label="Push"
@@ -457,7 +459,7 @@ export function SettingsScreen() {
           onValueChange={(value) => void handleContacts(value)}
         />
         <ToggleRow
-          label="Pull phone calendar into nudges"
+          label="Show my appointments here"
           value={prefsDraft.importFromPhoneCalendar}
           onValueChange={(value) => void handleImportFromPhoneCalendar(value)}
         />

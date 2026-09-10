@@ -16,6 +16,9 @@ import { useProfile } from "../hooks/useProfile";
 import { READY_4_LABEL, READY_4_PACKS_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useReadyPacks } from "../hooks/useReadyPacks";
 import { getPlannerConfig } from "../services/ready4PlannerConfigs";
+import { loadAppPreferences, saveAppPreferences } from "../services/appPreferencesStorage";
+import { fetchPhoneCalendarNudgeDrafts, mergePhoneCalendarDrafts, ensureCalendarPermission } from "../services/calendarSync";
+import { useNudgeActor } from "../hooks/useNudgeActor";
 import {
   dismissSecurityLockPrompt,
   loadSecurityLockPromptState
@@ -37,11 +40,14 @@ export function HomeScreen() {
   const navigation = useNavigation<any>();
   const { profile } = useProfile();
   const { isSupporterOnly, activeProfile, enableOwnNudgeWorld } = useCrew();
-  const { items: nudges } = useNudgeItems();
+  const { items: nudges, replaceItems } = useNudgeItems();
+  const actor = useNudgeActor();
   const { packs, isInstalled } = useReadyPacks();
   const { homePeek, isReady: horizonReady } = useNudgeHorizon();
   const { settings, isReady: securityReady } = useAppSecurity();
   const [showLockTip, setShowLockTip] = useState(false);
+  const [showCalendarInvite, setShowCalendarInvite] = useState(false);
+  const [calendarBusy, setCalendarBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -61,6 +67,18 @@ export function HomeScreen() {
       active = false;
     };
   }, [securityReady, settings.lockEnabled, settings.hasCredential]);
+
+  useEffect(() => {
+    let active = true;
+    loadAppPreferences().then((prefs) => {
+      if (active) {
+        setShowCalendarInvite(!prefs.importFromPhoneCalendar);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const installedPacks = useMemo(
     () => packs.filter((pack) => pack.kind === "content" && isInstalled(pack.id)).slice(0, 6),
@@ -83,6 +101,25 @@ export function HomeScreen() {
     }
     if (sourceKind === "budget") {
       navigation.navigate("BudgetItem", { itemId: sourceId });
+    }
+  }
+
+  async function showAppointmentsHere() {
+    setCalendarBusy(true);
+    try {
+      await ensureCalendarPermission();
+      const prefs = await loadAppPreferences();
+      await saveAppPreferences({ ...prefs, importFromPhoneCalendar: true });
+      const fetched = await fetchPhoneCalendarNudgeDrafts({ actor });
+      if (fetched.ok) {
+        const merged = mergePhoneCalendarDrafts(nudges, fetched.drafts);
+        if (merged.added > 0 || merged.updated > 0) {
+          replaceItems(merged.items);
+        }
+      }
+      setShowCalendarInvite(false);
+    } finally {
+      setCalendarBusy(false);
     }
   }
 
@@ -154,13 +191,42 @@ export function HomeScreen() {
                   openPeekEntry(homePeek.next!.sourceKind, homePeek.next!.sourceId, homePeek.next!.packId)
                 }
               />
-            ) : null}
+            ) : (
+              <>
+                <AppText variant="muted">Add something you don’t want to forget.</AppText>
+                <PrimaryButton onPress={() => navigation.navigate("Tabs", { screen: "Capture" })}>
+                  Add a nudge
+                </PrimaryButton>
+              </>
+            )}
           </>
         ) : (
           <AppText variant="muted">Loading…</AppText>
         )}
-        <PrimaryButton onPress={() => navigation.navigate("ComingUp")}>See what's coming up</PrimaryButton>
+        {homePeek.next ? (
+          <PrimaryButton onPress={() => navigation.navigate("ComingUp")}>See what's coming up</PrimaryButton>
+        ) : (
+          <SecondaryButton onPress={() => navigation.navigate("ComingUp")}>See what's coming up</SecondaryButton>
+        )}
+        {homePeek.next ? (
+          <SecondaryButton size="compact" onPress={() => navigation.navigate("Tabs", { screen: "Focus" })}>
+            Focus on this
+          </SecondaryButton>
+        ) : null}
       </SoftCard>
+
+      {showCalendarInvite ? (
+        <SoftCard style={styles.card}>
+          <AppText variant="heading">Phone calendar</AppText>
+          <AppText variant="muted">Show my appointments here — holidays and similar noise are skipped.</AppText>
+          <PrimaryButton size="compact" disabled={calendarBusy} onPress={() => void showAppointmentsHere()}>
+            {calendarBusy ? "Checking…" : "Show my appointments here"}
+          </PrimaryButton>
+          <SecondaryButton size="compact" onPress={() => setShowCalendarInvite(false)}>
+            Not now
+          </SecondaryButton>
+        </SoftCard>
+      ) : null}
 
       <RewardGlance />
 

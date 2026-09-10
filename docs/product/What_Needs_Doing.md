@@ -122,16 +122,16 @@ These were in the master prompt. They polish motivation and shopping. They do **
 
 ## Suggested build order
 
-| Next | Job | Why first |
-| --- | --- | --- |
-| A | First useful minute + notification ask | Without this, nothing else is in life |
-| B | Timed nudges + a real morning summary | This *is* integration with the day |
-| C | Later / Sorted / smaller from the list | This *is* easy and natural |
-| D | Home leads with Coming Up; capture gets a time | The timeline becomes the habit |
-| E | Voice save that actually saves | Natural capture |
-| F | Ask-for-help from the list; honest Crew copy | Shared care without pretending |
+| Next | Job | Why first | Status |
+| --- | --- | --- | --- |
+| A | First useful minute + notification ask | Without this, nothing else is in life | **Shipped** |
+| B | Timed nudges + a real morning summary | This *is* integration with the day | **Shipped** |
+| C | Later / Sorted / smaller from the list | This *is* easy and natural | **Shipped** |
+| D | Home leads with Coming Up; capture gets a time | The timeline becomes the habit | **Shipped** |
+| E | Voice save that actually saves | Natural capture | **Shipped** |
+| F | Ask-for-help from the list; honest Crew copy | Shared care without pretending | **Shipped** |
 
-A–C change how the app feels every day. D–F make it belong in life. Pictures and shop extras wait.
+A–F are in the app on this branch. Pictures and shop extras still wait.
 
 ## How this relates to Phases 1–4
 

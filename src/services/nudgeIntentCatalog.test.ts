@@ -81,6 +81,7 @@ describe("resolveSomethingElse", () => {
     expect(result.itemType).toBe("list");
     expect(result.title).toMatch(/drink of water/i);
     expect(result.suggestedFields.listItems?.some((item) => /skip today/i.test(item))).toBe(true);
+    expect(result.suggestedFields.reminderDate || result.suggestedFields.dueDate).toBeTruthy();
     expect(`${result.title} ${result.suggestedFields.notes}`).not.toMatch(/calorie|deficit|weight loss/i);
   });
 });

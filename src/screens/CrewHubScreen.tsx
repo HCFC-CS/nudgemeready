@@ -151,7 +151,7 @@ export function CrewHubScreen() {
         title="Crew"
         subtitle="Everyone in your support circle — people helping you, and people you help."
         showBack
-        helpText="One place for invites, your crew, crews you support, and organisation access when you have it."
+        helpText="Crew lives on this phone. Invites and Ask open a message you send yourself. The other person does not see your list on their phone yet."
       />
 
       {!isSupporterOnly ? (

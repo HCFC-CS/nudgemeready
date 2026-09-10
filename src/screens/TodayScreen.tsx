@@ -10,6 +10,8 @@ import { NudgeListRow, nudgeRowMeta } from "../components/NudgeListRow";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { RewardGlance } from "../components/RewardGlance";
 import { AdaptationCard } from "../components/AdaptationCard";
+import { MakeItSmallerCard } from "../components/MakeItSmallerCard";
+import { WhyIsThisHardCard } from "../components/WhyIsThisHardCard";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { SearchBar } from "../components/ModernUI";
@@ -27,6 +29,7 @@ import {
   reduceNudgeFrequency
 } from "../services/nudgeAdaptation";
 import { colors, radii, shadows, spacing } from "../theme/theme";
+import { whyHardActionNotice } from "../services/whyHardToday";
 import type { NudgeItem, NudgeItemWithParent } from "../types/nudge";
 import type { TabParamList } from "../types/navigation";
 import type { RewardDifficulty } from "../types/rewards";
@@ -108,6 +111,7 @@ export function TodayScreen() {
   const [viewBucket, setViewBucket] = useState<ViewBucket>("everything");
   const [searchQuery, setSearchQuery] = useState("");
   const [showReady4, setShowReady4] = useState(route.params?.typeFilter === "ready4");
+  const [supportItem, setSupportItem] = useState<NudgeItem | null>(null);
 
   useEffect(() => {
     if (route.params?.typeFilter === "ready4") {
@@ -213,6 +217,36 @@ export function TodayScreen() {
     }
   }
 
+  function markLater(item: NudgeItem) {
+    saveItem({
+      ...item,
+      ...moveNudgeToTomorrow(item),
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  function askAbout(item: NudgeItem) {
+    navigation.navigate("Help", { itemTitle: item.title });
+  }
+
+  function renderNudgeRow(item: NudgeItem) {
+    return (
+      <NudgeListRow
+        key={item.id}
+        title={item.title}
+        type={item.type}
+        meta={nudgeRowMeta(item)}
+        isDone={item.status === "done"}
+        onPress={() => navigation.navigate("ItemDetails", { draft: item })}
+        onToggleDone={() => markConfirmed(item)}
+        onDelete={() => confirmDelete(item)}
+        onLater={() => markLater(item)}
+        onAsk={() => askAbout(item)}
+        onSmaller={() => setSupportItem(item)}
+      />
+    );
+  }
+
   return (
     <Screen>
       <CrewSwitcher />
@@ -250,6 +284,49 @@ export function TodayScreen() {
 
       <RewardGlance />
 
+      {supportItem && statusFilter === "open" ? (
+        <View style={styles.support}>
+          <AppText variant="caption" style={styles.packGroupTitle}>
+            {supportItem.title}
+          </AppText>
+          <WhyIsThisHardCard
+            onAction={(action, extraNote) => {
+              if (action === "later" || action === "skip_today") {
+                const nextNotes = extraNote?.trim()
+                  ? supportItem.notes?.trim()
+                    ? `${supportItem.notes.trim()}\n${extraNote.trim()}`
+                    : extraNote.trim()
+                  : supportItem.notes;
+                saveItem({
+                  ...supportItem,
+                  notes: nextNotes,
+                  ...moveNudgeToTomorrow(supportItem),
+                  updatedAt: new Date().toISOString()
+                });
+                setSupportItem(null);
+                return;
+              }
+              whyHardActionNotice(action);
+            }}
+          />
+          <MakeItSmallerCard
+            key={supportItem.id}
+            title={supportItem.title}
+            onEarnTinyStep={(stepTitle) => {
+              earn({
+                difficulty: "normal",
+                title: stepTitle,
+                kind: "tiny_step",
+                packId: supportItem.sourcePackId,
+                sourceItemId: supportItem.id
+              });
+            }}
+          />
+          <Pressable accessibilityRole="button" onPress={() => setSupportItem(null)} style={styles.emptyAction}>
+            <AppText style={styles.emptyActionLabel}>Hide</AppText>
+          </Pressable>
+        </View>
+      ) : null}
       {stalledItem ? (
         <AdaptationCard
           itemTitle={stalledItem.title}
@@ -328,32 +405,10 @@ export function TodayScreen() {
                 <AppText variant="caption" style={styles.packGroupTitle}>
                   {group.title}
                 </AppText>
-                {group.items.map((item) => (
-                  <NudgeListRow
-                    key={item.id}
-                    title={item.title}
-                    type={item.type}
-                    meta={nudgeRowMeta(item)}
-                    isDone={item.status === "done"}
-                    onPress={() => navigation.navigate("ItemDetails", { draft: item })}
-                    onToggleDone={() => markConfirmed(item)}
-                    onDelete={() => confirmDelete(item)}
-                  />
-                ))}
+                {group.items.map((item) => renderNudgeRow(item))}
               </View>
             ))
-          : visible.map((item) => (
-              <NudgeListRow
-                key={item.id}
-                title={item.title}
-                type={item.type}
-                meta={nudgeRowMeta(item)}
-                isDone={item.status === "done"}
-                onPress={() => navigation.navigate("ItemDetails", { draft: item })}
-                onToggleDone={() => markConfirmed(item)}
-                onDelete={() => confirmDelete(item)}
-              />
-            ))}
+          : visible.map((item) => renderNudgeRow(item))}
       </View>
 
       {!visible.length ? (
@@ -377,6 +432,18 @@ export function TodayScreen() {
             >
               <AppText style={styles.emptyActionLabel}>Clear search</AppText>
             </Pressable>
+          ) : null}
+          {!searchQuery.trim() && statusFilter === "open" && !showReady4 ? (
+            <>
+              <AppText variant="muted">Add something you don’t want to forget.</AppText>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => navigation.navigate("Tabs", { screen: "Capture" })}
+                style={styles.emptyAction}
+              >
+                <AppText style={styles.emptyActionLabel}>Add a nudge</AppText>
+              </Pressable>
+            </>
           ) : null}
           {showReady4 && ready4Count === 0 ? (
             <Pressable
@@ -565,5 +632,9 @@ const styles = StyleSheet.create({
   emptyActionLabel: {
     color: colors.primaryDark,
     fontWeight: "700"
+  },
+  support: {
+    gap: spacing.sm,
+    marginBottom: spacing.sm
   }
 });

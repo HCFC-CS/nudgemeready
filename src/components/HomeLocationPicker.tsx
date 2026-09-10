@@ -115,6 +115,7 @@ function checklistPlaceholder(kind: PlaceKind) {
 export function HomeLocationPicker() {
   const {
     homeSettings,
+    setEnabled,
     setPlace,
     clearPlace,
     setPlaceReminder,
@@ -236,6 +237,46 @@ export function HomeLocationPicker() {
     setMessage("Selected — tap Save.");
   }
 
+  async function handleThisIsHome() {
+    setBusy(true);
+    setMessage("");
+    try {
+      const coordinates = await getCurrentCoordinates();
+      if (!coordinates) {
+        setMessage("Location permission needed to save this as home.");
+        return;
+      }
+      setActiveKind("home");
+      setPlace("home", {
+        label: "Home",
+        address: "",
+        postcode: "",
+        houseNumber: "",
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        locationSource: "gps",
+        reminderEnabled: true
+      });
+      setEnabled(true);
+      setDraft({
+        label: "Home",
+        address: "",
+        postcode: "",
+        houseNumber: "",
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        locationSource: "gps",
+        reminderEnabled: true,
+        thresholdMeters: HOME_THRESHOLD_DEFAULT_METERS,
+        checklistItems: [...DEFAULT_PLACE_CHECKLISTS.home]
+      });
+      setMode("location");
+      setMessage("This is home. Leaving reminders are on — Save settings if you just turned them on.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleUseCurrentLocation() {
     setBusy(true);
     setMessage("");
@@ -317,6 +358,12 @@ export function HomeLocationPicker() {
 
   return (
     <View style={styles.wrap}>
+      <PrimaryButton size="compact" onPress={() => void handleThisIsHome()} disabled={busy}>
+        {busy ? "Getting location…" : "This is home"}
+      </PrimaryButton>
+      <AppText variant="caption" style={styles.kindMeta}>
+        Saves where you are now as Home and turns on a leaving reminder. You can still set Work, School or a safe place below.
+      </AppText>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.kindRow}>
         {PLACE_KINDS.map((kind) => {
           const place = homeSettings.places[kind];
