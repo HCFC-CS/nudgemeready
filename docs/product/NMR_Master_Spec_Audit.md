@@ -129,7 +129,11 @@ Pack `affiliateCategories` feeding `withAffiliate`; Saved Things; 3-item compare
 
 Hydration / meal-check / movement lists as **core nudges** (no Ready4 pack required). Points only for logging/movement, never for weight or deficit. No NutritionProvider.
 
-### Still missing vs the prompt (do not start unless asked)
+### What still needs doing for a useful daily companion
+
+See [What_Needs_Doing.md](./What_Needs_Doing.md). Remaining work is the **short daily path** (quick save, reminders that fire, act from the list, Coming Up as the habit) — not more engines, not a diet tracker, not a 10-tab bar.
+
+### Still missing vs the prompt (polish / do not start until A–F feel natural)
 
 Dream-list images / reward styles; activity-based reward pacing; post-task “That was hard” bonus; location-aware shop ranking; gift registries / suppliers; cloud sync; RevenueCat; cosmetics; AI Coach; calorie calculator / barcode; 10-tab bar.
 

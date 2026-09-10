@@ -59,6 +59,8 @@ See [NMR master spec audit](./NMR_Master_Spec_Audit.md) for the vs-spec tables.
 
 Still out of scope unless asked: dream-list images, 5/10/20 points, calorie/barcode trackers, 10-tab bar, cloud sync.
 
+**What still needs doing for usefulness** (quick save, reminders that fire, act from the list): [What_Needs_Doing.md](./What_Needs_Doing.md).
+
 ## File anchors
 
 - Items: `src/types/nudge.ts`, `src/services/nudgeItems.ts`  
