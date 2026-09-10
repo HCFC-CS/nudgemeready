@@ -300,7 +300,7 @@ export function SettingsScreen() {
       <SoftCard>
         <SectionHeading
           title="Shop and booking ideas"
-          info="Quiet Help me find it links on some nudges. Completing a nudge never requires a purchase. Turn this off if you would rather not see partner ideas."
+          info="Quiet Help me find it links on some nudges. Completing a nudge never requires a purchase. Save ideas to Menu → Saved Things. Turn this off if you would rather not see partner ideas."
         />
         <ToggleRow
           label="Show shop and booking ideas"

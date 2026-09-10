@@ -15,8 +15,8 @@ Maps the master product prompt (10 Sep 2026) onto the Expo 54 local-first app. *
 | One goal framework | Informal project notes + budget savings goals + reward thresholds. Not one Goal entity. | **PARTIALLY EXISTS** |
 | One reward wallet | `RewardWallet` / Reward Bank only. Packs do not have their own points. | **ALREADY EXISTS** |
 | One shopping-list architecture | Nudge `list` items + Ready4 Shopping templates. No separate shopping engine. | **PARTIALLY EXISTS** |
-| One Saved Things area | Missing. | **MISSING** |
-| One affiliate engine | `withAffiliate()` is the only tracker. Gift / travel / pack shops are catalogues that call it. | **PARTIALLY EXISTS** |
+| One Saved Things area | **ALREADY EXISTS** | Menu → Saved Things. Compare up to three. Encrypted on device. |
+| One affiliate engine | `withAffiliate()` is the only tracker. Pack `affiliate` categories are ranked into 3–6 offers. | **ALREADY EXISTS** |
 | One notification engine | Speaking reminders, quiet hours, daily summary, geofence, pay-later. | **PARTIALLY EXISTS** |
 | One Crew layer | Local roles, invites, Ask for help. No multi-device sync. | **PARTIALLY EXISTS** |
 | Ready4 as context only | 18 content packs install templates into `NudgeItem`. Planner is a second dated store merged at read time. | **NEEDS EXTENDING** |
@@ -66,15 +66,15 @@ Do **not** start a health tracker in this pass. Product principle: NMR is not a 
 
 | Requirement | Status | Notes |
 | --- | --- | --- |
-| One AffiliateRecommendationEngine | **PARTIALLY EXISTS** | URL helper + several catalogues, not ranked 3–6 offers. |
-| Help Me Find It | **MISSING** as a named journey | Closest: collapsed “Optional shops / ideas”. |
-| I already have it / non-purchase route | **MISSING** | Completing a nudge never requires purchase. |
-| Pack `affiliateCategories` | **MISSING** | Hardcoded `readyPackShopLinks`. |
-| Saved Things + Compare | **MISSING** | |
-| User can disable suggestions | **MISSING** | |
+| One AffiliateRecommendationEngine | **ALREADY EXISTS** | Ranks 3–6 offers from pack categories; still calls `withAffiliate()`. |
+| Help Me Find It | **ALREADY EXISTS** | Named collapsed journey on item details, with Save. |
+| I already have it / non-purchase route | **ALREADY EXISTS** | Hides the block; persists per item. Completing a nudge never requires purchase. |
+| Pack `affiliateCategories` | **ALREADY EXISTS** | Pack content `affiliate` config; ranking in the shared engine. |
+| Saved Things + Compare | **ALREADY EXISTS** | Menu hub; compare limit 3. |
+| User can disable suggestions | **ALREADY EXISTS** | Settings → Show shop and booking ideas. |
 | Disclosure | **ALREADY EXISTS** | Short/long pending vs active. |
 | No banner ads / no pressure copy | **ALREADY EXISTS** | |
-| Health-unsafe products | **PARTIALLY EXISTS** | Policy copy; no ranking block-list yet. |
+| Health-unsafe products | **ALREADY EXISTS** | Ranking drops weight-loss / diet-pill / similar queries. |
 
 ### Navigation, a11y, data (§83–88, §96–97)
 
@@ -106,11 +106,11 @@ Extend Reward Bank and find-it **in place**:
 5. Label pack shop rows **Help me find it**; allow **I already have this**.
 6. Settings toggle to hide shop/booking ideas.
 
-### Phase 2 — adapt the task to the person (this pass)
+### Phase 2 — adapt the task to the person
 
 Why is this hard; missed-item “this doesn’t seem to be working”; Make it smaller on every item type with default tiny steps; weekly review from the existing ledger. Still no second engine.
 
-### Phase 3 — find-it depth
+### Phase 3 — find-it depth (this pass)
 
 Pack `affiliateCategories` feeding the existing `withAffiliate` helper; Saved Things; 3-item compare; ranking tests. Still one engine.
 

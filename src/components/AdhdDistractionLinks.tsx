@@ -41,6 +41,8 @@ export function AdhdDistractionLinks({
       summaryLabel="Helpful ideas"
       showAffiliateNote={showAffiliateNote}
       previewCount={3}
+      dismissKey={sourcePackId ? `adhd:${sourcePackId}:${sourceTemplateId ?? "item"}` : undefined}
+      sourcePackId={sourcePackId}
     />
   );
 }

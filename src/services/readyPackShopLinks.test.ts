@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { findAffiliatePartner } from "./affiliateLinks";
+import { getPack } from "../data/readyPacks/catalogue";
 import {
   getReadyPackShopSections,
   getShopSectionForPack,
@@ -73,5 +74,11 @@ describe("readyPackShopLinks", () => {
     const section = getShopSectionForPack("ready4-study");
     const labels = section?.links.map((link) => link.label).join(" ") ?? "";
     expect(labels).toMatch(/stationery|planners|headphones/i);
+  });
+
+  it("reads affiliate categories from pack configuration", () => {
+    const study = getPack("ready4-study");
+    expect(study?.content.affiliate?.categories.length).toBeGreaterThanOrEqual(3);
+    expect(study?.content.affiliate?.categories.every((category) => category.partners.length)).toBe(true);
   });
 });

@@ -25,5 +25,5 @@ export function ReadyPackShopLinks({
     [sourcePackId, sourceTemplateId, title, notes]
   );
 
-  return <SubtleOutboundLinks sections={sections} summaryLabel="Help me find it" previewCount={3} />;
+  return <SubtleOutboundLinks sections={sections} summaryLabel="Help me find it" previewCount={3} dismissKey={sourcePackId ? `shop:${sourcePackId}:${sourceTemplateId ?? "item"}` : undefined} sourcePackId={sourcePackId} />;
 }

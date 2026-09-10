@@ -1,6 +1,7 @@
 import { READY_4_LABEL } from "../../content/ready4Copy";
 import type {
   ReadyPack,
+  ReadyPackAffiliateConfig,
   ReadyPackBadgeDef,
   ReadyPackCrewRecommendation,
   ReadyPackKind,
@@ -10,6 +11,7 @@ import type {
   ThemePackPayload,
   VoicePackPayload
 } from "../../types/readyPacks";
+import { affiliateConfigForPack } from "./affiliateCategories";
 
 export function defineContentPack(input: {
   meta: Omit<ReadyPackMeta, "kind"> & { kind?: ReadyPackKind };
@@ -17,6 +19,7 @@ export function defineContentPack(input: {
   aiCoachPrompts?: string[];
   badges?: ReadyPackBadgeDef[];
   crewRecommendations?: ReadyPackCrewRecommendation[];
+  affiliate?: ReadyPackAffiliateConfig;
 }): ReadyPack {
   return {
     ...input.meta,
@@ -25,7 +28,8 @@ export function defineContentPack(input: {
       templates: input.templates,
       aiCoachPrompts: input.aiCoachPrompts ?? [],
       badges: input.badges ?? [],
-      crewRecommendations: input.crewRecommendations ?? []
+      crewRecommendations: input.crewRecommendations ?? [],
+      affiliate: input.affiliate
     }
   };
 }
@@ -89,6 +93,7 @@ type Ready4PackInput = {
   aiCoachPrompts?: string[];
   badges?: ReadyPackBadgeDef[];
   crewRecommendations?: ReadyPackCrewRecommendation[];
+  affiliate?: ReadyPackAffiliateConfig;
 };
 
 /** Edition 1 catalogue helper — consistent Ready4 ids, titles and product ids. */
@@ -109,6 +114,7 @@ export function ready4Pack(input: Ready4PackInput): ReadyPack {
     templates: input.templates,
     aiCoachPrompts: input.aiCoachPrompts,
     badges: input.badges,
-    crewRecommendations: input.crewRecommendations
+    crewRecommendations: input.crewRecommendations,
+    affiliate: input.affiliate ?? affiliateConfigForPack(id)
   });
 }

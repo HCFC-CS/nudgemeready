@@ -103,6 +103,13 @@ export function MoreScreen() {
         accent: colors.primaryDark
       },
       {
+        label: "Saved Things",
+        subtitle: "Find-it ideas you set aside to compare",
+        route: "SavedThings",
+        icon: "bookmark-outline",
+        accent: colors.softGold
+      },
+      {
         label: "Profile",
         subtitle: "Your name, photo, and account details",
         route: "Profile",

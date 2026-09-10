@@ -6,9 +6,13 @@ Commercial outbound links in Nudge Me Ready (gifts, cards, stays, parking, loung
 
 1. Destination URLs are built as normal.
 2. `withAffiliate(url)` matches the host to a partner and appends programme query params when configured.
-3. Gift, Holiday Planner, ADHD Starter and Ready4 pack shop UIs open links via `withAffiliate` and show a short disclosure.
-4. Privacy & support includes the longer disclosure.
-5. Until programme IDs (Amazon `tag`, Booking `aid`, etc.) are filled, disclosure copy says programmes are **not fully active** and does not claim commission is already earned.
+3. Ready4 packs declare `content.affiliate` categories. `rankAffiliateOffers()` picks 3–6 and still calls `withAffiliate`.
+4. Gift, Holiday Planner, ADHD Starter and Ready4 pack shop UIs open links via `withAffiliate` and show a short disclosure.
+5. Save stores an idea in **Saved Things** (Menu). Compare at most three. “I already have this” hides that block without a purchase.
+6. Privacy & support includes the longer disclosure.
+7. Until programme IDs (Amazon `tag`, Booking `aid`, etc.) are filled, disclosure copy says programmes are **not fully active** and does not claim commission is already earned.
+
+Health-unsafe search language (weight-loss pills, fat burners, and similar) is dropped from ranking. Ordinary wellbeing kit such as a water bottle or yoga mat is allowed.
 
 ## Ready4 pack shop links
 

@@ -49,6 +49,7 @@ export type RootStackParamList = {
   PlannerQuickAdd: { packId?: string; seed?: string } | undefined;
   ComingUp: { horizon?: import("./nudgeHorizon").NudgeHorizonId } | undefined;
   DocumentsHub: undefined;
+  SavedThings: undefined;
   CalendarHub: undefined;
 };
 

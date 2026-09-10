@@ -28,5 +28,5 @@ export function HolidayTravelLinks({
     [sourcePackId, sourceTemplateId, title, notes, locationLabel]
   );
 
-  return <SubtleOutboundLinks sections={sections} summaryLabel="Travel ideas" />;
+  return <SubtleOutboundLinks sections={sections} summaryLabel="Travel ideas" dismissKey={sourcePackId ? `travel:${sourcePackId}:${sourceTemplateId ?? "item"}` : undefined} sourcePackId={sourcePackId} />;
 }

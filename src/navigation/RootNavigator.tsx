@@ -33,6 +33,7 @@ import { PackPlannerScreen } from "../screens/PackPlannerScreen";
 import { PlannerQuickAddScreen } from "../screens/PlannerQuickAddScreen";
 import { ComingUpScreen } from "../screens/ComingUpScreen";
 import { DocumentsHubScreen } from "../screens/DocumentsHubScreen";
+import { SavedThingsScreen } from "../screens/SavedThingsScreen";
 import { CalendarHubScreen } from "../screens/CalendarHubScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { SplashScreen } from "../screens/SplashScreen";
@@ -108,6 +109,7 @@ export function RootNavigator() {
       <Stack.Screen name="PlannerQuickAdd" component={PlannerQuickAddScreen} />
       <Stack.Screen name="ComingUp" component={ComingUpScreen} />
       <Stack.Screen name="DocumentsHub" component={DocumentsHubScreen} />
+      <Stack.Screen name="SavedThings" component={SavedThingsScreen} />
       <Stack.Screen name="CalendarHub" component={CalendarHubScreen} />
       <Stack.Screen name="LegalInfo" component={LegalInfoScreen} />
       <Stack.Screen name="TermsOfUse" component={TermsOfUseScreen} />

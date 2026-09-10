@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { loadAppPreferences } from "../services/appPreferencesStorage";
 import { withAffiliate } from "../services/affiliateLinks";
 import { openExternalUrl } from "../services/openExternalUrl";
+import { useSavedThings } from "../hooks/useSavedThings";
 import { colors, radii, spacing } from "../theme/theme";
 import { AffiliateDisclosure } from "./AffiliateDisclosure";
 import { AppText } from "./Text";
@@ -32,17 +33,24 @@ export function SubtleOutboundLinks({
   sections,
   summaryLabel = "Help me find it",
   showAffiliateNote = true,
-  previewCount = DEFAULT_PREVIEW
+  previewCount = DEFAULT_PREVIEW,
+  dismissKey,
+  sourcePackId
 }: {
   sections: SubtleOutboundSection[];
   summaryLabel?: string;
   showAffiliateNote?: boolean;
   previewCount?: number;
+  /** When set, “I already have this” stays hidden after leaving the screen. */
+  dismissKey?: string;
+  sourcePackId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const [alreadyHave, setAlreadyHave] = useState(false);
+  const [localAlreadyHave, setLocalAlreadyHave] = useState(false);
   const [shopSuggestions, setShopSuggestions] = useState(true);
+  const [notice, setNotice] = useState("");
+  const { save, isSaved, alreadyHave, isHidden } = useSavedThings();
 
   useEffect(() => {
     let active = true;
@@ -61,7 +69,7 @@ export function SubtleOutboundLinks({
     [sections]
   );
 
-  if (!shopSuggestions || alreadyHave || !sections.length || totalLinks === 0) {
+  if (!shopSuggestions || localAlreadyHave || isHidden(dismissKey) || !sections.length || totalLinks === 0) {
     return null;
   }
 
@@ -109,22 +117,44 @@ export function SubtleOutboundLinks({
                   </AppText>
                 ) : null}
                 <View style={styles.chipRow}>
-                  {visible.map((link) => (
-                    <Pressable
-                      key={link.id}
-                      accessibilityRole="link"
-                      accessibilityLabel={`Open ${link.label}`}
-                      onPress={() => {
-                        void openExternalUrl(withAffiliate(link.url), link.label);
-                      }}
-                      style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
-                    >
-                      <AppText variant="caption" style={styles.chipLabel} numberOfLines={1}>
-                        {link.label}
-                      </AppText>
-                      <Ionicons name="open-outline" size={12} color={colors.mutedText} />
-                    </Pressable>
-                  ))}
+                  {visible.map((link) => {
+                    const saved = isSaved(link.url);
+                    return (
+                      <View key={link.id} style={styles.chipWrap}>
+                        <Pressable
+                          accessibilityRole="link"
+                          accessibilityLabel={`Open ${link.label}`}
+                          onPress={() => {
+                            void openExternalUrl(withAffiliate(link.url), link.label);
+                          }}
+                          style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+                        >
+                          <AppText variant="caption" style={styles.chipLabel} numberOfLines={1}>
+                            {link.label}
+                          </AppText>
+                          <Ionicons name="open-outline" size={12} color={colors.mutedText} />
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={saved ? `${link.label} saved` : `Save ${link.label}`}
+                          onPress={() => {
+                            if (saved) {
+                              return;
+                            }
+                            save({ title: link.label, url: link.url, sourcePackId });
+                            setNotice("Saved. Compare up to three in Menu → Saved Things.");
+                          }}
+                          style={({ pressed }) => [styles.saveBtn, pressed && styles.pressed]}
+                        >
+                          <Ionicons
+                            name={saved ? "bookmark" : "bookmark-outline"}
+                            size={16}
+                            color={saved ? colors.primaryDark : colors.mutedText}
+                          />
+                        </Pressable>
+                      </View>
+                    );
+                  })}
                 </View>
                 {hiddenCount > 0 ? (
                   <Pressable
@@ -142,9 +172,19 @@ export function SubtleOutboundLinks({
             );
           })}
           {showAffiliateNote ? <AffiliateDisclosure compact /> : null}
+          {notice ? (
+            <AppText variant="caption" style={styles.hint}>
+              {notice}
+            </AppText>
+          ) : null}
           <Pressable
             accessibilityRole="button"
-            onPress={() => setAlreadyHave(true)}
+            onPress={() => {
+              if (dismissKey) {
+                alreadyHave(dismissKey);
+              }
+              setLocalAlreadyHave(true);
+            }}
             hitSlop={8}
             style={styles.moreBtn}
           >
@@ -209,6 +249,11 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginTop: 2
   },
+  chipWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    maxWidth: "100%"
+  },
   chip: {
     flexDirection: "row",
     alignItems: "center",
@@ -224,7 +269,13 @@ const styles = StyleSheet.create({
   chipLabel: {
     color: colors.primaryDark,
     fontWeight: "600",
-    maxWidth: 220
+    maxWidth: 200
+  },
+  saveBtn: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center"
   },
   moreBtn: {
     alignSelf: "flex-start",

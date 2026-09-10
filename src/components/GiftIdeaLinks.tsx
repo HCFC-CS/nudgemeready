@@ -32,6 +32,7 @@ export function GiftIdeaLinks({
       ]}
       summaryLabel={variant === "card" ? "Card ideas" : "Gift ideas"}
       previewCount={3}
+      dismissKey={title.trim() ? `gift:${variant}:${title.trim().toLowerCase()}` : undefined}
     />
   );
 }
