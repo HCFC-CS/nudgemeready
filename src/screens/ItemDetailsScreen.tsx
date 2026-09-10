@@ -22,6 +22,8 @@ import { PackProvenanceBanner } from "../components/PackProvenanceBanner";
 import { NudgeFlowActions } from "../components/NudgeFlowActions";
 import { TaskBreakdownSuggestions } from "../components/TaskBreakdownSuggestions";
 import { MakeItSmallerCard } from "../components/MakeItSmallerCard";
+import { AdaptationCard } from "../components/AdaptationCard";
+import { WhyIsThisHardCard } from "../components/WhyIsThisHardCard";
 import { SpeakingReminderPlayer } from "../components/SpeakingReminderPlayer";
 import type { IoniconName } from "../components/iconTypes";
 import {
@@ -54,6 +56,14 @@ import { defaultEventPrepSteps } from "../services/eventPrepTimeline";
 import { getLocationLabel } from "../services/placeSearch";
 import { formatDateInput, formatTimeInput, getReminderAt, getReminderParts } from "../services/reminderDates";
 import { createItem, getChildrenForParent } from "../services/nudgeItems";
+import {
+  frequencyReductionNotice,
+  isStalledNudge,
+  markAdaptationOffered,
+  moveNudgeToTomorrow,
+  reduceNudgeFrequency
+} from "../services/nudgeAdaptation";
+import { whyHardActionNotice, type WhyHardAction } from "../services/whyHardToday";
 import { difficultyFromEffort } from "../types/rewards";
 import {
   buildBreakdownListItems,
@@ -427,16 +437,67 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     if (!editable) {
       return;
     }
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-    const iso = tomorrow.toISOString();
     saveItem({
       ...buildSavedItem("open"),
-      dueDate: iso,
-      reminderDate: iso
+      ...moveNudgeToTomorrow(draft)
     });
     navigation.goBack();
+  }
+
+  function mergeWhyHardNote(extraNote?: string) {
+    const extra = extraNote?.trim();
+    if (!extra) {
+      return notes;
+    }
+    return notes.trim() ? `${notes.trim()}\n${extra}` : extra;
+  }
+
+  function parkItemForTomorrow(extraNote?: string) {
+    if (!editable) {
+      return;
+    }
+    const nextNotes = mergeWhyHardNote(extraNote);
+    if (extraNote?.trim()) {
+      setNotes(nextNotes);
+    }
+    saveItem({
+      ...buildSavedItem("open"),
+      notes: nextNotes,
+      ...moveNudgeToTomorrow(draft)
+    });
+    navigation.goBack();
+  }
+
+  function handleWhyHardAction(action: WhyHardAction, extraNote?: string) {
+    if (!editable) {
+      return;
+    }
+    if (extraNote?.trim()) {
+      setNotes(mergeWhyHardNote(extraNote));
+    }
+    if (action === "later" || action === "skip_today") {
+      parkItemForTomorrow(extraNote);
+      return;
+    }
+    setNotice(whyHardActionNotice(action));
+  }
+
+  function applyAdaptationOffered() {
+    if (!editable) {
+      return;
+    }
+    saveItem({ ...buildSavedItem("open"), ...markAdaptationOffered() });
+  }
+
+  function earnTinyStep(stepTitle: string) {
+    const points = earn({
+      difficulty: "normal",
+      title: stepTitle,
+      kind: "tiny_step",
+      packId: draft.sourcePackId,
+      sourceItemId: draft.id
+    });
+    setNotice(`Nice. “${stepTitle}” · +${points}`);
   }
 
   function removeItem() {
@@ -542,16 +603,49 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
   }
 
   function renderItemOptions(onSave: () => void) {
+    const stalled = isStalledNudge(draft);
     return (
-      <NudgeFlowActions
-        editable={editable}
-        itemTitle={title}
-        onSave={onSave}
-        onSorted={() => finishItem(true)}
-        onLater={snoozeForLater}
-        onAskHelp={askForHelp}
-        onRemove={removeItem}
-      />
+      <>
+        {stalled ? (
+          <AdaptationCard
+            itemTitle={title.trim() || draft.title}
+            enabled={editable}
+            onMakeSmaller={() => {
+              applyAdaptationOffered();
+              setNotice(whyHardActionNotice("make_smaller"));
+            }}
+            onMove={() => parkItemForTomorrow()}
+            onLessOften={() => {
+              if (!editable) {
+                return;
+              }
+              const result = reduceNudgeFrequency(draft);
+              saveItem({
+                ...buildSavedItem(result.paused ? "paused" : "open"),
+                ...result.updates
+              });
+              setNotice(frequencyReductionNotice(result));
+            }}
+            onChange={() => {
+              applyAdaptationOffered();
+              setNotice("Change anything you like on this screen, then Save.");
+            }}
+            onRemove={removeItem}
+            onDismiss={applyAdaptationOffered}
+          />
+        ) : null}
+        <WhyIsThisHardCard enabled={editable} onAction={handleWhyHardAction} />
+        <MakeItSmallerCard title={title} onEarnTinyStep={earnTinyStep} />
+        <NudgeFlowActions
+          editable={editable}
+          itemTitle={title}
+          onSave={onSave}
+          onSorted={() => finishItem(true)}
+          onLater={snoozeForLater}
+          onAskHelp={askForHelp}
+          onRemove={removeItem}
+        />
+      </>
     );
   }
 
@@ -700,19 +794,6 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           <Field label="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Optional" />
         </SoftCard>
         <TaskBreakdownSuggestions title={title} onApply={applyTaskBreakdown} />
-        <MakeItSmallerCard
-          title={title}
-          onEarnTinyStep={(stepTitle) => {
-            const points = earn({
-              difficulty: "normal",
-              title: stepTitle,
-              kind: "tiny_step",
-              packId: draft.sourcePackId,
-              sourceItemId: draft.id
-            });
-            setNotice(`Nice. “${stepTitle}” · +${points}`);
-          }}
-        />
         {renderChecklistCard("Small steps")}
         {renderStepRemindersCard()}
         <SoftCard>

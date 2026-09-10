@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { HorizonEntryCard } from "../components/HorizonEntryCard";
 import { RewardGlance } from "../components/RewardGlance";
+import { WeeklyReviewCard } from "../components/WeeklyReviewCard";
 import { SoftCard, PageHeader, PrimaryButton, SecondaryButton, SectionHeading } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
@@ -162,6 +163,8 @@ export function HomeScreen() {
       </SoftCard>
 
       <RewardGlance />
+
+      <WeeklyReviewCard />
 
       <SoftCard style={styles.card}>
         <View style={styles.headerRow}>

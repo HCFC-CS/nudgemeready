@@ -53,7 +53,8 @@ export function createItem(input: NudgeItemInput, now = new Date()): NudgeItem {
     anchorPlannerItemId: input.anchorPlannerItemId,
     dueDaysBeforePlannerEvent: input.dueDaysBeforePlannerEvent,
     userEdited: input.userEdited,
-    nudgeIntent: input.nudgeIntent
+    nudgeIntent: input.nudgeIntent,
+    adaptationOfferedAt: input.adaptationOfferedAt
   };
 }
 

@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { CompletionRewardCard } from "../components/CompletionRewardCard";
 import { MakeItSmallerCard } from "../components/MakeItSmallerCard";
+import { WhyIsThisHardCard } from "../components/WhyIsThisHardCard";
 import { RewardGlance } from "../components/RewardGlance";
 import { CategoryChip, PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
@@ -12,6 +13,8 @@ import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useRewardBank } from "../hooks/useRewardBank";
 import { loadAppPreferences } from "../services/appPreferencesStorage";
 import { compareNudgesByDate, isReady4PackItem } from "../services/nudgeItems";
+import { moveNudgeToTomorrow } from "../services/nudgeAdaptation";
+import { whyHardActionNotice } from "../services/whyHardToday";
 import { colors, spacing } from "../theme/theme";
 import type { NudgeItem } from "../types/nudge";
 import type { RewardDifficulty } from "../types/rewards";
@@ -39,7 +42,7 @@ const focusModeDetails: Record<FocusMode, string> = {
 
 export function FocusScreen() {
   const navigation = useNavigation<any>();
-  const { items, completeNudgeItem } = useNudgeItems();
+  const { items, completeNudgeItem, saveItem } = useNudgeItems();
   const { earn } = useRewardBank();
   const [mode, setMode] = useState<FocusMode>("Anything");
   const [showAdjust, setShowAdjust] = useState(false);
@@ -140,19 +143,42 @@ export function FocusScreen() {
       </SoftCard>
 
       {selectedItem ? (
-        <MakeItSmallerCard
-          title={selectedItem.title}
-          onEarnTinyStep={(stepTitle) => {
-            const points = earn({
-              difficulty: "normal",
-              title: stepTitle,
-              kind: "tiny_step",
-              packId: selectedItem.sourcePackId,
-              sourceItemId: selectedItem.id
-            });
-            setTimerNotice(`Nice. “${stepTitle}” · +${points}`);
-          }}
-        />
+        <>
+          <WhyIsThisHardCard
+            onAction={(action, extraNote) => {
+              if (action === "later" || action === "skip_today") {
+                const nextNotes = extraNote?.trim()
+                  ? selectedItem.notes?.trim()
+                    ? `${selectedItem.notes.trim()}\n${extraNote.trim()}`
+                    : extraNote.trim()
+                  : selectedItem.notes;
+                saveItem({
+                  ...selectedItem,
+                  notes: nextNotes,
+                  ...moveNudgeToTomorrow(selectedItem),
+                  updatedAt: new Date().toISOString()
+                });
+                setTimerNotice(whyHardActionNotice(action));
+                return;
+              }
+              setTimerNotice(whyHardActionNotice(action));
+            }}
+          />
+          <MakeItSmallerCard
+            key={selectedItem.id}
+            title={selectedItem.title}
+            onEarnTinyStep={(stepTitle) => {
+              const points = earn({
+                difficulty: "normal",
+                title: stepTitle,
+                kind: "tiny_step",
+                packId: selectedItem.sourcePackId,
+                sourceItemId: selectedItem.id
+              });
+              setTimerNotice(`Nice. “${stepTitle}” · +${points}`);
+            }}
+          />
+        </>
       ) : null}
 
       <SoftCard style={styles.timerCard}>

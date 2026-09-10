@@ -9,6 +9,7 @@ import { HelpTip } from "../components/HelpTip";
 import { NudgeListRow, nudgeRowMeta } from "../components/NudgeListRow";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { RewardGlance } from "../components/RewardGlance";
+import { AdaptationCard } from "../components/AdaptationCard";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { SearchBar } from "../components/ModernUI";
@@ -19,6 +20,12 @@ import { useCrew } from "../hooks/useCrew";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useRewardBank } from "../hooks/useRewardBank";
 import { compareNudgesByDate, getPrimaryDate, isReady4PackItem } from "../services/nudgeItems";
+import {
+  markAdaptationOffered,
+  moveNudgeToTomorrow,
+  pickStalledNudge,
+  reduceNudgeFrequency
+} from "../services/nudgeAdaptation";
 import { colors, radii, shadows, spacing } from "../theme/theme";
 import type { NudgeItem, NudgeItemWithParent } from "../types/nudge";
 import type { TabParamList } from "../types/navigation";
@@ -95,7 +102,7 @@ export function TodayScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<TabParamList, "Today">>();
   const { activeProfile } = useCrew();
-  const { items, setItemStatus, deleteNudgeItem, loadError, clearLoadError } = useNudgeItems();
+  const { items, setItemStatus, deleteNudgeItem, saveItem, loadError, clearLoadError } = useNudgeItems();
   const { earn } = useRewardBank();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
   const [viewBucket, setViewBucket] = useState<ViewBucket>("everything");
@@ -155,6 +162,11 @@ export function TodayScreen() {
       return matchesViewBucket(item, viewBucket);
     });
   }, [allNudges, searchQuery, showReady4, statusFilter, viewBucket]);
+
+  const stalledItem = useMemo(
+    () => (statusFilter === "open" ? pickStalledNudge(visible) : undefined),
+    [statusFilter, visible]
+  );
 
   const ready4Groups = useMemo(() => {
     if (!showReady4) {
@@ -237,6 +249,37 @@ export function TodayScreen() {
       </View>
 
       <RewardGlance />
+
+      {stalledItem ? (
+        <AdaptationCard
+          itemTitle={stalledItem.title}
+          onMakeSmaller={() => navigation.navigate("ItemDetails", { draft: stalledItem })}
+          onMove={() => {
+            saveItem({
+              ...stalledItem,
+              ...moveNudgeToTomorrow(stalledItem),
+              updatedAt: new Date().toISOString()
+            });
+          }}
+          onLessOften={() => {
+            const result = reduceNudgeFrequency(stalledItem);
+            saveItem({
+              ...stalledItem,
+              ...result.updates,
+              updatedAt: new Date().toISOString()
+            });
+          }}
+          onChange={() => navigation.navigate("ItemDetails", { draft: stalledItem })}
+          onRemove={() => confirmDelete(stalledItem)}
+          onDismiss={() => {
+            saveItem({
+              ...stalledItem,
+              ...markAdaptationOffered(),
+              updatedAt: new Date().toISOString()
+            });
+          }}
+        />
+      ) : null}
 
       <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search…" />
 

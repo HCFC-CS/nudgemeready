@@ -109,6 +109,20 @@ export const taskBreakdownPlans: TaskBreakdownPlan[] = [
     ]
   },
   {
+    id: "walk",
+    label: "A short walk",
+    keywords: ["walk", "walking", "stroll", "go for a walk"],
+    totalMinutes: 25,
+    breakMinutes: 2,
+    encouragement: "Pick the length that feels possible today.",
+    steps: [
+      { title: "Walk for 5 minutes", minutes: 5 },
+      { title: "Walk for 10 minutes", minutes: 10 },
+      { title: "Walk for 20 minutes", minutes: 20 },
+      { title: "Walk around the block", minutes: 8 }
+    ]
+  },
+  {
     id: "generic-overwhelm",
     label: "Break any job into small steps",
     keywords: ["overwhelm", "too big", "dont know where", "don't know where", "stuck"],
@@ -125,6 +139,34 @@ export const taskBreakdownPlans: TaskBreakdownPlan[] = [
     ]
   }
 ];
+
+const DEFAULT_TINY_STEPS = [
+  "Do the first two minutes",
+  "A 5-minute version",
+  "One tiny piece of it"
+];
+
+const WALK_TITLE = /\bwalk(ing|s)?\b|\bstroll\b/i;
+
+/**
+ * Always-available tiny steps for “Make it smaller”.
+ * Keyword plans win when they match; otherwise a gentle generic trio.
+ */
+export function tinyStepsForTitle(title: string): string[] {
+  const query = title.trim();
+  if (WALK_TITLE.test(query)) {
+    const walk = taskBreakdownPlans.find((plan) => plan.id === "walk");
+    return walk?.steps.map((step) => step.title) ?? DEFAULT_TINY_STEPS;
+  }
+  if (!query) {
+    return [...DEFAULT_TINY_STEPS];
+  }
+  const plan = findTaskBreakdowns(query, 1)[0];
+  if (plan && plan.id !== "generic-overwhelm") {
+    return plan.steps.map((step) => step.title);
+  }
+  return [...DEFAULT_TINY_STEPS];
+}
 
 export function findTaskBreakdowns(title: string, limit = 3): TaskBreakdownPlan[] {
   const query = title.trim().toLowerCase();

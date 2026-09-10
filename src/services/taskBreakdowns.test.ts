@@ -5,7 +5,8 @@ import {
   buildStepReminderSchedule,
   findTaskBreakdowns,
   formatBreakdownNotes,
-  taskBreakdownPlans
+  taskBreakdownPlans,
+  tinyStepsForTitle
 } from "./taskBreakdowns";
 
 describe("findTaskBreakdowns", () => {
@@ -25,6 +26,12 @@ describe("findTaskBreakdowns", () => {
     const plans = findTaskBreakdowns("something totally obscure xyz");
     expect(plans).toHaveLength(1);
     expect(plans[0]?.id).toBe("generic-overwhelm");
+  });
+
+  it("matches a walk to shorter distance options", () => {
+    const plans = findTaskBreakdowns("Evening walk");
+    expect(plans[0]?.id).toBe("walk");
+    expect(plans[0]?.steps.map((step) => step.title)).toContain("Walk around the block");
   });
 
   it("suggests popular plans when the title is empty", () => {
@@ -61,5 +68,29 @@ describe("breakdown helpers", () => {
     expect(items[0]).toEqual({ id: "step-1-0", title: "1. Wipe the sides", status: "open" });
     expect(formatBreakdownNotes(kitchen)).toContain("~60 mins");
     expect(formatBreakdownNotes(kitchen)).toContain("short break");
+  });
+});
+
+describe("tinyStepsForTitle", () => {
+  it("always offers a tiny trio when nothing specific matches", () => {
+    expect(tinyStepsForTitle("something totally obscure xyz")).toEqual([
+      "Do the first two minutes",
+      "A 5-minute version",
+      "One tiny piece of it"
+    ]);
+    expect(tinyStepsForTitle("")).toHaveLength(3);
+  });
+
+  it("uses walk lengths for a walk title", () => {
+    expect(tinyStepsForTitle("Go for a walk")).toEqual([
+      "Walk for 5 minutes",
+      "Walk for 10 minutes",
+      "Walk for 20 minutes",
+      "Walk around the block"
+    ]);
+  });
+
+  it("keeps kitchen steps when the title matches", () => {
+    expect(tinyStepsForTitle("Clean the kitchen")[0]).toBe("Wipe the sides");
   });
 });

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { findTaskBreakdowns } from "../services/taskBreakdowns";
+import { tinyStepsForTitle } from "../services/taskBreakdowns";
 import { colors, radii, spacing } from "../theme/theme";
 import { AppText } from "./Text";
 
@@ -17,14 +17,11 @@ export function MakeItSmallerCard({
   onAcceptStep?: (stepTitle: string) => void;
   onEarnTinyStep?: (stepTitle: string) => void;
 }) {
-  const steps = useMemo(() => {
-    const plan = findTaskBreakdowns(title, 1)[0];
-    return plan?.steps.map((step) => step.title) ?? [];
-  }, [title]);
+  const steps = useMemo(() => tinyStepsForTitle(title), [title]);
   const [index, setIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
 
-  if (dismissed || steps.length < 2) {
+  if (dismissed || steps.length === 0) {
     return null;
   }
 

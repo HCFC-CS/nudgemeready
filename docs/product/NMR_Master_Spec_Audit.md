@@ -30,9 +30,9 @@ Maps the master product prompt (10 Sep 2026) onto the Expo 54 local-first app. *
 | Calm, non-judgemental copy | **ALREADY EXISTS** | “It still counts”; no miss penalties. |
 | Remember → nudge → start → smaller → do → earn | **PARTIALLY EXISTS** | Loop lives across Capture, Nudges, Focus, Reward Bank. |
 | DONE / LATER / MAKE IT SMALLER / SKIP TODAY | **CONFLICTS WITH CURRENT BUILD** | Live chips are **Save · Sorted · Later · Ask · Remove**. Keep Sorted — it is the calm completion word. Add Make it smaller more widely; do not rename Sorted to Done. |
-| Make it smaller + partial points | **PARTIALLY EXISTS** | Focus + ItemDetails when a breakdown exists. Tiny steps = +1. |
-| Why is this hard today? | **MISSING** | No friction reasons or adaptive copy. |
-| Missed-item adaptation | **MISSING** | No “this doesn’t seem to be working”. |
+| Make it smaller + partial points | **ALREADY EXISTS** | Every Item Details type + Focus. Generic tiny steps when no keyword plan. Tiny steps = +1. |
+| Why is this hard today? | **ALREADY EXISTS** | Item Details + Focus. Supportive reasons; shrink / skip / move. Never diagnoses. |
+| Missed-item adaptation | **ALREADY EXISTS** | One Nudges card plus Item Details: “This one doesn’t seem to be working for you.” |
 
 ### Rewards (§9–27, §84, §93)
 
@@ -49,7 +49,7 @@ Maps the master product prompt (10 Sep 2026) onto the Expo 54 local-first app. *
 | No negative points / no punitive streaks | **ALREADY EXISTS** | Claim spends available; lifetime stays. |
 | Claim vs Keep saving | **PARTIALLY EXISTS** | Alert uses “Not yet”. Needs explicit Keep saving. |
 | Dual targets next + big | **MISSING** | |
-| Momentum messages / weekly review | **MISSING** | |
+| Momentum messages / weekly review | **ALREADY EXISTS** | Home + Reward Bank card from the existing ledger. Dismissible per ISO week. |
 | Guilt-free treat copy | **NEEDS EXTENDING** | Default title still used guilt framing. |
 
 ### Health (§28–56, §94)
@@ -95,7 +95,7 @@ Do **not** start a health tracker in this pass. Product principle: NMR is not a 
 
 ## Implementation plan (priority)
 
-### Phase 1 — shared motivation (this pass)
+### Phase 1 — shared motivation
 
 Extend Reward Bank and find-it **in place**:
 
@@ -106,9 +106,9 @@ Extend Reward Bank and find-it **in place**:
 5. Label pack shop rows **Help me find it**; allow **I already have this**.
 6. Settings toggle to hide shop/booking ideas.
 
-### Phase 2 — adapt the task to the person
+### Phase 2 — adapt the task to the person (this pass)
 
-Why is this hard; missed-item “this doesn’t seem to be working”; Make it smaller on more surfaces; optional weekly review from the existing ledger. Still no second engine.
+Why is this hard; missed-item “this doesn’t seem to be working”; Make it smaller on every item type with default tiny steps; weekly review from the existing ledger. Still no second engine.
 
 ### Phase 3 — find-it depth
 

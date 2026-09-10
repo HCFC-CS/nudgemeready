@@ -144,6 +144,11 @@ export interface NudgeItem {
   userEdited?: boolean;
   /** Core “What do you want to do?” intent — never requires a Ready4 pack. */
   nudgeIntent?: import("./nudgeIntents").NudgeIntent;
+  /**
+   * Last time we offered a “this doesn’t seem to be working” adaptation.
+   * Used only to avoid repeating the prompt too soon — never as a penalty.
+   */
+  adaptationOfferedAt?: string;
 }
 
 export type NudgeItemInput = Partial<

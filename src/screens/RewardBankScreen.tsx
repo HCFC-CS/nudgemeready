@@ -6,6 +6,7 @@ import { Field } from "../components/FormControls";
 import { PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
+import { WeeklyReviewCard } from "../components/WeeklyReviewCard";
 import { useRewardBank } from "../hooks/useRewardBank";
 import { colors, spacing } from "../theme/theme";
 import type { RewardDefinition } from "../types/rewards";
@@ -84,6 +85,8 @@ export function RewardBankScreen() {
           I did something
         </SecondaryButton>
       </SoftCard>
+
+      <WeeklyReviewCard showBankLink={false} />
 
       <SoftCard style={styles.card}>
         <View style={styles.headerRow}>

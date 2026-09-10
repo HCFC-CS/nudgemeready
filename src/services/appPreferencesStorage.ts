@@ -19,6 +19,8 @@ export type AppPreferences = {
   /** When true, phone Calendar events are pulled into the app as appointments/events. */
   importFromPhoneCalendar: boolean;
   shopSuggestions: boolean;
+  /** ISO week key (e.g. 2026-W37) for which the weekly review card was dismissed. */
+  weeklyReviewDismissedWeek?: string;
 };
 
 export const defaultAppPreferences: AppPreferences = {
@@ -36,7 +38,8 @@ export const defaultAppPreferences: AppPreferences = {
   readAloud: true,
   preferredCalendarId: undefined,
   importFromPhoneCalendar: false,
-  shopSuggestions: true
+  shopSuggestions: true,
+  weeklyReviewDismissedWeek: undefined
 };
 
 export async function loadAppPreferences(): Promise<AppPreferences> {
