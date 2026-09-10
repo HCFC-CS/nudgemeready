@@ -6,6 +6,8 @@ Living documentation for the **0.2.0** TestFlight product line. Sourced from the
 | --- | --- |
 | [Ready4 Master Platform Spec](./Ready4_Master_Platform_Spec.md) | Shared-engine architecture for all Ready4 packs |
 | [Ready4 Gap & Roadmap](./Ready4_Platform_Gap_and_Roadmap.md) | Current vs target; Phase 1–4 priorities |
+| [What still needs doing](./What_Needs_Doing.md) | Useful / in-life / easy / natural — remaining daily-path work |
+| [NMR Master Spec Audit](./NMR_Master_Spec_Audit.md) | Master prompt vs current engines |
 | [01 — Product Spec Catalogue](./01-Product_Spec_Catalogue.md) | Full platform feature inventory, principles, modules, billing honesty, out of scope |
 | [02 — Ready4 Catalogue (Edition 1)](./02-Ready4_Catalogue_Edition_1.md) | Pack-by-pack catalogue matching Edition 1 Volume 2, aligned to shipped templates |
 | [Ready4 — Per-pack product specs](./ready4/README.md) | Individual product specs for all 15 Ready4 content packs |
