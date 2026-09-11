@@ -25,6 +25,8 @@ Individual product specifications for each **Edition 1 Ready4** content pack. Ge
 
 User journey Excel alignment: [user-flows.md](./user-flows.md)
 
+Illustrated **user guides** (workflows, screenshots, PDF per pack): [website/manual/library/](../../website/manual/library/index.html)
+
 ## Related docs
 
 - [Product Spec Catalogue](../01-Product_Spec_Catalogue.md)

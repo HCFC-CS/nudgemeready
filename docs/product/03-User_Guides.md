@@ -6,8 +6,11 @@ Illustrated website companion (same screenshots): [nudgemeready.app/manual](http
 
 **Download**
 
-- PDF: [`website/manual/download/Nudge-me-Ready-v3-0.3.1-User-Manual.pdf`](../../website/manual/download/Nudge-me-Ready-v3-0.3.1-User-Manual.pdf)
-- Zip (HTML + screenshots, open `User-Manual.html` on a computer): [`website/manual/download/Nudge-me-Ready-v3-0.3.1-User-Manual.zip`](../../website/manual/download/Nudge-me-Ready-v3-0.3.1-User-Manual.zip)
+- Full illustrated manual PDF: [`website/manual/download/Nudge-me-Ready-v3-0.3.1-User-Manual.pdf`](../../website/manual/download/Nudge-me-Ready-v3-0.3.1-User-Manual.pdf)
+- [Ready4 pack guides](../../website/manual/library/index.html) (one HTML + PDF per pack)
+- [Core module guides](../../website/manual/library/index.html) (Home, Nudges, Add, Focus, Crew, My money, and more)
+- Zip of all pack PDFs: [`Ready4-Pack-Guides.zip`](../../website/manual/download/Ready4-Pack-Guides.zip)
+- Zip of all core PDFs: [`Core-Module-Guides.zip`](../../website/manual/download/Core-Module-Guides.zip)
 
 Screenshots in this file live in `website/manual/images/`.
 

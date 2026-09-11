@@ -11,6 +11,8 @@
     "android": "expo start --android",
     "web": "expo start --web",
     "screenshots": "node scripts/run-screenshots.mjs",
+    "guides:capture": "node scripts/capture-guide-library.mjs",
+    "guides:build": "node scripts/guide-catalogue.mjs && node scripts/build-guide-library.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

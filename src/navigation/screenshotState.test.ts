@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getScreenshotPackId,
   getScreenshotScreenId,
   isScreenshotMode,
   shouldUseScreenshotDemoProfile
@@ -9,6 +10,7 @@ import {
 describe("screenshotState", () => {
   it("stays off in Node / native with no query string", () => {
     expect(getScreenshotScreenId()).toBeUndefined();
+    expect(getScreenshotPackId()).toBeUndefined();
     expect(isScreenshotMode()).toBe(false);
     expect(shouldUseScreenshotDemoProfile()).toBe(false);
   });
