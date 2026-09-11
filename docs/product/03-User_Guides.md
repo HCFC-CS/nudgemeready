@@ -4,6 +4,11 @@ Practical how-tos for **v3 0.3.1** on iPhone / iPad (TestFlight app **Nudge me R
 
 Illustrated website companion (same screenshots): [nudgemeready.app/manual](https://nudgemeready.app/manual/)
 
+**Download**
+
+- PDF: [`website/manual/download/Nudge-me-Ready-v3-0.3.1-User-Manual.pdf`](../../website/manual/download/Nudge-me-Ready-v3-0.3.1-User-Manual.pdf)
+- Zip (HTML + screenshots, open `User-Manual.html` on a computer): [`website/manual/download/Nudge-me-Ready-v3-0.3.1-User-Manual.zip`](../../website/manual/download/Nudge-me-Ready-v3-0.3.1-User-Manual.zip)
+
 Screenshots in this file live in `website/manual/images/`.
 
 ---
