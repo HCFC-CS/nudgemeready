@@ -5,11 +5,13 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native
 
 import { DocumentAttachmentsPanel } from "../components/DocumentAttachmentsPanel";
 import { Field, ToggleRow } from "../components/FormControls";
+import { FrequencyDropdown } from "../components/FrequencyDropdown";
 import { CalendarLinkCard } from "../components/CalendarLinkCard";
 import { DatePickerField } from "../components/DatePickerField";
 import { DateTimeFields } from "../components/DateTimeFields";
 import { EventPrepPlanner } from "../components/EventPrepPlanner";
 import { GuestsEditor } from "../components/GuestsEditor";
+import { ListPlannerDateLink } from "../components/ListPlannerDateLink";
 import { LocationFinderField } from "../components/LocationFinderField";
 import { TimePickerField } from "../components/TimePickerField";
 import { OccasionShoppingPrompts } from "../components/OccasionShoppingPrompts";
@@ -17,6 +19,11 @@ import { HolidayTravelLinks } from "../components/HolidayTravelLinks";
 import { AdhdDistractionLinks } from "../components/AdhdDistractionLinks";
 import { ReadyPackShopLinks } from "../components/ReadyPackShopLinks";
 import { PackProvenanceBanner } from "../components/PackProvenanceBanner";
+import { NudgeFlowActions } from "../components/NudgeFlowActions";
+import { TaskBreakdownSuggestions } from "../components/TaskBreakdownSuggestions";
+import { MakeItSmallerCard } from "../components/MakeItSmallerCard";
+import { AdaptationCard } from "../components/AdaptationCard";
+import { WhyIsThisHardCard } from "../components/WhyIsThisHardCard";
 import { SpeakingReminderPlayer } from "../components/SpeakingReminderPlayer";
 import type { IoniconName } from "../components/iconTypes";
 import {
@@ -35,8 +42,12 @@ import { AppText } from "../components/Text";
 import { VoiceFieldActions } from "../components/VoiceFieldActions";
 import type { MockContact } from "../data/mockData";
 import { ItemEditProvider, useItemEdit } from "../hooks/useItemEdit";
+import { READY_4_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useCrew } from "../hooks/useCrew";
 import { useNudgeItems } from "../hooks/useNudgeItems";
+import { useReady4Planner } from "../hooks/useReady4Planner";
+import { useReadyPacks } from "../hooks/useReadyPacks";
+import { useRewardBank } from "../hooks/useRewardBank";
 import { resolveItemCreator } from "../services/itemPermissions";
 import { getDefaultGiftIdeas } from "../services/giftLinks";
 import { getListSuggestions } from "../services/listSuggestions";
@@ -45,6 +56,30 @@ import { defaultEventPrepSteps } from "../services/eventPrepTimeline";
 import { getLocationLabel } from "../services/placeSearch";
 import { formatDateInput, formatTimeInput, getReminderAt, getReminderParts } from "../services/reminderDates";
 import { createItem, getChildrenForParent } from "../services/nudgeItems";
+import {
+  frequencyReductionNotice,
+  isStalledNudge,
+  markAdaptationOffered,
+  moveNudgeToTomorrow,
+  reduceNudgeFrequency
+} from "../services/nudgeAdaptation";
+import { whyHardActionNotice, type WhyHardAction } from "../services/whyHardToday";
+import { difficultyFromEffort } from "../types/rewards";
+import {
+  buildBreakdownListItems,
+  buildStepReminderSchedule,
+  formatBreakdownNotes,
+  type TaskBreakdownPlan
+} from "../services/taskBreakdowns";
+import { isWhatHelpsTemplate, resolveWhatHelpsItemId } from "../services/ready4WhatHelps";
+import {
+  APPOINTMENT_REMINDER_OPTIONS,
+  appointmentStartAt,
+  detectSelectedAppointmentReminders,
+  syncAppointmentReminderChildren,
+  type AppointmentReminderOption
+} from "../services/appointmentReminders";
+import { getPlannerConfig } from "../services/ready4PlannerConfigs";
 import { removeItemFromPhoneCalendar, syncItemToPhoneCalendar } from "../services/calendarSync";
 import { formatNudgeTypeLabel } from "../services/typeAccent";
 import { colors, radii, shadows, spacing, taskTypeAccentColors } from "../theme/theme";
@@ -74,7 +109,10 @@ export function ItemDetailsScreen(props: Props) {
 
 function ItemDetailsScreenContent({ navigation, route }: Props) {
   const draft = route.params.draft;
-  const { saveItem, items } = useNudgeItems();
+  const { saveItem, items, deleteNudgeItem } = useNudgeItems();
+  const { earn } = useRewardBank();
+  const { installState, packs } = useReadyPacks();
+  const { state: plannerState, updateItem: updatePlannerItem } = useReady4Planner();
   const { myCrewMembers, activeProfile } = useCrew();
   const { editable, isLocked } = useItemEdit();
   const [title, setTitle] = useState(draft.title);
@@ -83,18 +121,38 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
   const [reminder, setReminder] = useState(formatDateValue(draft.reminderDate));
   const [notes, setNotes] = useState(draft.notes ?? "");
   const [voiceNoteUrl, setVoiceNoteUrl] = useState(draft.voiceNoteUrl ?? "");
+  const [anchorPlannerItemId, setAnchorPlannerItemId] = useState(draft.anchorPlannerItemId);
+  const dueDaysBeforePlannerEvent = useMemo(() => {
+    if (draft.dueDaysBeforePlannerEvent !== undefined) {
+      return draft.dueDaysBeforePlannerEvent;
+    }
+    const pack = packs.find((entry) => entry.id === draft.sourcePackId);
+    const template = pack?.content.templates.find((entry) => entry.id === draft.sourceTemplateId);
+    return template?.dueDaysBeforePlannerEvent ?? 0;
+  }, [draft.dueDaysBeforePlannerEvent, draft.sourcePackId, draft.sourceTemplateId, packs]);
   const [forWhat, setForWhat] = useState(getSuggestedForWhat(draft.title));
   const [selectedWhen, setSelectedWhen] = useState("");
   const [selectedReminder, setSelectedReminder] = useState(reminder || "No reminder");
   const [linkedContact, setLinkedContact] = useState<MockContact | undefined>();
   const [appointmentTime, setAppointmentTime] = useState(formatTimeValue(draft.startDate));
   const [travelTime, setTravelTime] = useState("");
-  const [appointmentReminders, setAppointmentReminders] = useState(["1 day before", "1 hour before"]);
+  const [appointmentReminders, setAppointmentReminders] = useState<AppointmentReminderOption[]>(() => {
+    const existing = detectSelectedAppointmentReminders(getChildrenForParent(items, draft.id));
+    return existing.length ? existing : ["1 day before", "1 hour before"];
+  });
+  const customApptReminderParts = getReminderParts(
+    getChildrenForParent(items, draft.id).find((child) => child.sourceTemplateId === "appt-pre-custom")?.reminderDate
+  );
+  const [customApptReminderDate, setCustomApptReminderDate] = useState(customApptReminderParts.date);
+  const [customApptReminderTime, setCustomApptReminderTime] = useState(
+    customApptReminderParts.time || "09:00"
+  );
   const [reminderDate, setReminderDate] = useState(formatDateValue(draft.reminderDate ?? draft.dueDate));
   const [reminderTime, setReminderTime] = useState(formatTimeValue(draft.reminderDate ?? draft.dueDate));
   const [notificationOption, setNotificationOption] = useState("Push");
-  const [repeatOption, setRepeatOption] = useState(formatRepeatValue(draft.repeatRule?.frequency));
-  const [routineFrequency, setRoutineFrequency] = useState(formatRoutineFrequency(draft.repeatRule?.frequency));
+  const [repeatOption, setRepeatOption] = useState(formatRepeatValue(draft.repeatRule));
+  const [routineFrequency, setRoutineFrequency] = useState(formatRoutineFrequency(draft.repeatRule));
+  const [customFrequencyText, setCustomFrequencyText] = useState(getInitialCustomFrequencyText(draft.repeatRule));
   const [routineTime, setRoutineTime] = useState(formatTimeValue(draft.reminderDate));
   const [linkedParent, setLinkedParent] = useState(draft.parentId ? "Linked item" : "");
   const [repeatsYearly, setRepeatsYearly] = useState(
@@ -166,7 +224,12 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
       createdBy: resolveItemCreator(draft),
       isLocked,
       updatedAt: new Date().toISOString(),
-      dueDate: resolveDateValue(draft.dueDate, when),
+      dueDate:
+        draft.type === "list"
+          ? when.trim()
+            ? resolveDateValue(draft.dueDate, when)
+            : undefined
+          : resolveDateValue(draft.dueDate, when),
       startDate:
         draft.type === "appointment" || draft.type === "event"
           ? resolveDateValue(draft.startDate, when, appointmentTime)
@@ -194,8 +257,15 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
       nudgeEveryTenMinutesUntilDone:
         draft.type === "reminder" ? nudgeEveryTenMinutesUntilDone : draft.nudgeEveryTenMinutesUntilDone,
       notifyNudgerIfNotDone: draft.type === "reminder" ? notifyNudgerIfNotDone : draft.notifyNudgerIfNotDone,
-      repeatRule: buildRepeatRule(draft, repeatOption, routineFrequency),
-      listItems: draft.type === "list" ? listItems : draft.listItems,
+      repeatRule: buildRepeatRule(draft, repeatOption, routineFrequency, customFrequencyText),
+      listItems:
+        draft.type === "list" ||
+        draft.type === "routine" ||
+        draft.type === "chore" ||
+        draft.type === "task" ||
+        draft.type === "subtask"
+          ? listItems
+          : draft.listItems,
       sharedWith: draft.type === "list" ? sharedWith : draft.sharedWith,
       needsCard: isOccasionLike(draft.type) ? needsCard : draft.needsCard,
       needsPresent: isOccasionLike(draft.type) ? needsPresent : draft.needsPresent,
@@ -209,7 +279,10 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
         draft.type === "appointment" || draft.type === "event" ? syncToCalendar : draft.syncToCalendar,
       calendarId: draft.type === "appointment" || draft.type === "event" ? calendarId : draft.calendarId,
       calendarEventId:
-        draft.type === "appointment" || draft.type === "event" ? calendarEventId : draft.calendarEventId
+        draft.type === "appointment" || draft.type === "event" ? calendarEventId : draft.calendarEventId,
+      anchorPlannerItemId: draft.type === "list" ? anchorPlannerItemId : draft.anchorPlannerItemId,
+      dueDaysBeforePlannerEvent:
+        draft.type === "list" ? dueDaysBeforePlannerEvent : draft.dueDaysBeforePlannerEvent
     };
   }
 
@@ -311,12 +384,46 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     }
 
     saveItem(saved);
+    syncAppointmentRemindersFor(saved);
     navigation.navigate("Tabs", { screen: "Today" });
+  }
+
+  function syncAppointmentRemindersFor(saved: NudgeItem) {
+    if (saved.type !== "appointment") {
+      return;
+    }
+    const appointmentAt = appointmentStartAt(when, appointmentTime, saved.startDate);
+    if (!appointmentAt) {
+      return;
+    }
+    const { upsert, cancel } = syncAppointmentReminderChildren({
+      parent: saved,
+      appointmentAt,
+      selected: appointmentReminders,
+      existingChildren: getChildrenForParent(items, saved.id),
+      customReminderIso: getReminderAt(customApptReminderDate, customApptReminderTime),
+      actor: saved.createdBy
+    });
+    for (const child of upsert) {
+      saveItem(child);
+    }
+    for (const child of cancel) {
+      saveItem({ ...child, status: "cancelled", updatedAt: new Date().toISOString() });
+    }
   }
 
   function finishItem(goToDoneScreen: boolean) {
     if (!editable) {
       return;
+    }
+    if (draft.status !== "done") {
+      earn({
+        difficulty: difficultyFromEffort(draft.estimatedEffort),
+        title: title.trim() || draft.title,
+        kind: "task",
+        packId: draft.sourcePackId,
+        sourceItemId: draft.id
+      });
     }
     saveItem(buildSavedItem("done"));
     if (goToDoneScreen) {
@@ -326,50 +433,312 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     navigation.goBack();
   }
 
-  function renderItemOptions(onSave: () => void) {
+  function snoozeForLater() {
+    if (!editable) {
+      return;
+    }
+    saveItem({
+      ...buildSavedItem("open"),
+      ...moveNudgeToTomorrow(draft)
+    });
+    navigation.goBack();
+  }
+
+  function mergeWhyHardNote(extraNote?: string) {
+    const extra = extraNote?.trim();
+    if (!extra) {
+      return notes;
+    }
+    return notes.trim() ? `${notes.trim()}\n${extra}` : extra;
+  }
+
+  function parkItemForTomorrow(extraNote?: string) {
+    if (!editable) {
+      return;
+    }
+    const nextNotes = mergeWhyHardNote(extraNote);
+    if (extraNote?.trim()) {
+      setNotes(nextNotes);
+    }
+    saveItem({
+      ...buildSavedItem("open"),
+      notes: nextNotes,
+      ...moveNudgeToTomorrow(draft)
+    });
+    navigation.goBack();
+  }
+
+  function handleWhyHardAction(action: WhyHardAction, extraNote?: string) {
+    if (!editable) {
+      return;
+    }
+    if (extraNote?.trim()) {
+      setNotes(mergeWhyHardNote(extraNote));
+    }
+    if (action === "later" || action === "skip_today") {
+      parkItemForTomorrow(extraNote);
+      return;
+    }
+    setNotice(whyHardActionNotice(action));
+  }
+
+  function applyAdaptationOffered() {
+    if (!editable) {
+      return;
+    }
+    saveItem({ ...buildSavedItem("open"), ...markAdaptationOffered() });
+  }
+
+  function earnTinyStep(stepTitle: string) {
+    const points = earn({
+      difficulty: "normal",
+      title: stepTitle,
+      kind: "tiny_step",
+      packId: draft.sourcePackId,
+      sourceItemId: draft.id
+    });
+    setNotice(`Nice. “${stepTitle}” · +${points}`);
+  }
+
+  function removeItem() {
+    if (!editable) {
+      return;
+    }
+    deleteNudgeItem(draft.id);
+    navigation.goBack();
+  }
+
+  function applyTaskBreakdown(plan: TaskBreakdownPlan) {
+    if (!editable) {
+      return;
+    }
+    const start = new Date();
+    const nextTitle = title.trim() || plan.label;
+    const nextNotes = formatBreakdownNotes(plan);
+    const nextListItems = buildBreakdownListItems(plan);
+    setTitle(nextTitle);
+    setNotes(nextNotes);
+    setListItems(nextListItems);
+    setNotice(`Gentle plan applied: ${plan.steps.length} steps with short breaks.`);
+
+    const parentSnapshot = {
+      ...buildSavedItem("open"),
+      title: nextTitle,
+      notes: nextNotes,
+      listItems: nextListItems,
+      energyLevel: "low" as const,
+      estimatedEffort: "medium" as const,
+      dueDate: new Date(start.getTime() + plan.totalMinutes * 60_000).toISOString()
+    };
+
+    const schedule = buildStepReminderSchedule(plan, start);
+    const children = schedule.map((step) =>
+      createItem({
+        type: "reminder",
+        title: step.title,
+        parentId: draft.id,
+        createdBy: parentSnapshot.createdBy,
+        reminderDate: step.at.toISOString(),
+        speakingReminderText: step.speakingReminderText,
+        notes: "Gentle next-step cue. Snooze or skip anytime."
+      })
+    );
+
+    saveItem({
+      ...parentSnapshot,
+      children: [...new Set([...(parentSnapshot.children ?? []), ...children.map((child) => child.id)])]
+    });
+    for (const child of children) {
+      saveItem(child);
+    }
+  }
+
+  function askForHelp() {
+    navigation.navigate("Help", { itemTitle: title.trim() || draft.title });
+  }
+
+  function renderStepRemindersCard() {
+    const stepReminders = getChildrenForParent(items, draft.id).filter(
+      (child) => child.type === "reminder" && child.status !== "done" && child.status !== "cancelled"
+    );
+    if (!stepReminders.length) {
+      return null;
+    }
     return (
-      <View style={ts.optionsBlock}>
-        <AppText variant="caption" style={ts.optionsLabel}>
-          Options
+      <SoftCard>
+        <AppText variant="heading">Step reminders</AppText>
+        <AppText variant="muted">Gentle cues to start the next small step. Snooze or skip anytime.</AppText>
+        {stepReminders.map((child) => (
+          <Pressable
+            key={child.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Open step reminder ${child.title}`}
+            onPress={() => navigation.navigate("ItemDetails", { draft: child })}
+            style={styles.stepReminderRow}
+          >
+            <AppText style={styles.stepReminderTitle}>{child.title}</AppText>
+            {child.reminderDate ? (
+              <AppText variant="caption">
+                {formatDateInput(new Date(child.reminderDate))} · {formatTimeInput(new Date(child.reminderDate))}
+              </AppText>
+            ) : null}
+          </Pressable>
+        ))}
+      </SoftCard>
+    );
+  }
+
+  function persistListItems(next: typeof listItems) {
+    setListItems(next);
+    if (editable) {
+      saveItem({ ...buildSavedItem(), listItems: next });
+    }
+  }
+
+  function toggleListItemDone(itemId: string) {
+    const next = listItems.map((item) =>
+      item.id === itemId ? { ...item, status: item.status === "done" ? ("open" as const) : ("done" as const) } : item
+    );
+    persistListItems(next);
+  }
+
+  function renderItemOptions(onSave: () => void) {
+    const stalled = isStalledNudge(draft);
+    return (
+      <>
+        {stalled ? (
+          <AdaptationCard
+            itemTitle={title.trim() || draft.title}
+            enabled={editable}
+            onMakeSmaller={() => {
+              applyAdaptationOffered();
+              setNotice(whyHardActionNotice("make_smaller"));
+            }}
+            onMove={() => parkItemForTomorrow()}
+            onLessOften={() => {
+              if (!editable) {
+                return;
+              }
+              const result = reduceNudgeFrequency(draft);
+              saveItem({
+                ...buildSavedItem(result.paused ? "paused" : "open"),
+                ...result.updates
+              });
+              setNotice(frequencyReductionNotice(result));
+            }}
+            onChange={() => {
+              applyAdaptationOffered();
+              setNotice("Change anything you like on this screen, then Save.");
+            }}
+            onRemove={removeItem}
+            onDismiss={applyAdaptationOffered}
+          />
+        ) : null}
+        <WhyIsThisHardCard enabled={editable} onAction={handleWhyHardAction} />
+        <MakeItSmallerCard title={title} onEarnTinyStep={earnTinyStep} />
+        <NudgeFlowActions
+          editable={editable}
+          itemTitle={title}
+          onSave={onSave}
+          onSorted={() => finishItem(true)}
+          onLater={snoozeForLater}
+          onAskHelp={askForHelp}
+          onRemove={removeItem}
+        />
+      </>
+    );
+  }
+
+  function openWhatHelpsTarget(rowTitle: string) {
+    const packId = draft.sourcePackId;
+    const templateItemIds = packId ? installState.installed[packId]?.templateItemIds : undefined;
+    const itemsById = new Map(items.map((item) => [item.id, item]));
+    const resolved = resolveWhatHelpsItemId(packId, rowTitle, templateItemIds, itemsById);
+    if (resolved.restOutcome) {
+      setNotice("Rest is a valid choice. Nothing else needed right now.");
+      return;
+    }
+    if (!resolved.itemId) {
+      setNotice(`That tool is not installed yet. Re-open ${READY_PACKS_SHOP_LABEL} and update this pack if needed.`);
+      return;
+    }
+    const target = items.find((item) => item.id === resolved.itemId);
+    if (!target) {
+      setNotice(`Could not find that tool just now. Try Nudges → ${READY_4_LABEL}, or open ${READY_PACKS_SHOP_LABEL} from Menu.`);
+      return;
+    }
+    navigation.navigate("ItemDetails", { draft: target });
+  }
+
+  function renderChecklistCard(heading = "Steps") {
+    if (!listItems.length) {
+      return null;
+    }
+    const doneCount = listItems.filter((item) => item.status === "done").length;
+    const triageMode = isWhatHelpsTemplate(draft.sourceTemplateId);
+    return (
+      <SoftCard>
+        <AppText variant="heading">{heading}</AppText>
+        <AppText variant="muted">
+          {triageMode
+            ? `${doneCount}/${listItems.length} noted · pick one, then open that tool`
+            : `${doneCount}/${listItems.length} done · tick as you go — saves automatically`}
         </AppText>
-        <View style={ts.actionRow}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Save"
-            onPress={onSave}
-            style={({ pressed }) => [ts.optionBtn, ts.saveBtn, pressed && ts.pressed]}
-          >
-            <Ionicons name="save-outline" size={18} color={colors.accent} />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Complete"
-            onPress={() => finishItem(true)}
-            style={({ pressed }) => [ts.optionBtn, ts.completeBtn, pressed && ts.pressed]}
-          >
-            <Ionicons name="checkmark-circle" size={18} color={colors.onPrimary} />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Delete and move to completed"
-            onPress={() => finishItem(false)}
-            style={({ pressed }) => [ts.optionBtn, ts.deleteBtn, pressed && ts.pressed]}
-          >
-            <Ionicons name="trash-outline" size={18} color={colors.mutedText} />
-          </Pressable>
-        </View>
-      </View>
+        {listItems.map((item) => {
+          const canOpen =
+            triageMode &&
+            resolveWhatHelpsItemId(
+              draft.sourcePackId,
+              item.title,
+              draft.sourcePackId ? installState.installed[draft.sourcePackId]?.templateItemIds : undefined
+            ).itemId;
+          const isRest =
+            triageMode &&
+            resolveWhatHelpsItemId(
+              draft.sourcePackId,
+              item.title,
+              draft.sourcePackId ? installState.installed[draft.sourcePackId]?.templateItemIds : undefined
+            ).restOutcome;
+          return (
+            <View key={item.id} style={styles.checklistRowWrap}>
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: item.status === "done" }}
+                onPress={() => toggleListItemDone(item.id)}
+                style={styles.checklistRow}
+              >
+                <View style={[styles.checklistBox, item.status === "done" && styles.checklistBoxDone]}>
+                  {item.status === "done" ? (
+                    <Ionicons name="checkmark" size={14} color={colors.onPrimary} />
+                  ) : null}
+                </View>
+                <AppText style={item.status === "done" ? styles.checklistDone : undefined}>{item.title}</AppText>
+              </Pressable>
+              {triageMode && (canOpen || isRest) ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={isRest ? "Rest is enough" : `Open tool for ${item.title}`}
+                  onPress={() => openWhatHelpsTarget(item.title)}
+                  style={styles.openToolBtn}
+                >
+                  <AppText style={styles.openToolLabel}>{isRest ? "Rest ok" : "Open"}</AppText>
+                </Pressable>
+              ) : null}
+            </View>
+          );
+        })}
+      </SoftCard>
     );
   }
 
   if (draft.type === "task" || draft.type === "subtask") {
     return (
       <Screen>
-        <PageHeaderWithEdit title="Task" subtitle="One thing at a time." />
+        <PageHeaderWithEdit title="Task" subtitle="One thing at a time — break it down if it feels big." />
         {renderPackProvenance()}
         <SoftCard>
-          <Field label="Title" value={title} onChangeText={setTitle} placeholder="Book dentist" />
-          <Field label="For what?" value={forWhat} onChangeText={setForWhat} placeholder="Routine check-up" />
+          <Field label="Title" value={title} onChangeText={setTitle} placeholder="Clean the kitchen" />
+          <Field label="For what?" value={forWhat} onChangeText={setForWhat} placeholder="Optional context" />
           <View style={styles.section}>
             <AppText variant="small">When?</AppText>
             <View style={styles.chips}>
@@ -424,6 +793,9 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           </View>
           <Field label="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Optional" />
         </SoftCard>
+        <TaskBreakdownSuggestions title={title} onApply={applyTaskBreakdown} />
+        {renderChecklistCard("Small steps")}
+        {renderStepRemindersCard()}
         <SoftCard>
           <AppText variant="heading">Useful extras</AppText>
           <VoiceCaptureButton
@@ -484,8 +856,9 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           <Field label="Travel time" value={travelTime} onChangeText={setTravelTime} placeholder="Optional" />
           <View style={styles.section}>
             <AppText variant="small">Reminder</AppText>
+            <AppText variant="muted">Gentle cues before the appointment. Snooze or skip anytime.</AppText>
             <View style={styles.chips}>
-              {["1 day before", "1 hour before", "Custom"].map((option) => (
+              {APPOINTMENT_REMINDER_OPTIONS.map((option) => (
                 <CategoryChip
                   key={option}
                   label={option}
@@ -500,6 +873,16 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
                 />
               ))}
             </View>
+            {appointmentReminders.includes("Custom") ? (
+              <DateTimeFields
+                dateLabel="Custom reminder date"
+                timeLabel="Custom reminder time"
+                date={customApptReminderDate}
+                onDateChange={setCustomApptReminderDate}
+                time={customApptReminderTime}
+                onTimeChange={setCustomApptReminderTime}
+              />
+            ) : null}
           </View>
           <Field label="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Optional" />
           <VoiceCaptureButton
@@ -696,6 +1079,41 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           </View>
         )}
 
+        {/* Optional date so the list appears in order on Nudges (e.g. exam day) */}
+        <View style={ls.dateBlock}>
+          {draft.sourcePackId && getPlannerConfig(draft.sourcePackId) ? (
+            <ListPlannerDateLink
+              packId={draft.sourcePackId}
+              packLabel={getPlannerConfig(draft.sourcePackId)?.title ?? "planner"}
+              offsetDays={dueDaysBeforePlannerEvent}
+              selectedPlannerItemId={anchorPlannerItemId}
+              plannerItems={plannerState.items}
+              onSelect={({ plannerItemId, dueDateIso }) => {
+                setAnchorPlannerItemId(plannerItemId);
+                setWhen(formatDateValue(dueDateIso));
+                updatePlannerItem(plannerItemId, { nudgeItemId: draft.id });
+              }}
+              onClear={() => {
+                setAnchorPlannerItemId(undefined);
+              }}
+            />
+          ) : null}
+          <DatePickerField
+            label="Date"
+            value={when}
+            onChangeText={(value) => {
+              setWhen(value);
+              if (anchorPlannerItemId) {
+                setAnchorPlannerItemId(undefined);
+              }
+            }}
+            placeholder="DD-MM-YYYY"
+          />
+          <AppText variant="caption" style={ls.dim}>
+            Optional — pick a planner event (like an exam), or type a date so this list shows in the right place on Nudges.
+          </AppText>
+        </View>
+
         {/* Add bar: text + voice — paste multi-line to add many items */}
         <View style={ls.addBar}>
           <TextInput
@@ -774,27 +1192,54 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           </View>
         ) : (
           <View style={ls.itemsCard}>
-            {listItems.map((item) => (
-              <Pressable
-                key={item.id}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: item.status === "done" }}
-                style={ls.row}
-                onPress={() =>
-                  setListItems((cur) =>
-                    cur.map((c) => c.id === item.id ? { ...c, status: c.status === "done" ? "open" : "done" } : c)
+            {listItems.map((item) => {
+              const triageMode = isWhatHelpsTemplate(draft.sourceTemplateId);
+              const resolved = triageMode
+                ? resolveWhatHelpsItemId(
+                    draft.sourcePackId,
+                    item.title,
+                    draft.sourcePackId
+                      ? installState.installed[draft.sourcePackId]?.templateItemIds
+                      : undefined
                   )
-                }
-              >
-                <View style={[ls.check, item.status === "done" && ls.checkDone]}>
-                  {item.status === "done" && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
+                : undefined;
+              return (
+                <View key={item.id} style={ls.rowWrap}>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: item.status === "done" }}
+                    style={ls.row}
+                    onPress={() => toggleListItemDone(item.id)}
+                  >
+                    <View style={[ls.check, item.status === "done" && ls.checkDone]}>
+                      {item.status === "done" && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
+                    </View>
+                    <AppText style={[ls.itemLabel, item.status === "done" && ls.itemDone]} numberOfLines={2}>
+                      {item.title}
+                    </AppText>
+                  </Pressable>
+                  {triageMode && (resolved?.itemId || resolved?.restOutcome) ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={resolved.restOutcome ? "Rest is enough" : `Open tool for ${item.title}`}
+                      onPress={() => openWhatHelpsTarget(item.title)}
+                      style={ls.openToolBtn}
+                    >
+                      <AppText style={ls.openToolLabel}>{resolved.restOutcome ? "Rest ok" : "Open"}</AppText>
+                    </Pressable>
+                  ) : null}
+                  <Pressable
+                    hitSlop={8}
+                    onPress={() => {
+                      const next = listItems.filter((c) => c.id !== item.id);
+                      persistListItems(next);
+                    }}
+                  >
+                    <Ionicons name="close" size={18} color={colors.mutedText} />
+                  </Pressable>
                 </View>
-                <AppText style={[ls.itemLabel, item.status === "done" && ls.itemDone]} numberOfLines={1}>{item.title}</AppText>
-                <Pressable hitSlop={8} onPress={() => setListItems((cur) => cur.filter((c) => c.id !== item.id))}>
-                  <Ionicons name="close" size={18} color={colors.mutedText} />
-                </Pressable>
-              </Pressable>
-            ))}
+              );
+            })}
           </View>
         )}
 
@@ -802,13 +1247,19 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
         {listDone > 0 && (
           <Pressable
             accessibilityRole="button"
-            onPress={() => setListItems((cur) => cur.filter((i) => i.status !== "done"))}
+            onPress={() => persistListItems(listItems.filter((i) => i.status !== "done"))}
             style={({ pressed }) => [ls.clearBtn, pressed && ls.pressed]}
           >
             <Ionicons name="trash-outline" size={16} color={colors.mutedText} />
             <AppText variant="caption" style={ls.dim}>Clear completed</AppText>
           </Pressable>
         )}
+
+        {notice ? (
+          <AppText variant="small" style={{ paddingHorizontal: spacing.sm, color: colors.accent }}>
+            {notice}
+          </AppText>
+        ) : null}
 
         {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
@@ -877,7 +1328,8 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
       { value: "Daily", icon: "sunny-outline" },
       { value: "Weekly", icon: "calendar-outline" },
       { value: "Monthly", icon: "calendar-number-outline" },
-      { value: "Yearly", icon: "refresh-outline" }
+      { value: "Yearly", icon: "refresh-outline" },
+      { value: "Custom", icon: "options-outline" }
     ];
     const notifyOptions: Array<{ value: string; icon: IoniconName }> = [
       { value: "Push", icon: "notifications-outline" },
@@ -983,7 +1435,21 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           />
         </View>
 
-        <ReminderRepeatDropdown value={repeatOption} options={repeatOptions} onSelect={setRepeatOption} />
+        <FrequencyDropdown
+          label="Repeat"
+          value={repeatOption}
+          options={repeatOptions}
+          onSelect={setRepeatOption}
+          accessibilityLabel="Repeat"
+        />
+        {repeatOption === "Custom" ? (
+          <Field
+            label="Custom repeat"
+            value={customFrequencyText}
+            onChangeText={setCustomFrequencyText}
+            placeholder="e.g. Every other Tuesday"
+          />
+        ) : null}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={rs.optionScroll}>
           {notifyOptions.map((option) => (
@@ -1042,19 +1508,20 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
         {renderPackProvenance()}
         <SoftCard>
           <Field label="Routine title" value={title} onChangeText={setTitle} placeholder="Take vitamins" />
-          <View style={styles.section}>
-            <AppText variant="small">Frequency</AppText>
-            <View style={styles.chips}>
-              {["Daily", "Weekdays", "Weekly", "Monthly", "Custom"].map((option) => (
-                <CategoryChip
-                  key={option}
-                  label={option}
-                  selected={routineFrequency === option}
-                  onPress={() => setRoutineFrequency(option)}
-                />
-              ))}
-            </View>
-          </View>
+          <FrequencyDropdown
+            label="Frequency"
+            value={routineFrequency}
+            options={ROUTINE_FREQUENCY_OPTIONS}
+            onSelect={setRoutineFrequency}
+          />
+          {routineFrequency === "Custom" ? (
+            <Field
+              label="Custom frequency"
+              value={customFrequencyText}
+              onChangeText={setCustomFrequencyText}
+              placeholder="e.g. Every other morning"
+            />
+          ) : null}
           <Field label="Time" value={routineTime} onChangeText={setRoutineTime} placeholder="Morning" />
           <View style={styles.section}>
             <AppText variant="small">Reminder</AppText>
@@ -1081,12 +1548,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             placeholder="Optional"
           />
         </SoftCard>
-        <SoftCard>
-          <AppText variant="heading">Gentle tracking</AppText>
-          <AppText>Completed 18 times this month</AppText>
-          <AppText variant="muted">Last completed yesterday</AppText>
-          <AppText variant="muted">Pick this up again</AppText>
-        </SoftCard>
+        {renderChecklistCard("Routine steps")}
         {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
@@ -1100,30 +1562,38 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
   if (draft.type === "chore") {
     return (
       <Screen>
-        <PageHeaderWithEdit title="Chore" subtitle="One house job at a time." />
+        <PageHeaderWithEdit
+          title="Chore"
+          subtitle="One house job at a time — break it into small steps if it feels big."
+        />
         {renderPackProvenance()}
         <SoftCard>
           <Field label="Chore title" value={title} onChangeText={setTitle} placeholder="Clean the kitchen" />
-          <View style={styles.section}>
-            <AppText variant="small">How often?</AppText>
-            <View style={styles.chips}>
-              {["Daily", "Weekdays", "Weekly", "Monthly", "Custom"].map((option) => (
-                <CategoryChip
-                  key={option}
-                  label={option}
-                  selected={routineFrequency === option}
-                  onPress={() => setRoutineFrequency(option)}
-                />
-              ))}
-            </View>
-          </View>
+          <FrequencyDropdown
+            label="How often?"
+            value={routineFrequency}
+            options={ROUTINE_FREQUENCY_OPTIONS}
+            onSelect={setRoutineFrequency}
+          />
+          {routineFrequency === "Custom" ? (
+            <Field
+              label="Custom frequency"
+              value={customFrequencyText}
+              onChangeText={setCustomFrequencyText}
+              placeholder="e.g. Every Saturday morning"
+            />
+          ) : null}
           <Field label="When" value={routineTime} onChangeText={setRoutineTime} placeholder="Saturday morning" />
           <Field label="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Optional" />
           <VoiceCaptureButton
             placeholder="Say a chore note..."
             onCaptured={(capturedText, capturedVoiceNoteUrl) => appendToNotes(capturedText, setNotes, setVoiceNoteUrl, capturedVoiceNoteUrl)}
           />
+          {notice ? <AppText variant="small">{notice}</AppText> : null}
         </SoftCard>
+        <TaskBreakdownSuggestions title={title} onApply={applyTaskBreakdown} />
+        {renderChecklistCard("Chore steps")}
+        {renderStepRemindersCard()}
         {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
@@ -1150,6 +1620,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             value={venueLocation}
             onChange={setVenueLocation}
             placeholder="Search venue, e.g. AO Arena Manchester"
+            showDirectionsOptions
           />
         </SoftCard>
         <SoftCard>
@@ -1157,6 +1628,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             eventDate={when}
             eventTime={appointmentTime}
             venue={getLocationLabel(venueLocation)}
+            venueLocation={venueLocation}
             homeLocation={homeWhere}
             travelMinutes={eventTravelMinutes}
             readyMinutes={eventReadyMinutes}
@@ -1389,7 +1861,7 @@ function getFieldsForType(type: NudgeItem["type"]) {
     return ["title", "when", "notes"];
   }
   if (type === "list") {
-    return ["title", "notes"];
+    return ["title", "when", "notes"];
   }
   if (type === "event") {
     return ["title", "when", "where", "contact", "reminder", "notes"];
@@ -1467,7 +1939,8 @@ function formatTimeValue(value?: string) {
   return formatTimeInput(date);
 }
 
-function formatRepeatValue(value?: string) {
+function formatRepeatValue(rule?: NudgeRepeatRule | string) {
+  const value = typeof rule === "string" ? rule : rule?.frequency;
   if (value === "daily") {
     return "Daily";
   }
@@ -1486,7 +1959,11 @@ function formatRepeatValue(value?: string) {
   return "Never";
 }
 
-function formatRoutineFrequency(value?: string) {
+function formatRoutineFrequency(rule?: NudgeRepeatRule | string) {
+  if (typeof rule === "object" && rule?.frequency === "custom" && rule.customText === "Weekdays") {
+    return "Weekdays";
+  }
+  const value = typeof rule === "string" ? rule : rule?.frequency;
   if (value === "daily") {
     return "Daily";
   }
@@ -1501,6 +1978,24 @@ function formatRoutineFrequency(value?: string) {
   }
   return "Daily";
 }
+
+function getInitialCustomFrequencyText(rule?: NudgeRepeatRule) {
+  if (rule?.frequency !== "custom") {
+    return "";
+  }
+  if (!rule.customText || rule.customText === "Weekdays") {
+    return "";
+  }
+  return rule.customText;
+}
+
+const ROUTINE_FREQUENCY_OPTIONS: Array<{ value: string; icon: IoniconName }> = [
+  { value: "Daily", icon: "sunny-outline" },
+  { value: "Weekdays", icon: "briefcase-outline" },
+  { value: "Weekly", icon: "calendar-outline" },
+  { value: "Monthly", icon: "calendar-number-outline" },
+  { value: "Custom", icon: "options-outline" }
+];
 
 function resolveDateValue(existingValue: string | undefined, dateText: string, timeText?: string) {
   const trimmedDate = dateText.trim();
@@ -1538,11 +2033,31 @@ function parseDisplayDate(dateText: string, timeText?: string) {
   return new Date(Number(year), Number(month) - 1, Number(day), hours, minutes);
 }
 
-function buildRepeatRule(draft: NudgeItem, repeatOption: string, routineFrequency: string): NudgeRepeatRule | undefined {
+function buildRepeatRule(
+  draft: NudgeItem,
+  repeatOption: string,
+  routineFrequency: string,
+  customFrequencyText: string
+): NudgeRepeatRule | undefined {
   if (draft.type === "routine" || draft.type === "chore") {
+    if (routineFrequency === "Weekdays") {
+      return { frequency: "custom", customText: "Weekdays" };
+    }
+    if (routineFrequency === "Custom") {
+      return {
+        frequency: "custom",
+        customText: customFrequencyText.trim() || undefined
+      };
+    }
     return { frequency: toRepeatFrequency(routineFrequency) };
   }
   if (draft.type === "reminder") {
+    if (repeatOption === "Custom") {
+      return {
+        frequency: "custom",
+        customText: customFrequencyText.trim() || undefined
+      };
+    }
     return { frequency: toRepeatFrequency(repeatOption) };
   }
   return draft.repeatRule;
@@ -1550,7 +2065,7 @@ function buildRepeatRule(draft: NudgeItem, repeatOption: string, routineFrequenc
 
 function toRepeatFrequency(value: string): NudgeRepeatRule["frequency"] {
   const normalized = value.toLowerCase();
-  if (normalized === "daily" || normalized === "weekdays") {
+  if (normalized === "daily") {
     return "daily";
   }
   if (normalized === "weekly") {
@@ -1562,7 +2077,7 @@ function toRepeatFrequency(value: string): NudgeRepeatRule["frequency"] {
   if (normalized === "yearly") {
     return "yearly";
   }
-  if (normalized === "custom") {
+  if (normalized === "custom" || normalized === "weekdays") {
     return "custom";
   }
   return "none";
@@ -1651,64 +2166,60 @@ function ReminderToggleTile({
   );
 }
 
-function ReminderRepeatDropdown({
-  value,
-  options,
-  onSelect
-}: {
-  value: string;
-  options: Array<{ value: string; icon: IoniconName }>;
-  onSelect: (value: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const current = options.find((option) => option.value === value) ?? options[0];
-
-  return (
-    <View style={rs.dropdown}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Repeat"
-        onPress={() => setOpen((isOpen) => !isOpen)}
-        style={({ pressed }) => [rs.dropdownTrigger, pressed && rs.pressed]}
-      >
-        <Ionicons name="repeat-outline" size={20} color={colors.accent} />
-        <Ionicons name={current.icon} size={18} color={colors.text} />
-        <AppText variant="body" style={rs.dropdownValue}>
-          {current.value}
-        </AppText>
-        <Ionicons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.mutedText} />
-      </Pressable>
-      {open ? (
-        <View style={rs.dropdownMenu}>
-          {options.map((option) => (
-            <Pressable
-              key={option.value}
-              accessibilityRole="button"
-              onPress={() => {
-                onSelect(option.value);
-                setOpen(false);
-              }}
-              style={[rs.dropdownItem, value === option.value && rs.dropdownItemActive]}
-            >
-              <Ionicons
-                name={option.icon}
-                size={18}
-                color={value === option.value ? colors.accent : colors.mutedText}
-              />
-              <AppText variant="body" style={value === option.value ? rs.dropdownItemTextActive : undefined}>
-                {option.value}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   reminder: {
     gap: spacing.sm
+  },
+  checklistRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+    flex: 1
+  },
+  checklistRowWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  openToolBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
+    backgroundColor: colors.secondary
+  },
+  openToolLabel: {
+    color: colors.accent,
+    fontWeight: "700",
+    fontSize: 12
+  },
+  checklistBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.card
+  },
+  checklistBoxDone: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary
+  },
+  checklistDone: {
+    textDecorationLine: "line-through",
+    color: colors.mutedText
+  },
+  stepReminderRow: {
+    gap: 2,
+    paddingVertical: spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderLight
+  },
+  stepReminderTitle: {
+    color: colors.primaryDark,
+    fontWeight: "600"
   },
   section: {
     gap: spacing.xs
@@ -1906,7 +2417,25 @@ const ls = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     minHeight: 42,
-    paddingHorizontal: spacing.xs
+    paddingHorizontal: spacing.xs,
+    flex: 1
+  },
+  rowWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingRight: spacing.xs
+  },
+  openToolBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
+    backgroundColor: colors.secondary
+  },
+  openToolLabel: {
+    color: colors.accent,
+    fontWeight: "700",
+    fontSize: 12
   },
   check: {
     width: 24,
@@ -1940,6 +2469,9 @@ const ls = StyleSheet.create({
   dim: {
     color: colors.mutedText,
     fontWeight: "600"
+  },
+  dateBlock: {
+    gap: spacing.xs
   },
   suggestBlock: {
     gap: spacing.xs

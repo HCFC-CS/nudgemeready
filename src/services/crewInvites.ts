@@ -1,4 +1,11 @@
-import type { ConsentType, CrewInvitation, CrewPermissionSet, CrewRole, InviteMethod } from "../types/crew";
+import type {
+  ConsentType,
+  CrewInvitation,
+  CrewPermissionKey,
+  CrewPermissionSet,
+  CrewRole,
+  InviteMethod
+} from "../types/crew";
 import { mergeRolePermissions } from "../types/crew";
 
 const INVITE_BASE = "https://nudgemeready.app/invite";
@@ -74,14 +81,114 @@ function manualBase64Decode(value: string) {
   return output;
 }
 
+type CompactInvitePayload = {
+  v: 2;
+  i: string;
+  by: string;
+  pn: string;
+  pid: string;
+  cid: string;
+  mid: string;
+  r: CrewRole[];
+  p?: CrewPermissionKey[];
+  c?: ConsentType[];
+  x: string;
+  a?: string;
+  cn?: string;
+};
+
+function truePermissionKeys(permissions: CrewPermissionSet): CrewPermissionKey[] {
+  return (Object.keys(permissions) as CrewPermissionKey[]).filter((key) => permissions[key]);
+}
+
+function permissionsFromTrueKeys(keys: CrewPermissionKey[] | undefined, roles: CrewRole[]): CrewPermissionSet {
+  const next = mergeRolePermissions(roles);
+  if (!keys) {
+    return next;
+  }
+  for (const key of Object.keys(next) as CrewPermissionKey[]) {
+    next[key] = keys.includes(key);
+  }
+  return next;
+}
+
+function toCompactInvitePayload(payload: SharedInvitePayload): CompactInvitePayload {
+  const invite = payload.invitation;
+  const compact: CompactInvitePayload = {
+    v: 2,
+    i: invite.id,
+    by: invite.invitedByName,
+    pn: payload.targetProfile.name,
+    pid: payload.targetProfile.id,
+    cid: payload.crew.id,
+    mid: invite.membershipId,
+    r: invite.proposedRoles,
+    x: invite.expiresAt
+  };
+  const permissionKeys = truePermissionKeys(invite.proposedPermissions);
+  if (permissionKeys.length) {
+    compact.p = permissionKeys;
+  }
+  if (invite.proposedConsents.length) {
+    compact.c = invite.proposedConsents;
+  }
+  if (payload.targetProfile.avatarSymbol) {
+    compact.a = payload.targetProfile.avatarSymbol;
+  }
+  const defaultCrewName = `${payload.targetProfile.name}'s Crew`;
+  if (payload.crew.name && payload.crew.name !== defaultCrewName) {
+    compact.cn = payload.crew.name;
+  }
+  return compact;
+}
+
+function fromCompactInvitePayload(compact: CompactInvitePayload): SharedInvitePayload {
+  const now = new Date().toISOString();
+  const invitation: CrewInvitation = {
+    id: compact.i,
+    invitedByUserId: "shared",
+    invitedByName: compact.by,
+    inviteMethod: "link",
+    inviteLink: buildInviteLink(compact.i),
+    targetCrewId: compact.cid,
+    targetProfileId: compact.pid,
+    targetProfileName: compact.pn,
+    membershipId: compact.mid,
+    proposedRoles: compact.r,
+    proposedPermissions: permissionsFromTrueKeys(compact.p, compact.r),
+    proposedConsents: compact.c ?? [],
+    status: "sent",
+    expiresAt: compact.x,
+    createdAt: now,
+    updatedAt: now
+  };
+  return {
+    v: 1,
+    invitation,
+    targetProfile: {
+      id: compact.pid,
+      name: compact.pn,
+      avatarSymbol: compact.a
+    },
+    crew: {
+      id: compact.cid,
+      name: compact.cn ?? `${compact.pn}'s Crew`,
+      supportedProfileId: compact.pid
+    }
+  };
+}
+
 export function encodeSharedInvitePayload(payload: SharedInvitePayload) {
-  return toBase64Url(JSON.stringify(payload));
+  return toBase64Url(JSON.stringify(toCompactInvitePayload(payload)));
 }
 
 export function decodeSharedInvitePayload(raw: string): SharedInvitePayload | null {
   try {
-    const parsed = JSON.parse(fromBase64Url(raw)) as SharedInvitePayload;
-    if (parsed?.v !== 1 || !parsed.invitation?.id || !parsed.crew?.id || !parsed.targetProfile?.id) {
+    const parsed = JSON.parse(fromBase64Url(raw)) as SharedInvitePayload | CompactInvitePayload;
+    if (parsed?.v === 2 && "i" in parsed && parsed.i && parsed.pid && parsed.cid && parsed.mid) {
+      return fromCompactInvitePayload(parsed);
+    }
+    if (parsed?.v !== 1 || !("invitation" in parsed) || !parsed.invitation?.id || !parsed.crew?.id || !parsed.targetProfile?.id) {
       return null;
     }
     return parsed;
@@ -215,41 +322,26 @@ export function parseInviteFromUrl(url: string): { inviteId?: string; payload: S
   }
 }
 
+function inviteFromName(invite: CrewInvitation) {
+  return invite.invitedByName.trim() || "Someone";
+}
+
 export function getEmailInviteCopy(invite: CrewInvitation) {
   return {
-    subject: "You've been invited to join a Crew on Nudge me Ready",
-    body: `Hi,
-
-You've been invited to join a Crew on Nudge me Ready.
-
-Nudge me Ready helps people stay independent with gentle reminders, support and peace of mind for the people who care about them.
-
-This invite gives you access to their nudges only. You only get your own reminders if you set up the app for yourself.
-
-When you accept, you’ll agree to the Crew Supporter Terms — a short promise to be supportive, respect privacy, and stay within the role you’re offered.
-
-Use the secure link below to review the invite and accept:
+    subject: `${inviteFromName(invite)} invited you to a Crew`,
+    body: `${inviteFromName(invite)} invited you to join a Crew on Nudge me Ready.
 
 ${invite.inviteLink}`
   };
 }
 
 export function getSmsInviteCopy(invite: CrewInvitation) {
-  return `You've been invited to join a Crew on Nudge me Ready (access to their nudges only — set up the app yourself for your own):
-
+  return `${inviteFromName(invite)} invited you to a Crew on Nudge me Ready:
 ${invite.inviteLink}`;
 }
 
 export function getWhatsAppInviteCopy(invite: CrewInvitation) {
-  return `Hi, I'd like to invite you to join my Crew on Nudge me Ready.
-
-You'll get access to my nudges only. Set up the app for yourself if you want your own reminders.
-
-When you accept, you’ll agree to the Crew Supporter Terms (be supportive, respect privacy, stay in role).
-
-Join using this secure link:
-
-${invite.inviteLink}`;
+  return getSmsInviteCopy(invite);
 }
 
 export function getInviteMethodLabel(method: InviteMethod) {
@@ -283,7 +375,7 @@ export type InviteShareChannel = "email" | "sms" | "whatsapp" | "copy";
 
 export function getInviteSharePayload(invite: CrewInvitation, channel: InviteShareChannel) {
   if (channel === "copy") {
-    return { kind: "share" as const, message: invite.inviteLink };
+    return { kind: "share" as const, message: getSmsInviteCopy(invite) };
   }
   if (channel === "email") {
     const copy = getEmailInviteCopy(invite);

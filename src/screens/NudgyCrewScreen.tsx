@@ -1,1 +1,1 @@
-export { MyCrewScreen as NudgyCrewScreen } from "./MyCrewScreen";
+export { CrewHubScreen as NudgyCrewScreen } from "./CrewHubScreen";

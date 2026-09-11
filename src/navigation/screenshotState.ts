@@ -1,6 +1,6 @@
 import type { NavigationState, PartialState } from "@react-navigation/native";
 
-import { mockItems, mockNudgeItems } from "../data/mockData";
+import { mockNudgeItems } from "../data/mockData";
 import type { RootStackParamList } from "../types/navigation";
 
 export type ScreenshotTarget = {
@@ -12,31 +12,22 @@ export type ScreenshotTarget = {
 export const screenshotTargets: ScreenshotTarget[] = [
   { id: "Splash", filename: "01-splash", label: "Splash" },
   { id: "Home", filename: "02-home", label: "Home" },
-  { id: "Capture", filename: "03-capture", label: "+nudge" },
-  { id: "Today", filename: "04-today", label: "My Nudges" },
-  { id: "Focus", filename: "05-focus", label: "Focus" },
-  { id: "More", filename: "06-more", label: "More" },
-  { id: "MyWorld", filename: "07-my-world", label: "My World" },
-  { id: "Projects", filename: "08-projects", label: "Projects" },
-  { id: "Lists", filename: "09-lists", label: "Lists" },
-  { id: "Reminders", filename: "10-reminders", label: "Reminders" },
-  { id: "Routines", filename: "11-routines", label: "Routines" },
-  { id: "Events", filename: "12-events", label: "Events" },
-  { id: "Occasions", filename: "13-occasions", label: "Occasions" },
-  { id: "Done", filename: "14-done", label: "Done" },
-  { id: "ItemDetails", filename: "15-item-details", label: "Item Details" },
-  { id: "AddTask", filename: "16-add-task", label: "Add Task" },
-  { id: "VoiceAddTask", filename: "17-voice-add-task", label: "Voice Add Task" },
-  { id: "TaskBuddy", filename: "18-task-buddy", label: "Task Buddy" },
-  { id: "Help", filename: "19-ask-for-help", label: "Ask for Help" },
-  { id: "Circle", filename: "20-my-crew", label: "My Crew" },
-  { id: "NudgyCrew", filename: "21-my-crew", label: "My Crew" },
-  { id: "MyCrew", filename: "21-my-crew", label: "My Crew" },
-  { id: "CrewsISupport", filename: "24-crews-i-support", label: "Crews I Support" },
-  { id: "OrganisationDashboard", filename: "25-organisation-dashboard", label: "People We Support" },
-  { id: "InviteCrew", filename: "26-invite-crew", label: "Invite Crew" },
-  { id: "Profile", filename: "22-profile", label: "Profile" },
-  { id: "Settings", filename: "23-settings", label: "Settings" }
+  { id: "Today", filename: "03-nudges", label: "Nudges" },
+  { id: "Capture", filename: "04-add", label: "Add" },
+  { id: "More", filename: "05-menu", label: "Menu" },
+  { id: "Focus", filename: "06-focus", label: "Focus" },
+  { id: "MyWorld", filename: "07-everything", label: "Everything" },
+  { id: "ComingUp", filename: "08-coming-up", label: "What's coming up" },
+  { id: "RewardBank", filename: "09-reward-bank", label: "Reward Bank" },
+  { id: "ReadyPacks", filename: "10-ready-packs", label: "Ready4Packs" },
+  { id: "Done", filename: "11-done", label: "Completed" },
+  { id: "ItemDetails", filename: "12-item-details", label: "Item Details" },
+  { id: "Help", filename: "13-ask-for-help", label: "Ask for Help" },
+  { id: "CrewHub", filename: "14-crew", label: "Crew" },
+  { id: "OrganisationDashboard", filename: "15-organisation-dashboard", label: "People We Support" },
+  { id: "InviteCrew", filename: "16-invite-crew", label: "Invite Crew" },
+  { id: "Profile", filename: "17-profile", label: "Profile" },
+  { id: "Settings", filename: "18-settings", label: "Settings" }
 ];
 
 const tabScreens = new Set<keyof RootStackParamList | string>([
@@ -47,26 +38,32 @@ const tabScreens = new Set<keyof RootStackParamList | string>([
   "More"
 ]);
 
+const TAB_ORDER = ["Home", "Today", "Capture", "More", "Focus"] as const;
+
+const EXTRA_STACK_SCREENS = new Set([
+  "Budget",
+  "CalendarHub",
+  "DocumentsHub",
+  "SavedThings",
+  "ReadyPacks",
+  "ComingUp"
+]);
+
 function createRoute(name: string, params?: object) {
   return params ? { name, params, key: `${name}-screenshot` } : { name, key: `${name}-screenshot` };
 }
 
 export function getScreenshotInitialState(screenId: string): PartialState<NavigationState> | undefined {
   if (tabScreens.has(screenId)) {
+    const index = TAB_ORDER.indexOf(screenId as (typeof TAB_ORDER)[number]);
     return {
       index: 0,
       routes: [
         {
           ...createRoute("Tabs"),
           state: {
-            index: ["Home", "Capture", "Today", "Focus", "More"].indexOf(screenId),
-            routes: [
-              createRoute("Home"),
-              createRoute("Capture"),
-              createRoute("Today"),
-              createRoute("Focus"),
-              createRoute("More")
-            ]
+            index: index >= 0 ? index : 0,
+            routes: TAB_ORDER.map((name) => createRoute(name))
           }
         }
       ]
@@ -81,21 +78,21 @@ export function getScreenshotInitialState(screenId: string): PartialState<Naviga
     };
   }
 
-  if (screenId === "AddTask") {
+  if (screenId === "ReadyPackPreview") {
     return {
       index: 0,
-      routes: [createRoute("AddTask", { draft: mockItems[0] })]
+      routes: [createRoute("ReadyPackPreview", { packId: getScreenshotPackId() ?? "ready4-home" })]
     };
   }
 
-  if (screenId === "TaskBuddy") {
+  if (screenId === "PackPlanner") {
     return {
       index: 0,
-      routes: [createRoute("TaskBuddy", { task: mockItems[2] })]
+      routes: [createRoute("PackPlanner", { packId: getScreenshotPackId() ?? "ready4-home" })]
     };
   }
 
-  if (screenshotTargets.some((target) => target.id === screenId)) {
+  if (screenshotTargets.some((target) => target.id === screenId) || EXTRA_STACK_SCREENS.has(screenId)) {
     return {
       index: 0,
       routes: [createRoute(screenId)]
@@ -105,9 +102,27 @@ export function getScreenshotInitialState(screenId: string): PartialState<Naviga
   return undefined;
 }
 
-export function getScreenshotScreenId(): string | undefined {
+export function getScreenshotScreenId() {
   if (typeof window === "undefined") {
     return undefined;
   }
-  return new URLSearchParams(window.location.search).get("screen") ?? undefined;
+  const params = new URLSearchParams(window.location.search);
+  return params.get("screenshot") ?? params.get("screen") ?? undefined;
+}
+
+export function getScreenshotPackId() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+  return new URLSearchParams(window.location.search).get("pack") ?? undefined;
+}
+
+export function isScreenshotMode() {
+  return Boolean(getScreenshotScreenId());
+}
+
+/** Splash stays on first-open registration. Other shots use a completed demo profile. */
+export function shouldUseScreenshotDemoProfile() {
+  const screenId = getScreenshotScreenId();
+  return Boolean(screenId && screenId !== "Splash");
 }

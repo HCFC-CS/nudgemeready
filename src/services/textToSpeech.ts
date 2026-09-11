@@ -15,6 +15,37 @@ export function isSpeaking() {
   return speaking;
 }
 
+/** Short cue so mic / speak buttons feel responsive when listening starts. */
+export function announceVoiceReady() {
+  return new Promise<void>((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve();
+    };
+
+    try {
+      Speech.stop();
+    } catch {
+      // Ignore stop failures.
+    }
+
+    Speech.speak("Ready", {
+      language: "en-GB",
+      rate: 1.05,
+      onDone: finish,
+      onStopped: finish,
+      onError: finish
+    });
+
+    // If speech never callbacks (some devices), continue after a short beat.
+    setTimeout(finish, 1200);
+  });
+}
+
 export async function speakText(text: string, options?: { onDone?: () => void }) {
   const cleaned = text.trim();
   if (!cleaned) {

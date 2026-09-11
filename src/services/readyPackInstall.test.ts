@@ -22,26 +22,26 @@ import type { ReadyPackInstallState } from "../types/readyPacks";
 
 const emptyState = (): ReadyPackInstallState => ({ installed: {} });
 
-describe("Ready 4 catalogue", () => {
-  it("lists 15 Ready 4 content packs plus cosmetics", () => {
-    expect(listContentPacks()).toHaveLength(15);
+describe("Ready4 catalogue", () => {
+  it("lists 15 Ready4 content packs plus cosmetics", () => {
+    expect(listContentPacks()).toHaveLength(18);
     expect(listPacks("theme").length).toBeGreaterThanOrEqual(7);
     expect(listPacks("voice").length).toBeGreaterThanOrEqual(5);
     expect(listPacks("character").length).toBeGreaterThanOrEqual(11);
-    expect(getPack("ready4-travel")?.title).toBe("Ready 4 Travel");
-    expect(getPack("ready4-home")?.title).toBe("Ready 4 Home");
+    expect(getPack("ready4-travel")?.title).toBe("Ready4 Travel");
+    expect(getPack("ready4-home")?.title).toBe("Ready4 Home");
     expect(getPack("holiday-planner")).toBeUndefined();
   });
 
-  it("titles every content pack Ready 4 …", () => {
+  it("titles every content pack Ready4 …", () => {
     for (const pack of listContentPacks()) {
-      expect(pack.title.startsWith("Ready 4 ")).toBe(true);
+      expect(pack.title.startsWith("Ready4 ")).toBe(true);
       expect(pack.id.startsWith("ready4-")).toBe(true);
     }
   });
 });
 
-describe("Ready 4 Travel", () => {
+describe("Ready4 Travel", () => {
   it("includes core travel templates", () => {
     const titles = ready4TravelPack.content.templates.map((template) => template.title);
     expect(titles).toContain("Check passport expiry");
@@ -65,7 +65,7 @@ describe("Ready 4 Travel", () => {
   });
 });
 
-describe("Ready 4 Home", () => {
+describe("Ready4 Home", () => {
   it("is free to install", () => {
     expect(isPackFree(ready4HomePack)).toBe(true);
     expect(canInstallPack(ready4HomePack, defaultEntitlementLedger()).allowed).toBe(true);
@@ -116,7 +116,37 @@ describe("install / uninstall / migrate", () => {
     );
     const removed = uninstallPack("ready4-travel", withEdit, installed.state, "unedited_only");
     expect(removed.keptEditedCount).toBe(1);
-    expect(removed.items.some((item) => item.title === "My packing list")).toBe(true);
+    const kept = removed.items.find((item) => item.title === "My packing list");
+    expect(kept).toBeTruthy();
+    expect(kept?.sourcePackId).toBeUndefined();
+  });
+
+  it("keeps user-created nudges that only linked a pack, clearing the association", () => {
+    const installed = installPack(ready4TravelPack, [], emptyState(), defaultEntitlementLedger());
+    const linked: NudgeItem = {
+      id: "user-nudge-1",
+      title: "Call solicitor about moving house",
+      type: "reminder",
+      status: "open",
+      children: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      attachments: [],
+      listItems: [],
+      progress: 0,
+      sourcePackId: "ready4-travel",
+      nudgeIntent: "remember"
+    };
+    const removed = uninstallPack(
+      "ready4-travel",
+      [...installed.items, linked],
+      installed.state,
+      "all_from_pack"
+    );
+    const kept = removed.items.find((item) => item.id === "user-nudge-1");
+    expect(kept).toBeTruthy();
+    expect(kept?.sourcePackId).toBeUndefined();
+    expect(kept?.title).toBe("Call solicitor about moving house");
   });
 
   it("preserves unedited flag when content is unchanged", () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { findAffiliatePartner } from "./affiliateLinks";
+import { getPack } from "../data/readyPacks/catalogue";
 import {
   getReadyPackShopSections,
   getShopSectionForPack,
@@ -10,7 +11,7 @@ import {
 describe("readyPackShopLinks", () => {
   const packIds = listPacksWithShopLinks();
 
-  it("covers Ready 4 packs that offer shop links", () => {
+  it("covers Ready4 packs that offer shop links", () => {
     expect(packIds).toEqual(
       expect.arrayContaining([
         "ready4-home",
@@ -21,7 +22,10 @@ describe("readyPackShopLinks", () => {
         "ready4-emergencies",
         "ready4-study",
         "ready4-family",
-        "ready4-independence"
+        "ready4-independence",
+        "ready4-baby",
+        "ready4-moving",
+        "ready4-wedding"
       ])
     );
     expect(packIds).not.toContain("ready4-travel");
@@ -70,5 +74,11 @@ describe("readyPackShopLinks", () => {
     const section = getShopSectionForPack("ready4-study");
     const labels = section?.links.map((link) => link.label).join(" ") ?? "";
     expect(labels).toMatch(/stationery|planners|headphones/i);
+  });
+
+  it("reads affiliate categories from pack configuration", () => {
+    const study = getPack("ready4-study");
+    expect(study?.content.affiliate?.categories.length).toBeGreaterThanOrEqual(3);
+    expect(study?.content.affiliate?.categories.every((category) => category.partners.length)).toBe(true);
   });
 });

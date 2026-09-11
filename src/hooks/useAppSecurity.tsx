@@ -14,7 +14,6 @@ import {
   authenticateWithBiometrics,
   adminResetLockKeepData,
   buildSupportRecoveryMailto,
-  createEmailResetLink,
   credentialLabel,
   type CredentialType,
   disableAppLock,
@@ -32,6 +31,7 @@ import {
   verifyRecoveryCode
 } from "../services/appSecurity";
 import { isDevAdminAvailable } from "../services/devAdmin";
+import { requestPasswordResetEmail } from "../services/passwordResetEmail";
 
 const MAX_FAILED_ATTEMPTS = 5;
 const BASE_LOCKOUT_MS = 30_000;
@@ -60,7 +60,7 @@ type AppSecurityContextValue = {
   updateLockOnBackground: (enabled: boolean) => Promise<void>;
   beginForgotPasswordWithDevice: () => Promise<boolean>;
   beginForgotPasswordWithRecoveryCode: (code: string) => Promise<boolean>;
-  beginForgotPasswordWithEmailLink: () => Promise<void>;
+  beginForgotPasswordWithEmailLink: () => Promise<{ message: string }>;
   beginForgotPasswordWithEmailToken: (token: string) => Promise<boolean>;
   emailSupportForRecovery: () => Promise<void>;
   updateRecoveryEmail: (currentCredential: string, email: string) => Promise<void>;
@@ -317,12 +317,15 @@ export function AppSecurityProvider({
   );
 
   const beginForgotPasswordWithEmailLink = useCallback(async () => {
-    const reset = await createEmailResetLink();
-    const canOpen = await Linking.canOpenURL(reset.mailtoUrl);
-    if (!canOpen) {
-      throw new Error("No email app is available on this phone");
+    const result = await requestPasswordResetEmail();
+    if (result.mailtoUrl) {
+      const canOpen = await Linking.canOpenURL(result.mailtoUrl);
+      if (!canOpen) {
+        throw new Error("No email app is available on this phone");
+      }
+      await Linking.openURL(result.mailtoUrl);
     }
-    await Linking.openURL(reset.mailtoUrl);
+    return { message: result.message };
   }, []);
 
   const beginForgotPasswordWithEmailToken = useCallback(

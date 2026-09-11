@@ -4,6 +4,8 @@
 **Platform:** iPhone / iPad (iOS)  
 **Build to use:** **0.2.0** (latest Ready to Test build in TestFlight)
 
+For the separate **v3** app (new features, side by side with v2), see [`docs/TESTFLIGHT_V3.md`](docs/TESTFLIGHT_V3.md).
+
 ---
 
 ## Part A — For Helen (add testers)

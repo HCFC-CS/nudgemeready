@@ -1,31 +1,52 @@
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Vibration, View } from "react-native";
+import { Pressable, StyleSheet, Vibration, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
-import { CompletionRewardCard } from "../components/GamificationComponents";
+import { CompletionRewardCard } from "../components/CompletionRewardCard";
+import { MakeItSmallerCard } from "../components/MakeItSmallerCard";
+import { WhyIsThisHardCard } from "../components/WhyIsThisHardCard";
+import { RewardGlance } from "../components/RewardGlance";
 import { CategoryChip, PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useNudgeItems } from "../hooks/useNudgeItems";
+import { useRewardBank } from "../hooks/useRewardBank";
 import { loadAppPreferences } from "../services/appPreferencesStorage";
-import { getPointsForItem } from "../services/gamification";
+import { compareNudgesByDate, isReady4PackItem } from "../services/nudgeItems";
+import { moveNudgeToTomorrow } from "../services/nudgeAdaptation";
+import { formatRewardEarnNotice } from "../services/rewardBank";
+import { whyHardActionNotice } from "../services/whyHardToday";
 import { colors, spacing } from "../theme/theme";
 import type { NudgeItem } from "../types/nudge";
+import type { RewardDifficulty } from "../types/rewards";
 
-type FocusMode = "Quick Win" | "Low Energy" | "Deep Work" | "Project Step" | "Anything";
+function difficultyForItem(item: NudgeItem): RewardDifficulty {
+  if (item.estimatedEffort === "large") {
+    return "really_hard";
+  }
+  if (item.estimatedEffort === "medium") {
+    return "hard";
+  }
+  return "normal";
+}
 
-const focusModes: FocusMode[] = ["Quick Win", "Low Energy", "Deep Work", "Project Step", "Anything"];
+type FocusMode = "Anything" | "Quick Win" | "Low Energy" | "Project Step";
+
+const focusModes: FocusMode[] = ["Anything", "Quick Win", "Low Energy", "Project Step"];
 const timerOptions = [15, 25, 45, 60];
 const focusModeDetails: Record<FocusMode, string> = {
-  "Quick Win": "Small things that should take under 15 minutes.",
-  "Low Energy": "Gentle choices for days when energy is lower.",
-  "Deep Work": "Bigger project work when you have more space.",
-  "Project Step": "One linked step from a bigger project.",
-  Anything: "Any open thing that could move forward."
+  Anything: "Any open nudge — start with what is in front of you.",
+  "Quick Win": "Smaller things when you want a gentle start.",
+  "Low Energy": "Softer choices for lower-energy days.",
+  "Project Step": "One linked step from a bigger project."
 };
 
 export function FocusScreen() {
-  const { items, completeNudgeItem } = useNudgeItems();
-  const [mode, setMode] = useState<FocusMode>("Quick Win");
+  const navigation = useNavigation<any>();
+  const { items, completeNudgeItem, saveItem } = useNudgeItems();
+  const { earn } = useRewardBank();
+  const [mode, setMode] = useState<FocusMode>("Anything");
+  const [showAdjust, setShowAdjust] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [timerMinutes, setTimerMinutes] = useState(25);
   const [remainingSeconds, setRemainingSeconds] = useState(25 * 60);
@@ -59,7 +80,7 @@ export function FocusScreen() {
           clearInterval(timer);
           setIsRunning(false);
           setIsComplete(true);
-          setTimerNotice("Focus timer finished.");
+          setTimerNotice("Focus timer finished. Rest is fine.");
           Vibration.vibrate([0, 350, 150, 350]);
           return 0;
         }
@@ -94,84 +115,184 @@ export function FocusScreen() {
 
   return (
     <Screen>
-      <PageHeader title="Focus" subtitle="One item, one session." />
-      <SoftCard>
-        <AppText variant="heading">Choose your focus</AppText>
-        <View style={styles.chips}>
-          {focusModes.map((option) => (
-            <CategoryChip key={option} label={option} selected={mode === option} onPress={() => chooseMode(option)} />
-          ))}
-        </View>
-        <AppText variant="muted">{focusModeDetails[mode]}</AppText>
-      </SoftCard>
+      <PageHeader
+        title="Focus"
+        showBack={false}
+        helpText="One nudge at a time. Start when ready. Pause, Sorted, Break, or Next anytime — no penalty."
+      />
+
+      <RewardGlance />
+
       <SoftCard>
         {selectedItem ? (
           <>
+            <AppText variant="caption" style={styles.eyebrow}>
+              This session
+            </AppText>
             <AppText variant="heading">{selectedItem.title}</AppText>
             <AppText variant="muted">{formatFocusContext(selectedItem)}</AppText>
           </>
         ) : (
           <>
-            <AppText variant="heading">No items in this view.</AppText>
-            <AppText variant="muted">Try a different focus mode or add something new.</AppText>
+            <AppText variant="heading">Nothing open right now</AppText>
+            <AppText variant="muted">Add a nudge, or browse Ready4 packs for a gentle start.</AppText>
+            <SecondaryButton size="compact" onPress={() => navigation.navigate("Capture")}>
+              Add a nudge
+            </SecondaryButton>
           </>
         )}
       </SoftCard>
+
+      {selectedItem ? (
+        <>
+          <WhyIsThisHardCard
+            onAction={(action, extraNote) => {
+              if (action === "later" || action === "skip_today") {
+                const nextNotes = extraNote?.trim()
+                  ? selectedItem.notes?.trim()
+                    ? `${selectedItem.notes.trim()}\n${extraNote.trim()}`
+                    : extraNote.trim()
+                  : selectedItem.notes;
+                saveItem({
+                  ...selectedItem,
+                  notes: nextNotes,
+                  ...moveNudgeToTomorrow(selectedItem),
+                  updatedAt: new Date().toISOString()
+                });
+                setTimerNotice(whyHardActionNotice(action));
+                return;
+              }
+              setTimerNotice(whyHardActionNotice(action));
+            }}
+          />
+          <MakeItSmallerCard
+            key={selectedItem.id}
+            title={selectedItem.title}
+            onEarnTinyStep={(stepTitle) => {
+              const points = earn({
+                difficulty: "normal",
+                title: stepTitle,
+                kind: "tiny_step",
+                packId: selectedItem.sourcePackId,
+                sourceItemId: selectedItem.id
+              });
+              setTimerNotice(`Nice. “${stepTitle}” · +${points}`);
+            }}
+          />
+        </>
+      ) : null}
+
       <SoftCard style={styles.timerCard}>
-        <AppText variant="timer" style={styles.timerText}>{timerText}</AppText>
-        <View style={styles.timerOptions}>
-          {timerOptions.map((option) => (
-            <CategoryChip
-              key={option}
-              label={`${option}`}
-              selected={timerMinutes === option}
-              onPress={() => resetTimer(option)}
-            />
-          ))}
-        </View>
+        <AppText variant="timer" style={styles.timerText}>
+          {timerText}
+        </AppText>
+        <AppText variant="caption" style={styles.timerHint}>
+          {timerMinutes} minute session
+        </AppText>
       </SoftCard>
-      <PrimaryButton onPress={startTimer}>{isRunning ? "Focus running…" : "Start Focus"}</PrimaryButton>
-      <View style={styles.quickActions}>
-        <SecondaryButton size="compact" style={styles.quickAction} onPress={() => setIsRunning(false)}>
-          Pause
-        </SecondaryButton>
-        <SecondaryButton
-          size="compact"
-          style={styles.quickAction}
-          onPress={() => {
-            setIsRunning(false);
-            setIsComplete(true);
-            setTimerNotice("Marked complete.");
-            Vibration.vibrate(250);
-            if (selectedItem) {
-              completeNudgeItem(selectedItem.id);
-            }
-          }}
-        >
-          Complete
-        </SecondaryButton>
-        <SecondaryButton
-          size="compact"
-          style={styles.quickAction}
-          onPress={() => {
-            setIsRunning(false);
-            setTimerNotice("Break started. Come back when you're ready.");
-            Vibration.vibrate(150);
-          }}
-        >
-          Break
-        </SecondaryButton>
-        <SecondaryButton
-          size="compact"
-          style={styles.quickAction}
-          onPress={() => {
-            setSelectedIndex((current) => (focusItems.length ? (current + 1) % focusItems.length : 0));
-            resetTimer(timerMinutes);
-          }}
-        >
-          Skip
-        </SecondaryButton>
-      </View>
+
+      <PrimaryButton onPress={startTimer} disabled={(!selectedItem && !isRunning) || isRunning}>
+        {isRunning ? "Focus running…" : "Start Focus"}
+      </PrimaryButton>
+
+      {isRunning || remainingSeconds < timerMinutes * 60 ? (
+        <View style={styles.quickActions}>
+          <SecondaryButton size="compact" style={styles.quickAction} onPress={() => setIsRunning(false)}>
+            Pause
+          </SecondaryButton>
+          <SecondaryButton
+            size="compact"
+            style={styles.quickAction}
+            onPress={() => {
+              setIsRunning(false);
+              setIsComplete(true);
+              Vibration.vibrate(250);
+              if (selectedItem) {
+                completeNudgeItem(selectedItem.id);
+                const points = earn({
+                  difficulty: difficultyForItem(selectedItem),
+                  title: selectedItem.title,
+                  kind: "task",
+                  packId: selectedItem.sourcePackId,
+                  sourceItemId: selectedItem.id
+                });
+                setTimerNotice(
+                  formatRewardEarnNotice(
+                    points,
+                    selectedItem.title,
+                    "Marked sorted. +{points} — well done for starting."
+                  )
+                );
+              } else {
+                setTimerNotice("Marked sorted. Well done for starting.");
+              }
+            }}
+          >
+            Sorted
+          </SecondaryButton>
+          <SecondaryButton
+            size="compact"
+            style={styles.quickAction}
+            onPress={() => {
+              setIsRunning(false);
+              setTimerNotice("Break started. Come back when you are ready.");
+              Vibration.vibrate(150);
+            }}
+          >
+            Break
+          </SecondaryButton>
+          <SecondaryButton
+            size="compact"
+            style={styles.quickAction}
+            onPress={() => {
+              setSelectedIndex((current) => (focusItems.length ? (current + 1) % focusItems.length : 0));
+              resetTimer(timerMinutes);
+            }}
+          >
+            Next
+          </SecondaryButton>
+        </View>
+      ) : null}
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: showAdjust }}
+        onPress={() => setShowAdjust((current) => !current)}
+        style={styles.adjustToggle}
+      >
+        <AppText style={styles.adjustToggleLabel}>
+          {showAdjust ? "Hide options" : "Adjust mode or timer"}
+        </AppText>
+      </Pressable>
+
+      {showAdjust ? (
+        <SoftCard>
+          <AppText variant="heading">Mode</AppText>
+          <View style={styles.chips}>
+            {focusModes.map((option) => (
+              <CategoryChip
+                key={option}
+                label={option}
+                selected={mode === option}
+                onPress={() => chooseMode(option)}
+              />
+            ))}
+          </View>
+          <AppText variant="muted">{focusModeDetails[mode]}</AppText>
+          <AppText variant="heading">Timer</AppText>
+          <View style={styles.chips}>
+            {timerOptions.map((option) => (
+              <CategoryChip
+                key={option}
+                label={`${option}m`}
+                selected={timerMinutes === option}
+                onPress={() => resetTimer(option)}
+              />
+            ))}
+          </View>
+        </SoftCard>
+      ) : null}
+
       {timerNotice ? (
         <SoftCard>
           <AppText variant="muted">{timerNotice}</AppText>
@@ -181,9 +302,11 @@ export function FocusScreen() {
         <>
           <SoftCard>
             <AppText variant="heading">Session complete</AppText>
-            <AppText variant="muted">Marked as complete and saved to your progress.</AppText>
+            <AppText variant="muted">Saved quietly. Rest if you need to.</AppText>
           </SoftCard>
-          {selectedItem ? <CompletionRewardCard points={getPointsForItem(selectedItem)} /> : null}
+          {selectedItem ? (
+            <CompletionRewardCard points={difficultyForItem(selectedItem) === "really_hard" ? 3 : difficultyForItem(selectedItem) === "hard" ? 2 : 1} />
+          ) : null}
         </>
       ) : null}
     </Screen>
@@ -197,27 +320,29 @@ function formatTimer(totalSeconds: number) {
 }
 
 function getFocusItems(items: NudgeItem[], mode: FocusMode) {
-  const openItems = items.filter((item) => item.status === "open");
+  const openItems = items
+    .filter((item) => item.status === "open" && !isReady4PackItem(item))
+    .sort(compareNudgesByDate);
+
   if (mode === "Quick Win") {
-    return openItems.filter((item) => item.estimatedEffort === "tiny" || item.estimatedEffort === "small");
+    const quick = openItems.filter(
+      (item) => item.estimatedEffort === "tiny" || item.estimatedEffort === "small"
+    );
+    return quick.length ? quick : openItems;
   }
   if (mode === "Low Energy") {
-    return openItems.filter((item) => item.energyLevel === "low");
-  }
-  if (mode === "Deep Work") {
-    return openItems.filter((item) => item.parentId && item.estimatedEffort === "large");
+    const low = openItems.filter((item) => item.energyLevel === "low");
+    return low.length ? low : openItems;
   }
   if (mode === "Project Step") {
-    return openItems.filter((item) => item.type === "subtask" && item.parentId);
+    const steps = openItems.filter((item) => item.type === "subtask" && item.parentId);
+    return steps.length ? steps : openItems;
   }
-  return openItems.filter((item) => ["task", "subtask", "routine", "note"].includes(item.type));
+  return openItems;
 }
 
 function formatFocusContext(item: NudgeItem) {
-  if (item.parentId) {
-    return "Project step";
-  }
-  if (item.type === "subtask") {
+  if (item.parentId || item.type === "subtask") {
     return "Project step";
   }
   if (item.type === "routine") {
@@ -234,6 +359,12 @@ function formatType(type: string) {
 }
 
 const styles = StyleSheet.create({
+  eyebrow: {
+    color: colors.accent,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4
+  },
   chips: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -242,16 +373,15 @@ const styles = StyleSheet.create({
   timerCard: {
     alignItems: "center",
     backgroundColor: colors.primarySoft,
-    borderColor: colors.borderLight
+    borderColor: colors.borderLight,
+    gap: spacing.xs
   },
   timerText: {
     color: colors.primaryDark
   },
-  timerOptions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: spacing.sm
+  timerHint: {
+    color: colors.primaryDark,
+    opacity: 0.8
   },
   quickActions: {
     flexDirection: "row",
@@ -260,6 +390,14 @@ const styles = StyleSheet.create({
   },
   quickAction: {
     flexGrow: 1,
-    minWidth: "22%"
+    minWidth: 72
+  },
+  adjustToggle: {
+    alignSelf: "center",
+    paddingVertical: spacing.sm
+  },
+  adjustToggleLabel: {
+    color: colors.accent,
+    fontWeight: "700"
   }
 });

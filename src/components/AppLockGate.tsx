@@ -4,6 +4,7 @@ import { View, StyleSheet } from "react-native";
 import { useAppSecurity } from "../hooks/useAppSecurity";
 import { useProfile } from "../hooks/useProfile";
 import { navigationRef } from "../navigation/navigationRef";
+import { isScreenshotMode } from "../navigation/screenshotState";
 import {
   onDeepLinkUnlock,
   setDeepLinkLockActive,
@@ -12,15 +13,18 @@ import {
 import { colors } from "../theme/theme";
 
 /**
- * Boots security and keeps the user on Splash while locked or unregistered.
- * Unlock / registration UI lives on SplashScreen.
+ * Boots security and keeps the user on Splash while locked, unregistered,
+ * or still needing a password/PIN.
  */
 export function AppLockGate({ children }: { children: React.ReactNode }) {
   const { isReady, isLocked, settings } = useAppSecurity();
   const { isProfileReady, needsRegistration } = useProfile();
   const shouldLock = isReady && isLocked && settings.lockEnabled && settings.hasCredential;
   const shouldRegister = isProfileReady && needsRegistration;
-  const shouldGate = shouldLock || shouldRegister;
+  const shouldSetupSecurity =
+    isReady && isProfileReady && !needsRegistration && !settings.hasCredential;
+  const shouldGate =
+    isScreenshotMode() ? false : shouldLock || shouldRegister || shouldSetupSecurity;
 
   useEffect(() => {
     // Only stash deep links while locked — registration can still accept invites after profile is set.

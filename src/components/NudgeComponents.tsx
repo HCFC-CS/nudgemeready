@@ -18,11 +18,12 @@ import {
   type DeviceContact
 } from "../services/deviceContacts";
 import { contactFavoriteKey, toggleFavoriteContactKey } from "../services/favoriteContactsStorage";
+import { announceVoiceReady } from "../services/textToSpeech";
 import { colors, radii, shadows, spacing } from "../theme/theme";
-import type { TaskItem } from "../types/models";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import { ContactSuggestionRow } from "./ContactSuggestionRow";
+import { HelpTip } from "./HelpTip";
 import { ItemEditBanner } from "./ItemEditBanner";
 import { HeroSurface, SearchBar } from "./ModernUI";
 import { AppText } from "./Text";
@@ -52,20 +53,45 @@ export function BackButton({ onPress }: { onPress?: () => void }) {
 export function PageHeader({
   title,
   subtitle,
-  showBack = true
+  showBack = true,
+  helpText,
+  helpTitle
 }: {
   title: string;
+  /** Informational copy — shown via the “i” tip, not as body text. */
   subtitle?: string;
   showBack?: boolean;
+  /** Optional extra information behind the “i” tip. */
+  helpText?: string;
+  helpTitle?: string;
 }) {
   const navigation = useNavigation();
   const canShowBack = showBack && navigation.canGoBack();
+  const infoText = [helpText?.trim(), subtitle?.trim()].filter(Boolean).join("\n\n");
 
   return (
     <View style={styles.header}>
-      {canShowBack ? <BackButton /> : null}
-      <AppText variant="title">{title}</AppText>
-      {subtitle ? <AppText variant="muted">{subtitle}</AppText> : null}
+      <View style={styles.headerTop}>
+        {canShowBack ? <BackButton /> : null}
+        <View style={styles.headerTitleRow}>
+          <AppText variant="title" style={styles.headerTitle}>
+            {title}
+          </AppText>
+          {infoText ? <HelpTip title={helpTitle ?? title} text={infoText} /> : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Heading + optional “i” information tip for SoftCard sections. */
+export function SectionHeading({ title, info }: { title: string; info?: string }) {
+  return (
+    <View style={styles.sectionHeadingRow}>
+      <AppText variant="heading" style={styles.sectionHeadingTitle}>
+        {title}
+      </AppText>
+      {info ? <HelpTip title={title} text={info} size={36} /> : null}
     </View>
   );
 }
@@ -84,9 +110,15 @@ export function PageHeaderWithEdit({
 
   return (
     <View style={styles.header}>
-      {canShowBack ? <BackButton /> : null}
-      <AppText variant="title">{title}</AppText>
-      {subtitle ? <AppText variant="muted">{subtitle}</AppText> : null}
+      <View style={styles.headerTop}>
+        {canShowBack ? <BackButton /> : null}
+        <View style={styles.headerTitleRow}>
+          <AppText variant="title" style={styles.headerTitle}>
+            {title}
+          </AppText>
+          {subtitle ? <HelpTip title={title} text={subtitle} /> : null}
+        </View>
+      </View>
       <ItemEditBanner />
     </View>
   );
@@ -130,27 +162,6 @@ export function CategoryChip({
     <Button tone={selected ? "primary" : "quiet"} style={styles.chip} onPress={onPress} disabled={isDisabled || !onPress}>
       {label}
     </Button>
-  );
-}
-
-export function ItemCard({ item, onPress, onDone }: { item: TaskItem; onPress?: () => void; onDone?: () => void }) {
-  return (
-    <Pressable onPress={onPress} disabled={!onPress}>
-      <SoftCard>
-        <View style={styles.itemRow}>
-          <View style={styles.itemText}>
-            <AppText variant="heading">{item.title}</AppText>
-            <AppText variant="muted">
-              {formatItemType(item.taskType)}
-              {item.dueDate ? ` - ${item.dueDate}` : ""}
-            </AppText>
-          </View>
-          <Pressable onPress={onDone} disabled={!onDone} style={[styles.doneDot, item.isCompleted && styles.doneDotActive]}>
-            <AppText variant="small">{item.isCompleted ? "OK" : ""}</AppText>
-          </Pressable>
-        </View>
-      </SoftCard>
-    </Pressable>
   );
 }
 
@@ -365,6 +376,7 @@ export function VoiceCaptureButton({
     if (!isEditable) {
       return;
     }
+    await announceVoiceReady();
     if (useSpeech) {
       const started = await speech.start();
       if (started) {
@@ -577,27 +589,36 @@ export function SoftTextInput({
   return <SearchBar value={value} onChangeText={onChangeText} placeholder={placeholder} />;
 }
 
-function formatItemType(type: TaskItem["taskType"]) {
-  if (type === "taskJob") {
-    return "Task";
-  }
-  if (type === "chore") {
-    return "Routine";
-  }
-  if (type === "occasion") {
-    return "Occasion";
-  }
-  return type.charAt(0).toUpperCase() + type.slice(1);
-}
-
 const styles = StyleSheet.create({
   header: {
     gap: spacing.xs,
     paddingBottom: spacing.sm
   },
+  headerTop: {
+    gap: spacing.xs
+  },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  headerTitle: {
+    flexShrink: 1,
+    flex: 1
+  },
+  sectionHeadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    marginBottom: spacing.xs
+  },
+  sectionHeadingTitle: {
+    flex: 1
+  },
   backButton: {
     alignSelf: "flex-start",
-    minHeight: 32,
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
@@ -614,34 +635,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card
   },
   chip: {
-    minHeight: 36,
-    paddingHorizontal: 14,
+    minHeight: 44,
+    paddingHorizontal: 16,
     borderRadius: radii.pill
   },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm
-  },
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md
-  },
-  itemText: {
-    flex: 1
-  },
-  doneDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.primaryDark,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  doneDotActive: {
-    backgroundColor: colors.primary
   },
   picker: {
     gap: spacing.xs
@@ -776,7 +777,7 @@ const styles = StyleSheet.create({
   },
   compactInput: {
     width: 160,
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.borderLight,

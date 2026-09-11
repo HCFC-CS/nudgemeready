@@ -1,6 +1,6 @@
 import { ready4Pack } from "../packFactory";
 
-/** Ready 4 Travel — Edition 1 catalogue + best of the former Holiday Planner. */
+/** Ready4 Travel — Edition 1 catalogue + best of the former Holiday Planner. */
 export const ready4TravelPack = ready4Pack({
   slug: "travel",
   name: "Travel",

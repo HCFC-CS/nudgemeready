@@ -7,25 +7,23 @@ export type RootStackParamList = {
   Splash: { recoverToken?: string } | undefined;
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   ItemDetails: { draft: NudgeItem };
+  /** @deprecated Redirects to Capture — TaskItem create path retired. */
   AddTask: { draft?: Partial<TaskItem>; type?: TaskType } | undefined;
+  /** @deprecated Redirects to Capture. */
   VoiceAddTask: undefined;
+  /** @deprecated Redirects to Capture. */
   TaskBuddy: { taskId?: string; task?: TaskItem } | undefined;
-  Help: undefined;
+  Help: { itemTitle?: string } | undefined;
+  /** Alias → CrewHub */
   Circle: undefined;
   MyWorld: undefined;
-  Projects: undefined;
-  Lists: undefined;
-  Chores: undefined;
-  Reminders: undefined;
-  Routines: undefined;
-  Events: undefined;
-  Appointments: undefined;
-  Notes: undefined;
-  Occasions: undefined;
-  SpecialDays: undefined;
+  /** Alias → CrewHub */
   NudgyCrew: undefined;
+  /** Alias → CrewHub */
   MyCrew: undefined;
+  /** Alias → CrewHub */
   CrewsISupport: undefined;
+  CrewHub: undefined;
   OrganisationDashboard: undefined;
   InviteCrew: undefined;
   AcceptInvite: { inviteId?: string; payload?: string } | undefined;
@@ -38,12 +36,27 @@ export type RootStackParamList = {
   DevAdmin: undefined;
   ReadyPacks: undefined;
   ReadyPackPreview: { packId: string };
+  RewardBank: undefined;
+  DidSomething: undefined;
+  Budget: undefined;
+  BudgetQuickAdd: { seed?: string } | undefined;
+  BudgetCategory: { categoryId: string };
+  BudgetItem: { itemId: string };
+  BudgetGoals: undefined;
+  BudgetProject: { budgetId: string };
+  PlannerHub: undefined;
+  PackPlanner: { packId: string };
+  PlannerQuickAdd: { packId?: string; seed?: string } | undefined;
+  ComingUp: { horizon?: import("./nudgeHorizon").NudgeHorizonId } | undefined;
+  DocumentsHub: undefined;
+  SavedThings: undefined;
+  CalendarHub: undefined;
 };
 
 export type TabParamList = {
   Home: undefined;
   Capture: undefined;
-  Today: undefined;
+  Today: { typeFilter?: "ready4" | "allTypes" } | undefined;
   Focus: undefined;
   More: undefined;
 };

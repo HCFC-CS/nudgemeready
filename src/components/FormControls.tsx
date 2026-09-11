@@ -2,6 +2,7 @@ import { StyleSheet, Switch, TextInput, View, type TextInputProps } from "react-
 
 import { useOptionalItemEdit } from "../hooks/useItemEdit";
 import { colors, radii, spacing } from "../theme/theme";
+import { HelpTip } from "./HelpTip";
 import { AppText } from "./Text";
 import { VoiceFieldActions } from "./VoiceFieldActions";
 
@@ -59,6 +60,7 @@ export function Field({
         ) : null}
       </View>
       <TextInput
+        accessibilityLabel={label}
         style={[styles.input, multiline && styles.multiline, !isEditable && styles.inputDisabled]}
         value={value}
         onChangeText={onChangeText}
@@ -85,12 +87,16 @@ export function ToggleRow({
   value,
   onValueChange,
   note,
+  helpText,
   disabled
 }: {
   label: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
+  /** Short status line only — prefer helpText for longer explanations. */
   note?: string;
+  /** Opens a quiet “?” tip instead of cluttering the row. */
+  helpText?: string;
   disabled?: boolean;
 }) {
   const isEditable = useFieldEditable(disabled === undefined ? undefined : !disabled);
@@ -101,12 +107,19 @@ export function ToggleRow({
       accessible
       accessibilityRole="switch"
       accessibilityLabel={label}
-      accessibilityHint={note}
+      accessibilityHint={helpText ?? note}
       accessibilityState={{ checked: value, disabled: !isEditable }}
     >
-      <View style={{ flex: 1 }}>
-        <AppText>{label}</AppText>
-        {note ? <AppText variant="small" style={{ color: colors.mutedText }}>{note}</AppText> : null}
+      <View style={styles.toggleCopy}>
+        <View style={styles.toggleLabelRow}>
+          <AppText style={styles.toggleLabel}>{label}</AppText>
+          {helpText ? <HelpTip title={label} text={helpText} size={36} /> : null}
+        </View>
+        {note ? (
+          <AppText variant="small" style={{ color: colors.mutedText }}>
+            {note}
+          </AppText>
+        ) : null}
       </View>
       <Switch
         value={value}
@@ -155,6 +168,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
     paddingVertical: spacing.xs
+  },
+  toggleCopy: {
+    flex: 1,
+    gap: 2
+  },
+  toggleLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  toggleLabel: {
+    flexShrink: 1
   },
   fieldLabel: {
     fontWeight: "600",

@@ -3,22 +3,24 @@ import { useNavigation } from "@react-navigation/native";
 import { StyleSheet, View } from "react-native";
 
 import { FilterScroll, MenuTile } from "../components/ModernUI";
-import { PageHeader, SoftCard } from "../components/NudgeComponents";
+import { PageHeader, SecondaryButton, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
+import { READY_4_TODAY_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useReadyPacks } from "../hooks/useReadyPacks";
 import { isPackFree, READY_PACK_STORE_BILLING_ENABLED } from "../services/readyPackEntitlements";
 import {
   isCatalogueKindVisible,
   READY_PACK_COSMETICS_ENABLED
 } from "../services/readyPackFeatureFlags";
+import { getPlannerConfig } from "../services/ready4PlannerConfigs";
 import { colors, spacing } from "../theme/theme";
 import type { IoniconName } from "../components/iconTypes";
 import type { ReadyPackKind } from "../types/readyPacks";
 
 const allFilters: Array<{ label: string; kind?: ReadyPackKind }> = [
   { label: "All" },
-  { label: "ReadyPacks", kind: "content" },
+  { label: READY_PACKS_SHOP_LABEL, kind: "content" },
   { label: "Themes", kind: "theme" },
   { label: "Voices", kind: "voice" },
   { label: "Characters", kind: "character" }
@@ -36,7 +38,7 @@ export function ReadyPacksScreen() {
       allFilters.filter((entry) => !entry.kind || isCatalogueKindVisible(entry.kind)),
     []
   );
-  const [filterLabel, setFilterLabel] = useState("ReadyPacks");
+  const [filterLabel, setFilterLabel] = useState(READY_PACKS_SHOP_LABEL);
 
   const selectedFilter = useMemo(
     () => filters.find((entry) => entry.label === filterLabel),
@@ -54,11 +56,11 @@ export function ReadyPacksScreen() {
   return (
     <Screen>
       <PageHeader
-        title="ReadyPacks"
+        title={READY_PACKS_SHOP_LABEL}
         subtitle={
           READY_PACK_STORE_BILLING_ENABLED
-            ? "Ready 4 life systems — preview before you install."
-            : "Ready 4 life systems. Included in this version — App Store purchases are not enabled yet."
+            ? "Ready-made reminders and checklists you can edit. Pick a topic and we'll add them for you."
+            : "Ready-made reminders and checklists you can edit. All included — choose a topic to get started."
         }
       />
       {filters.length > 1 ? (
@@ -71,14 +73,23 @@ export function ReadyPacksScreen() {
       {!READY_PACK_COSMETICS_ENABLED ? (
         <SoftCard style={styles.note}>
           <AppText variant="muted">
-            Themes, voices and characters are coming later. This catalogue shows ReadyPacks that add editable
-            reminders and checklists.
+            Themes, voices and characters are coming later. This catalogue shows {READY_PACKS_SHOP_LABEL} that add
+            editable reminders and checklists.
           </AppText>
         </SoftCard>
       ) : null}
+      {packs.some((pack) => isInstalled(pack.id) && getPlannerConfig(pack.id)) ? (
+        <SecondaryButton
+          size="compact"
+          onPress={() => navigation.navigate("PlannerHub")}
+          style={styles.hubBtn}
+        >
+          Combined {READY_4_TODAY_LABEL}
+        </SecondaryButton>
+      ) : null}
       {!isReady ? (
         <SoftCard>
-          <AppText variant="muted">Loading ReadyPacks…</AppText>
+          <AppText variant="muted">Loading {READY_PACKS_SHOP_LABEL}…</AppText>
         </SoftCard>
       ) : (
         <View style={styles.list} accessibilityRole="list">
@@ -112,6 +123,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm
   },
   note: {
+    marginTop: spacing.sm
+  },
+  hubBtn: {
     marginTop: spacing.sm
   }
 });

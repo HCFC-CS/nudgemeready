@@ -2,22 +2,28 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
 
 import { Button } from "./Button";
+import { DistanceScaleBar } from "./DistanceScaleBar";
 import { Field } from "./FormControls";
+import { HearButton } from "./HearButton";
 import { PrimaryButton } from "./NudgeComponents";
 import { AppText } from "./Text";
 import { useHomeSettings } from "../hooks/useHomeSettings";
 import {
-  filterAddressesByHouseNumber,
   formatUkPostcode,
+  filterAddressesByHouseNumber,
   isLikelyUkPostcode,
-  lookupHouseAtPostcode,
   searchAddressesForPostcode,
-  type HomeAddressOption
+  type HomeAddressOption,
+  type PostcodeArea
 } from "../services/homeAddressLookup";
 import { getCurrentCoordinates } from "../services/locationReminders";
 import {
+  buildLeavingPlaceSpeechText,
+  clampHomeThresholdMeters,
+  DEFAULT_PLACE_CHECKLISTS,
   getPlaceSummary,
   hasPlaceCoordinates,
+  HOME_THRESHOLD_DEFAULT_METERS,
   PLACE_KINDS,
   PLACE_LABELS,
   type HomeLocationSource,
@@ -37,6 +43,8 @@ type PlaceDraft = {
   longitude: number | null;
   locationSource: HomeLocationSource | null;
   reminderEnabled: boolean;
+  thresholdMeters: number;
+  checklistItems: string[];
 };
 
 function draftFromPlace(place: SavedPlace): PlaceDraft {
@@ -48,11 +56,13 @@ function draftFromPlace(place: SavedPlace): PlaceDraft {
     latitude: place.latitude,
     longitude: place.longitude,
     locationSource: place.locationSource,
-    reminderEnabled: place.reminderEnabled
+    reminderEnabled: place.reminderEnabled,
+    thresholdMeters: place.thresholdMeters,
+    checklistItems: [...place.checklistItems]
   };
 }
 
-function emptyDraft(reminderEnabled: boolean): PlaceDraft {
+function emptyDraft(kind: PlaceKind, reminderEnabled: boolean): PlaceDraft {
   return {
     label: "",
     address: "",
@@ -61,7 +71,9 @@ function emptyDraft(reminderEnabled: boolean): PlaceDraft {
     latitude: null,
     longitude: null,
     locationSource: null,
-    reminderEnabled
+    reminderEnabled,
+    thresholdMeters: HOME_THRESHOLD_DEFAULT_METERS,
+    checklistItems: [...DEFAULT_PLACE_CHECKLISTS[kind]]
   };
 }
 
@@ -74,7 +86,9 @@ function draftsEqual(a: PlaceDraft, b: PlaceDraft) {
     a.latitude === b.latitude &&
     a.longitude === b.longitude &&
     a.locationSource === b.locationSource &&
-    a.reminderEnabled === b.reminderEnabled
+    a.reminderEnabled === b.reminderEnabled &&
+    a.thresholdMeters === b.thresholdMeters &&
+    a.checklistItems.join("\n") === b.checklistItems.join("\n")
   );
 }
 
@@ -88,13 +102,26 @@ function shortSummary(draft: PlaceDraft) {
   return draft.label || [draft.houseNumber, draft.postcode].filter(Boolean).join(", ") || "Address set";
 }
 
+function checklistPlaceholder(kind: PlaceKind) {
+  if (kind === "work") {
+    return "laptop, notes…";
+  }
+  if (kind === "school") {
+    return "homework, gym kit…";
+  }
+  return "keys, phone…";
+}
+
 export function HomeLocationPicker() {
   const {
     homeSettings,
+    setEnabled,
     setPlace,
     clearPlace,
     setPlaceReminder,
-    setAllPlaceReminders
+    setAllPlaceReminders,
+    setPlaceThreshold,
+    setPlaceChecklist
   } = useHomeSettings();
   const [activeKind, setActiveKind] = useState<PlaceKind>("home");
   const activePlace = homeSettings.places[activeKind];
@@ -102,8 +129,9 @@ export function HomeLocationPicker() {
   const [mode, setMode] = useState<Mode>(activePlace.locationSource === "gps" ? "location" : "address");
   const [draft, setDraft] = useState<PlaceDraft>(() => draftFromPlace(activePlace));
   const [postcode, setPostcode] = useState(activePlace.postcode);
-  const [houseNumber, setHouseNumber] = useState(activePlace.houseNumber);
-  const [addresses, setAddresses] = useState<HomeAddressOption[]>([]);
+  const [addressFilter, setAddressFilter] = useState("");
+  const [addressOptions, setAddressOptions] = useState<HomeAddressOption[]>([]);
+  const [area, setArea] = useState<PostcodeArea | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -111,16 +139,18 @@ export function HomeLocationPicker() {
     const place = homeSettings.places[activeKind];
     setDraft(draftFromPlace(place));
     setPostcode(place.postcode);
-    setHouseNumber(place.houseNumber);
+    setAddressFilter("");
+    setAddressOptions([]);
     setMode(place.locationSource === "gps" ? "location" : "address");
-    setAddresses([]);
+    setArea(null);
     setMessage("");
   }, [activeKind]);
 
   const isDirty = !draftsEqual(draft, savedDraft);
+
   const visibleAddresses = useMemo(
-    () => filterAddressesByHouseNumber(addresses, houseNumber),
-    [addresses, houseNumber]
+    () => filterAddressesByHouseNumber(addressOptions, addressFilter),
+    [addressOptions, addressFilter]
   );
 
   const reminderCount = PLACE_KINDS.filter(
@@ -132,17 +162,34 @@ export function HomeLocationPicker() {
     setDraft((current) => ({ ...current, reminderEnabled }));
   }
 
+  function clearAddressSelection() {
+    setDraft((current) => ({
+      ...current,
+      label: "",
+      address: "",
+      houseNumber: "",
+      latitude: null,
+      longitude: null,
+      locationSource: null
+    }));
+  }
+
   async function handleLookupPostcode() {
     const nextPostcode = formatUkPostcode(postcode);
     setPostcode(nextPostcode);
     if (!isLikelyUkPostcode(nextPostcode)) {
       setMessage("Enter a full UK postcode.");
+      setArea(null);
+      setAddressOptions([]);
       return;
     }
 
     setBusy(true);
     setMessage("");
-    setAddresses([]);
+    setArea(null);
+    setAddressOptions([]);
+    setAddressFilter("");
+    clearAddressSelection();
     try {
       const result = await searchAddressesForPostcode(nextPostcode);
       if (result.error) {
@@ -150,37 +197,33 @@ export function HomeLocationPicker() {
         return;
       }
       setPostcode(result.postcode);
-      setAddresses(result.addresses);
-      setMessage(
-        result.addresses.length
-          ? `${result.addresses.length} found — pick a number.`
-          : "No list found. Enter a house number."
-      );
-    } catch {
-      setMessage("Lookup failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleLookupHouse() {
-    setBusy(true);
-    setMessage("");
-    try {
-      const result = await lookupHouseAtPostcode(houseNumber, postcode);
-      if (result.error || !result.address) {
-        setMessage(result.error || "Not found.");
-        return;
+      setArea(result.area ?? null);
+      setAddressOptions(result.addresses);
+      setDraft((current) => ({
+        ...current,
+        postcode: result.postcode,
+        label: "",
+        address: "",
+        houseNumber: "",
+        latitude: null,
+        longitude: null,
+        locationSource: null
+      }));
+      if (result.addresses.length === 1 && !result.addresses[0]?.houseNumber) {
+        setMessage("No named houses found for this postcode yet. You can use the postcode centre below.");
+      } else {
+        setMessage(`Found ${result.addresses.length} address${result.addresses.length === 1 ? "" : "es"}. Pick one.`);
       }
-      selectAddress(result.address);
     } catch {
-      setMessage("Lookup failed.");
+      setMessage("Lookup failed. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
   }
 
-  function selectAddress(option: HomeAddressOption) {
+  function handleSelectAddress(option: HomeAddressOption) {
+    setPostcode(option.postcode);
+    setAddressFilter("");
     setDraft((current) => ({
       ...current,
       label: option.label,
@@ -191,9 +234,47 @@ export function HomeLocationPicker() {
       longitude: option.longitude,
       locationSource: "address"
     }));
-    setPostcode(option.postcode);
-    setHouseNumber(option.houseNumber);
     setMessage("Selected — tap Save.");
+  }
+
+  async function handleThisIsHome() {
+    setBusy(true);
+    setMessage("");
+    try {
+      const coordinates = await getCurrentCoordinates();
+      if (!coordinates) {
+        setMessage("Location permission needed to save this as home.");
+        return;
+      }
+      setActiveKind("home");
+      setPlace("home", {
+        label: "Home",
+        address: "",
+        postcode: "",
+        houseNumber: "",
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        locationSource: "gps",
+        reminderEnabled: true
+      });
+      setEnabled(true);
+      setDraft({
+        label: "Home",
+        address: "",
+        postcode: "",
+        houseNumber: "",
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        locationSource: "gps",
+        reminderEnabled: true,
+        thresholdMeters: HOME_THRESHOLD_DEFAULT_METERS,
+        checklistItems: [...DEFAULT_PLACE_CHECKLISTS.home]
+      });
+      setMode("location");
+      setMessage("This is home. Leaving reminders are on — Save settings if you just turned them on.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleUseCurrentLocation() {
@@ -229,8 +310,13 @@ export function HomeLocationPicker() {
     if (draft.latitude == null || draft.longitude == null) {
       clearPlace(activeKind);
       setPlaceReminder(activeKind, draft.reminderEnabled);
-      setAddresses([]);
-      setMessage("Cleared.");
+      setPlaceThreshold(activeKind, clampHomeThresholdMeters(draft.thresholdMeters));
+      setPlaceChecklist(
+        activeKind,
+        draft.checklistItems.length ? draft.checklistItems : [...DEFAULT_PLACE_CHECKLISTS[activeKind]]
+      );
+      setArea(null);
+      setMessage("Cleared location. Checklist and distance kept.");
       return;
     }
     setPlace(activeKind, {
@@ -241,7 +327,11 @@ export function HomeLocationPicker() {
       latitude: draft.latitude,
       longitude: draft.longitude,
       locationSource: draft.locationSource ?? "address",
-      reminderEnabled: draft.reminderEnabled
+      reminderEnabled: draft.reminderEnabled,
+      thresholdMeters: clampHomeThresholdMeters(draft.thresholdMeters),
+      checklistItems: draft.checklistItems.length
+        ? draft.checklistItems
+        : [...DEFAULT_PLACE_CHECKLISTS[activeKind]]
     });
     setMessage("Saved.");
   }
@@ -249,21 +339,31 @@ export function HomeLocationPicker() {
   function handleDiscard() {
     setDraft(savedDraft);
     setPostcode(savedDraft.postcode);
-    setHouseNumber(savedDraft.houseNumber);
-    setAddresses([]);
+    setAddressFilter("");
+    setAddressOptions([]);
+    setArea(null);
     setMessage("");
   }
 
   function handleClearDraft() {
-    setDraft(emptyDraft(draft.reminderEnabled));
+    setDraft(emptyDraft(activeKind, draft.reminderEnabled));
     setPostcode("");
-    setHouseNumber("");
-    setAddresses([]);
+    setAddressFilter("");
+    setAddressOptions([]);
+    setArea(null);
     setMessage("Cleared — tap Save to confirm.");
   }
 
+  const preview = buildLeavingPlaceSpeechText(activeKind, draft.checklistItems);
+
   return (
     <View style={styles.wrap}>
+      <PrimaryButton size="compact" onPress={() => void handleThisIsHome()} disabled={busy}>
+        {busy ? "Getting location…" : "This is home"}
+      </PrimaryButton>
+      <AppText variant="caption" style={styles.kindMeta}>
+        Saves where you are now as Home and turns on a leaving reminder. You can still set Work, School or a safe place below.
+      </AppText>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.kindRow}>
         {PLACE_KINDS.map((kind) => {
           const place = homeSettings.places[kind];
@@ -290,7 +390,7 @@ export function HomeLocationPicker() {
         <View style={styles.flex}>
           <AppText>Remind when leaving</AppText>
           <AppText variant="caption" style={styles.kindMeta}>
-            {PLACE_LABELS[activeKind]}
+            GPS only for {PLACE_LABELS[activeKind]} — not a daily reminder
           </AppText>
         </View>
         <Switch
@@ -311,6 +411,62 @@ export function HomeLocationPicker() {
         <AppText variant="caption" style={styles.kindMeta}>
           {reminderCount} on
         </AppText>
+      </View>
+
+      <DistanceScaleBar
+        value={draft.thresholdMeters}
+        onChange={(meters) =>
+          setDraft((current) => ({ ...current, thresholdMeters: clampHomeThresholdMeters(meters) }))
+        }
+      />
+
+      <AppText variant="caption" style={styles.checklistHeading}>
+        When leaving {PLACE_LABELS[activeKind].toLowerCase()}, remind me about
+      </AppText>
+      {draft.checklistItems.map((item, index) => (
+        <View key={`${activeKind}-item-${index}`} style={styles.checklistRow}>
+          <View style={styles.flex}>
+            <Field
+              label={`Item ${index + 1}`}
+              value={item}
+              onChangeText={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  checklistItems: current.checklistItems.map((entry, itemIndex) =>
+                    itemIndex === index ? value : entry
+                  )
+                }))
+              }
+              placeholder={checklistPlaceholder(activeKind)}
+            />
+          </View>
+          {draft.checklistItems.length > 1 ? (
+            <Button
+              tone="quiet"
+              style={styles.removeButton}
+              onPress={() =>
+                setDraft((current) => ({
+                  ...current,
+                  checklistItems: current.checklistItems.filter((_, itemIndex) => itemIndex !== index)
+                }))
+              }
+            >
+              Remove
+            </Button>
+          ) : null}
+        </View>
+      ))}
+      <Button
+        tone="quiet"
+        onPress={() => setDraft((current) => ({ ...current, checklistItems: [...current.checklistItems, ""] }))}
+      >
+        Add item
+      </Button>
+      <View style={styles.previewRow}>
+        <AppText variant="caption" style={styles.previewText}>
+          Preview: {preview}
+        </AppText>
+        <HearButton text={preview} />
       </View>
 
       <View style={styles.modeRow}>
@@ -334,8 +490,15 @@ export function HomeLocationPicker() {
               <Field
                 label="Postcode"
                 value={postcode}
-                onChangeText={(value) => setPostcode(value.toUpperCase())}
+                onChangeText={(value) => {
+                  setPostcode(value.toUpperCase());
+                  setArea(null);
+                  setAddressOptions([]);
+                  setAddressFilter("");
+                  clearAddressSelection();
+                }}
                 placeholder="L39 2DT"
+                autoCapitalize="characters"
               />
             </View>
             <Button
@@ -348,45 +511,56 @@ export function HomeLocationPicker() {
             </Button>
           </View>
 
-          <View style={styles.row}>
-            <View style={styles.flex}>
-              <Field label="House number" value={houseNumber} onChangeText={setHouseNumber} placeholder="12" />
-            </View>
-            <Button
-              tone="quiet"
-              style={styles.lookupBtn}
-              onPress={() => void handleLookupHouse()}
-              disabled={busy || !postcode.trim() || !houseNumber.trim()}
-            >
-              Find
-            </Button>
-          </View>
+          {area ? (
+            <AppText variant="caption" style={styles.kindMeta}>
+              Area: {area.summary}
+            </AppText>
+          ) : null}
 
-          {visibleAddresses.length ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-              {visibleAddresses.map((option) => {
-                const selected =
-                  draft.houseNumber === option.houseNumber &&
-                  draft.postcode === option.postcode &&
-                  draft.latitude === option.latitude;
-                return (
-                  <Pressable
-                    key={`${option.houseNumber}-${option.street}-${option.latitude}`}
-                    onPress={() => selectAddress(option)}
-                    style={[styles.houseChip, selected && styles.houseChipSelected]}
-                  >
-                    <AppText variant="small" style={selected ? styles.selectedLabel : undefined}>
-                      {option.houseNumber}
-                    </AppText>
-                    {option.street ? (
-                      <AppText variant="caption" numberOfLines={1} style={styles.kindMeta}>
-                        {option.street}
-                      </AppText>
-                    ) : null}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+          {addressOptions.length > 0 ? (
+            <View style={styles.section}>
+              <Field
+                label="Filter addresses (optional)"
+                value={addressFilter}
+                onChangeText={setAddressFilter}
+                placeholder="e.g. 12 or flat"
+              />
+              <AppText variant="caption" style={styles.checklistHeading}>
+                Choose an address
+              </AppText>
+              <ScrollView
+                style={styles.addressList}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
+              >
+                {visibleAddresses.length ? (
+                  visibleAddresses.map((option) => {
+                    const selected =
+                      draft.latitude === option.latitude &&
+                      draft.longitude === option.longitude &&
+                      draft.label === option.label;
+                    return (
+                      <Pressable
+                        key={`${option.label}-${option.latitude}-${option.longitude}`}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Select ${option.label}`}
+                        onPress={() => handleSelectAddress(option)}
+                        style={[styles.addressRow, selected && styles.addressRowSelected]}
+                      >
+                        <AppText style={selected ? styles.selectedLabel : undefined}>{option.label}</AppText>
+                        <AppText variant="caption" style={styles.kindMeta} numberOfLines={2}>
+                          {option.address}
+                        </AppText>
+                      </Pressable>
+                    );
+                  })
+                ) : (
+                  <AppText variant="caption" style={styles.kindMeta}>
+                    No addresses match that filter.
+                  </AppText>
+                )}
+              </ScrollView>
+            </View>
           ) : null}
         </View>
       ) : (
@@ -402,7 +576,7 @@ export function HomeLocationPicker() {
           <AppText variant="caption" style={styles.summaryLabel}>
             {isDirty ? "Selected" : "Saved"}
           </AppText>
-          <AppText numberOfLines={1}>{shortSummary(draft)}</AppText>
+          <AppText numberOfLines={2}>{shortSummary(draft)}</AppText>
         </View>
         {draft.latitude != null || savedDraft.latitude != null ? (
           <Pressable onPress={handleClearDraft} hitSlop={8}>
@@ -474,6 +648,28 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.sm
   },
+  checklistHeading: {
+    color: colors.mutedText,
+    fontWeight: "700",
+    marginTop: spacing.xs
+  },
+  checklistRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: spacing.sm
+  },
+  removeButton: {
+    marginBottom: 2
+  },
+  previewRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  previewText: {
+    color: colors.mutedText,
+    flex: 1
+  },
   modeRow: {
     flexDirection: "row",
     gap: spacing.sm
@@ -506,23 +702,22 @@ const styles = StyleSheet.create({
     minWidth: 88,
     marginBottom: 2
   },
-  chipRow: {
-    gap: spacing.sm,
-    paddingVertical: spacing.xs
-  },
-  houseChip: {
-    minWidth: 64,
-    maxWidth: 120,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.sm,
+  addressList: {
+    maxHeight: 220,
     borderWidth: 1,
     borderColor: colors.borderLight,
-    backgroundColor: colors.card,
+    borderRadius: radii.md,
+    backgroundColor: colors.ivoryElevated
+  },
+  addressRow: {
+    minHeight: 52,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.borderLight,
     gap: 2
   },
-  houseChipSelected: {
-    borderColor: colors.primary,
+  addressRowSelected: {
     backgroundColor: colors.primarySoft
   },
   summaryRow: {

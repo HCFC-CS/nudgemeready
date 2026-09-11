@@ -1,8 +1,8 @@
-# Nudge Me Ready — Ready 4 Catalogue (Edition 1)
+# Nudge Me Ready — Ready4 Catalogue (Edition 1)
 
 **Volume 2 style product catalogue** aligned to Catalogue Edition 1 and the **live** templates in `src/data/readyPacks/ready4/`.
 
-**Forget Me Never.** ReadyPacks are curated collections of reminders, routines and lists. Install once, then edit freely.
+**Forget Me Never.** Ready4Packs are curated collections of reminders, routines and lists. Install once, then edit freely.
 
 ---
 
@@ -19,7 +19,7 @@
 
 ### Pricing honesty (TestFlight 0.2.0)
 
-- **Free in app:** Ready 4 Home, Ready 4 Wellbeing  
+- **Free in app:** Ready4 Home, Ready4 Wellbeing  
 - **Paid catalogue SKUs:** remaining packs (`ready.pack.ready4_*`)  
 - While RevenueCat API keys are empty, paid packs install **without charge** and the UI says so  
 - Edition 1 list prices below (e.g. £4.99) are **commercial catalogue** figures for when IAP is enabled  
@@ -40,25 +40,25 @@
 
 | # | Pack | Free / paid SKU | Templates |
 | ---: | --- | --- | ---: |
-| 1 | Ready 4 Study | `ready.pack.ready4_study` | 8 |
-| 2 | Ready 4 Home | **Free** | 6 |
-| 3 | Ready 4 Finance | `ready.pack.ready4_finance` | 6 |
-| 4 | Ready 4 Medication | `ready.pack.ready4_medication` | 6 |
-| 5 | Ready 4 Work | `ready.pack.ready4_work` | 6 |
-| 6 | Ready 4 Family | `ready.pack.ready4_family` | 6 |
-| 7 | Ready 4 Travel | `ready.pack.ready4_travel` | 12 |
-| 8 | Ready 4 Wellbeing | **Free** | 6 |
-| 9 | Ready 4 Shopping | `ready.pack.ready4_shopping` | 6 |
-| 10 | Ready 4 Independence | `ready.pack.ready4_independence` | 6 |
-| 11 | Ready 4 Appointments | `ready.pack.ready4_appointments` | 6 |
-| 12 | Ready 4 Pets | `ready.pack.ready4_pets` | 6 |
-| 13 | Ready 4 Digital Life | `ready.pack.ready4_digital_life` | 6 |
-| 14 | Ready 4 Life Admin | `ready.pack.ready4_life_admin` | 6 |
-| 15 | Ready 4 Emergencies | `ready.pack.ready4_emergencies` | 6 |
+| 1 | Ready4 Study | `ready.pack.ready4_study` | 8 |
+| 2 | Ready4 Home | **Free** | 6 |
+| 3 | Ready4 Finance | `ready.pack.ready4_finance` | 6 |
+| 4 | Ready4 Medication | `ready.pack.ready4_medication` | 6 |
+| 5 | Ready4 Work | `ready.pack.ready4_work` | 6 |
+| 6 | Ready4 Family | `ready.pack.ready4_family` | 6 |
+| 7 | Ready4 Travel | `ready.pack.ready4_travel` | 12 |
+| 8 | Ready4 Wellbeing | **Free** | 6 |
+| 9 | Ready4 Shopping | `ready.pack.ready4_shopping` | 6 |
+| 10 | Ready4 Independence | `ready.pack.ready4_independence` | 6 |
+| 11 | Ready4 Appointments | `ready.pack.ready4_appointments` | 6 |
+| 12 | Ready4 Pets | `ready.pack.ready4_pets` | 6 |
+| 13 | Ready4 Digital Life | `ready.pack.ready4_digital_life` | 6 |
+| 14 | Ready4 Life Admin | `ready.pack.ready4_life_admin` | 6 |
+| 15 | Ready4 Emergencies | `ready.pack.ready4_emergencies` | 6 |
 
 ---
 
-## Part 1 — Ready 4 Study
+## Part 1 — Ready4 Study
 
 **Create calm study systems.** Assignments, revision, exams and routines — without shame around deadlines.
 
@@ -85,11 +85,11 @@ Assignment planner · Revision planner · Exam countdown · Lecture / class prep
 
 **Customers also buy (Edition 1):** Work · Digital Life · Wellbeing  
 
-**Edition 1 IAP note:** Individual ReadyPack ~£4.99 · Premium include (when live)
+**Edition 1 IAP note:** Individual Ready4 pack ~£4.99 · Premium include (when live)
 
 ---
 
-## Part 2 — Ready 4 Home — FREE
+## Part 2 — Ready4 Home — FREE
 
 **Create calm routines for home life.** Daily reset, cleaning, bins, maintenance and bills — without overwhelm.
 
@@ -120,7 +120,7 @@ Daily reset · Cleaning planner · Leaving-home check · Bin collection · Home 
 
 ---
 
-## Part 3 — Ready 4 Finance
+## Part 3 — Ready4 Finance
 
 **Bills, subscriptions, renewals and a simple budget glance** — organised calmly, not judged. Not financial advice.
 
@@ -138,7 +138,7 @@ Upcoming bills · Subscription review · Savings goal note · Annual renewals ·
 
 ---
 
-## Part 4 — Ready 4 Medication
+## Part 4 — Ready4 Medication
 
 > **Organisational support only.** Does not diagnose, prescribe, or change medication. Follow clinician advice.
 
@@ -158,7 +158,7 @@ Medication organisation check · Daily medication times · Prescription / supply
 
 ---
 
-## Part 5 — Ready 4 Work
+## Part 5 — Ready4 Work
 
 **Top 3 priorities, meeting prep, follow-ups and breaks** — structured workdays without overwhelm.
 
@@ -176,7 +176,7 @@ Workday start · Today’s Top 3 · Meeting prep checklist · Project milestones
 
 ---
 
-## Part 6 — Ready 4 Family
+## Part 6 — Ready4 Family
 
 **School, meals, chores and shared plans** — so the mental load is not only in one person’s head.
 
@@ -194,7 +194,7 @@ Family week glance · School / nursery checklist · Meal ideas this week · Chor
 
 ---
 
-## Part 7 — Ready 4 Travel
+## Part 7 — Ready4 Travel
 
 **Passports, packing, transport, airport extras, stays and a calm return-home checklist.**
 
@@ -225,7 +225,7 @@ Travel countdown · Packing lists · Documents · Airport checklist · Accommoda
 
 ---
 
-## Part 8 — Ready 4 Wellbeing — FREE
+## Part 8 — Ready4 Wellbeing — FREE
 
 **Gentle structure for mornings, hydration, movement, sleep and gratitude** — supportive, not pressured. Not therapy.
 
@@ -237,7 +237,7 @@ Morning reset · Hydration · Movement · Mindfulness pause · Sleep routine · 
 
 ### Templates (shipped)
 
-Morning reset · Hydration nudge · Movement choices · Mindfulness pause · Sleep wind-down · Gratitude / good thing note  
+Morning reset · Have a drink of water · I ate something · Move a little · Mindfulness pause · Sleep wind-down · Gratitude / good thing note  
 
 **IAP:** Free included pack  
 
@@ -245,7 +245,7 @@ Morning reset · Hydration nudge · Movement choices · Mindfulness pause · Sle
 
 ---
 
-## Part 9 — Ready 4 Shopping
+## Part 9 — Ready4 Shopping
 
 **Reusable lists, household essentials and a calm shop plan.**
 
@@ -263,7 +263,7 @@ Shopping list · Ingredients for planned meals · Household essentials restock �
 
 ---
 
-## Part 10 — Ready 4 Independence
+## Part 10 — Ready4 Independence
 
 **Morning and evening routines, safety checks and essential tasks** for confident independent living.
 
@@ -281,7 +281,7 @@ Morning independence routine · Evening settle routine · Home safety check · E
 
 ---
 
-## Part 11 — Ready 4 Appointments
+## Part 11 — Ready4 Appointments
 
 **Countdown, prep, travel and follow-ups** — arrive prepared without the last-minute scramble.
 
@@ -299,7 +299,7 @@ Next appointment · Appointment preparation · Travel to appointment · Leave fo
 
 ---
 
-## Part 12 — Ready 4 Pets
+## Part 12 — Ready4 Pets
 
 **Feeding, walks, vet plans, treatments and records.**
 
@@ -319,7 +319,7 @@ Daily pet care · Pet medication / treatments · Vet appointment prep · Vaccina
 
 ---
 
-## Part 13 — Ready 4 Digital Life
+## Part 13 — Ready4 Digital Life
 
 **Passwords, updates, subscriptions, backups and device health** in small steps.
 
@@ -337,7 +337,7 @@ Password review · Software & security updates · Digital subscriptions review �
 
 ---
 
-## Part 14 — Ready 4 Life Admin
+## Part 14 — Ready4 Life Admin
 
 **Documents, renewals, vehicle and household admin** — small important jobs that are easy to forget.
 
@@ -355,7 +355,7 @@ Important documents checklist · Renewals this season · Household admin tasks �
 
 ---
 
-## Part 15 — Ready 4 Emergencies
+## Part 15 — Ready4 Emergencies
 
 > **Organisational support only.** Not an emergency service. If someone is at immediate risk, contact emergency services.
 
@@ -400,7 +400,7 @@ Theme, voice and character packs exist in `src/data/readyPacks/cosmetics.ts` (e.
 
 ## Archived situation packs
 
-Earlier situation packs (ADHD Starter, Holiday Planner, etc.) live under `src/data/readyPacks/archive/` and are **not** in the live Edition 1 Ready 4 catalogue.
+Earlier situation packs (ADHD Starter, Holiday Planner, etc.) live under `src/data/readyPacks/archive/` and are **not** in the live Edition 1 Ready4 catalogue.
 
 ---
 

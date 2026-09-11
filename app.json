@@ -17,6 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.helencunliffe.nudgeme",
       "icon": "./assets/icon.png",
+      "usesAppleSignIn": true,
       "associatedDomains": [
         "applinks:nudgemeready.app",
         "applinks:www.nudgemeready.app"
@@ -67,7 +68,10 @@
               "pathPrefix": "/recover"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "permissions": [
@@ -81,6 +85,7 @@
     },
     "plugins": [
       "expo-notifications",
+      "expo-apple-authentication",
       [
         "expo-image-picker",
         {
@@ -122,7 +127,8 @@
         {
           "contactsPermission": "Allow Nudge me Ready to look up contacts when adding appointment guests."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {
@@ -132,7 +138,13 @@
       "revenueCatApiKeyIOS": "",
       "revenueCatApiKeyAndroid": "",
       "privacyPolicyUrl": "https://nudgemeready.app/privacy/",
-      "supportUrl": "https://nudgemeready.app/support/"
+      "supportUrl": "https://nudgemeready.app/support/",
+      "passwordResetApiUrl": "",
+      "alexaBridgeUrl": "",
+      "alexaBridgeSecret": "",
+      "googleIosClientId": "",
+      "googleAndroidClientId": "",
+      "googleWebClientId": ""
     }
   }
 }

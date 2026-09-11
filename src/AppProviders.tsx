@@ -1,28 +1,38 @@
-import type { PropsWithChildren } from "react";
+﻿import type { PropsWithChildren } from "react";
 
 import { CrewProvider } from "./hooks/useCrew";
-import { CircleProvider } from "./hooks/useCircle";
+import { AlexaLinkProvider } from "./hooks/useAlexaLink";
 import { HomeSettingsProvider } from "./hooks/useHomeSettings";
 import { NudgeItemsProvider } from "./hooks/useNudgeItems";
 import { ProfileProvider } from "./hooks/useProfile";
 import { ReadyPacksProvider } from "./hooks/useReadyPacks";
-import { TasksProvider } from "./hooks/useTasks";
+import { RewardBankProvider } from "./hooks/useRewardBank";
+import { SavedThingsProvider } from "./hooks/useSavedThings";
+import { BudgetProvider } from "./hooks/useBudget";
+import { Ready4PlannerProvider } from "./hooks/useReady4Planner";
 import { VoiceCaptureSettingsProvider } from "./hooks/useVoiceCaptureSettings";
 
+/** CircleProvider removed — Crew is the only support graph. */
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <ProfileProvider>
       <VoiceCaptureSettingsProvider>
         <HomeSettingsProvider>
-          <TasksProvider>
-            <CrewProvider>
-              <NudgeItemsProvider>
-                <ReadyPacksProvider>
-                  <CircleProvider>{children}</CircleProvider>
-                </ReadyPacksProvider>
-              </NudgeItemsProvider>
-            </CrewProvider>
-          </TasksProvider>
+          <CrewProvider>
+            <NudgeItemsProvider>
+              <RewardBankProvider>
+                <SavedThingsProvider>
+                  <BudgetProvider>
+                    <AlexaLinkProvider>
+                      <ReadyPacksProvider>
+                        <Ready4PlannerProvider>{children}</Ready4PlannerProvider>
+                      </ReadyPacksProvider>
+                    </AlexaLinkProvider>
+                  </BudgetProvider>
+                </SavedThingsProvider>
+              </RewardBankProvider>
+            </NudgeItemsProvider>
+          </CrewProvider>
         </HomeSettingsProvider>
       </VoiceCaptureSettingsProvider>
     </ProfileProvider>

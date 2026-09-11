@@ -3,12 +3,20 @@ import { createContext, type PropsWithChildren, useContext, useEffect, useState 
 import { canEditItem } from "../services/itemPermissions";
 import {
   cancelSpeakingReminderNotifications,
+  resyncTimedNudges,
   syncSpeakingReminderNotifications
 } from "../services/speakingReminders";
 import { completeItem, deleteItem, updateItem } from "../services/nudgeItems";
 import { markPackItemEdited } from "../services/readyPackInstall";
 import { cleanupAttachmentsForItem } from "../services/documentAttachments";
-import { clearNudgeItemsStorage, loadNudgeItems, saveNudgeItems } from "../services/nudgeItemsStorage";
+import { isScreenshotMode } from "../navigation/screenshotState";
+import {
+  clearNudgeItemsStorage,
+  getDemoNudgeItems,
+  loadNudgeItems,
+  saveNudgeItems
+} from "../services/nudgeItemsStorage";
+import { syncDailySummaryNotification } from "../services/dailySummary";
 import { useCrew } from "./useCrew";
 import { useNudgeActor } from "./useNudgeActor";
 import type { NudgeItem, NudgeItemStatus, NudgeItemType } from "../types/nudge";
@@ -39,6 +47,14 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let active = true;
+    if (isScreenshotMode()) {
+      setItems(getDemoNudgeItems());
+      setLoadError(null);
+      setIsReady(true);
+      return () => {
+        active = false;
+      };
+    }
     loadNudgeItems()
       .then((loaded) => {
         if (active) {
@@ -57,11 +73,47 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    if (!isReady) {
+    if (!isReady || isScreenshotMode()) {
       return;
     }
     void saveNudgeItems(items);
   }, [isReady, items]);
+
+  useEffect(() => {
+    if (!isReady || isScreenshotMode()) {
+      return;
+    }
+    let cancelled = false;
+    const snapshot = items;
+    void (async () => {
+      const idsByItem = await resyncTimedNudges(snapshot);
+      if (cancelled) {
+        return;
+      }
+      setItems((current) => {
+        let next = current;
+        let changed = false;
+        for (const item of current) {
+          const ids = idsByItem[item.id];
+          if (!ids) {
+            continue;
+          }
+          const prev = item.reminderNotificationIds ?? [];
+          if (ids.join() !== prev.join()) {
+            next = updateItem(next, item.id, { reminderNotificationIds: ids });
+            changed = true;
+          }
+        }
+        return changed ? next : current;
+      });
+      await syncDailySummaryNotification(snapshot);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Reschedule once after load — saveItem keeps each nudge in sync after that.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady]);
 
   function saveItem(item: NudgeItem) {
     setItems((current) => {
@@ -87,21 +139,19 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
       return [item, ...current];
     });
 
-    if (item.type === "reminder") {
-      void (async () => {
-        const notificationIds = await syncSpeakingReminderNotifications(item);
-        setItems((current) => updateItem(current, item.id, { reminderNotificationIds: notificationIds }));
-      })();
-    }
+    void (async () => {
+      const notificationIds = await syncSpeakingReminderNotifications(item);
+      let latest: NudgeItem[] = [];
+      setItems((current) => {
+        latest = updateItem(current, item.id, { reminderNotificationIds: notificationIds });
+        return latest;
+      });
+      await syncDailySummaryNotification(latest.length ? latest : undefined);
+    })();
   }
 
   function replaceItems(next: NudgeItem[]) {
     setItems(next);
-  }
-
-  function stopReminderNotifications(item: NudgeItem) {
-    void cancelSpeakingReminderNotifications(item);
-    setItems((current) => updateItem(current, item.id, { reminderNotificationIds: [] }));
   }
 
   function setItemStatus(itemId: string, status: NudgeItemStatus) {
@@ -116,12 +166,12 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
 
       const next = updateItem(current, itemId, { status });
 
-      if (existing.type === "reminder" && (status === "done" || status === "cancelled")) {
+      if (status === "done" || status === "cancelled" || status === "paused") {
         void cancelSpeakingReminderNotifications(existing);
         return updateItem(next, itemId, { reminderNotificationIds: [] });
       }
 
-      if (existing.type === "reminder" && status === "open" && existing.status !== "open") {
+      if (status === "open" && existing.status !== "open") {
         void (async () => {
           const notificationIds = await syncSpeakingReminderNotifications({ ...existing, status: "open" });
           setItems((latest) => updateItem(latest, itemId, { reminderNotificationIds: notificationIds }));
@@ -138,9 +188,7 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
       if (!existing) {
         return current;
       }
-      if (existing.type === "reminder") {
-        void cancelSpeakingReminderNotifications(existing);
-      }
+      void cancelSpeakingReminderNotifications(existing);
       const nextItems = completeItem(current, itemId);
       return updateItem(nextItems, itemId, { reminderNotificationIds: [] });
     });
@@ -155,9 +203,7 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    if (existing.type === "reminder") {
-      stopReminderNotifications(existing);
-    }
+    void cancelSpeakingReminderNotifications(existing);
 
     setItems((current) => deleteItem(current, itemId));
 
@@ -168,9 +214,7 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
   async function clearAllNudgeItems() {
     const snapshot = items;
     for (const item of snapshot) {
-      if (item.type === "reminder") {
-        await cancelSpeakingReminderNotifications(item);
-      }
+      await cancelSpeakingReminderNotifications(item);
       await cleanupAttachmentsForItem(item.id, item.attachments);
     }
     setItems([]);
@@ -182,9 +226,7 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
     const snapshot = items;
     const toRemove = snapshot.filter(predicate);
     for (const item of toRemove) {
-      if (item.type === "reminder") {
-        await cancelSpeakingReminderNotifications(item);
-      }
+      await cancelSpeakingReminderNotifications(item);
       await cleanupAttachmentsForItem(item.id, item.attachments);
     }
     const remaining = snapshot.filter((item) => !predicate(item));

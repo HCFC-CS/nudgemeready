@@ -74,7 +74,7 @@ export function buildEventPrepTimeline(
       startAt: leaveAt,
       endAt: eventStart,
       durationMinutes: travelMinutes,
-      subtitle: `${travelMinutes} min to get there`
+      subtitle: `~${travelMinutes} min travel · arrive for ${formatTimelineTime(eventStart)}`
     },
     {
       id: "event",

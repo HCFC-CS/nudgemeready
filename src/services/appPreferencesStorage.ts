@@ -18,6 +18,11 @@ export type AppPreferences = {
   preferredCalendarId?: string;
   /** When true, phone Calendar events are pulled into the app as appointments/events. */
   importFromPhoneCalendar: boolean;
+  shopSuggestions: boolean;
+  /** ISO week key (e.g. 2026-W37) for which the weekly review card was dismissed. */
+  weeklyReviewDismissedWeek?: string;
+  /** Once true, we do not ask again to turn on lock-screen nudges. */
+  notificationAskOffered?: boolean;
 };
 
 export const defaultAppPreferences: AppPreferences = {
@@ -34,7 +39,10 @@ export const defaultAppPreferences: AppPreferences = {
   voiceCapture: true,
   readAloud: true,
   preferredCalendarId: undefined,
-  importFromPhoneCalendar: false
+  importFromPhoneCalendar: false,
+  shopSuggestions: true,
+  weeklyReviewDismissedWeek: undefined,
+  notificationAskOffered: false
 };
 
 export async function loadAppPreferences(): Promise<AppPreferences> {
