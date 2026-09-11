@@ -98,3 +98,4 @@ Do **not** run `eas build --profile production` from this feature branch if you 
 
 - **Most testers:** keep using **Nudge me Ready** 0.2.0 from the original TestFlight invite.  
 - **v3 testers:** install **Nudge me Ready v3** from the new TestFlight app invite. Both icons can appear on the home screen.
+- Illustrated user guide (this version): [docs/product/03-User_Guides.md](./product/03-User_Guides.md) and https://nudgemeready.app/manual/

@@ -1,237 +1,194 @@
 # Nudge Me Ready — User Guides
 
-Practical how-tos for **0.2.0** on iPhone / iPad (TestFlight or App Store build). Warm, no-shame language throughout.
+Practical how-tos for **v3 0.3.1** on iPhone / iPad (TestFlight app **Nudge me Ready v3**). Warm, no-shame language throughout.
 
-Illustrated companion: [nudgemeready.app/manual](https://nudgemeready.app/manual/)
+Illustrated website companion (same screenshots): [nudgemeready.app/manual](https://nudgemeready.app/manual/)
+
+Screenshots in this file live in `website/manual/images/`.
 
 ---
 
 ## 1. Install and first open
 
-1. Install **Nudge me Ready** from TestFlight (or the App Store when live).  
-2. Open the app and create your **profile** (name / photo as offered).  
-3. Accept **Terms of Use** when prompted.  
-4. Optionally turn on **app lock** (Face ID and/or PIN / password).  
-5. If you enable lock, **Share / save your recovery code offline** (paper or password manager — not only Notes on this phone).  
+![First-open profile screen](../../website/manual/images/guide-splash.png)
 
-You can skip lock and turn it on later in **Settings → Security**.
+1. Install **Nudge me Ready v3** from TestFlight (not the older 0.2.0 app).
+2. Create your **profile** (name, email, date of birth, photo or emoji).
+3. Accept **Terms of Use**.
+4. Optionally turn on **app lock** (Face ID and/or PIN / password). You can skip and do this later in Settings.
+5. If a **recovery code** is shown, save it offline (paper or a password manager).
 
----
+Then tap **See my day** to open Home.
 
-## 2. Protect your nudges (recommended)
-
-Practical trio for this kind of app:
-
-1. Keep a **device passcode** (or Face ID) on the phone  
-2. Turn **app lock** on in Nudge me Ready  
-3. Store the **recovery code offline**
-
-### Turn on app lock
-
-**More → Settings → Security**
-
-- Choose password or PIN  
-- Add recovery email  
-- Optionally unlock with Face ID  
-- After enable: share the recovery code, then confirm you’ve saved it  
-
-### Unlock
-
-When the app is locked, use Face ID or your PIN / password on the sign-in screen.
-
-### Forgot PIN / password
-
-On the sign-in screen choose **Forgot…** then:
-
-- Confirm with **Face ID / device passcode**, or  
-- Use your **email reset** path, or  
-- Enter your **recovery code**
-
-Forgetting your PIN/password resets the lock — it does **not** delete your nudges. Uninstalling the app removes local data.
-
-### Home tip
-
-If lock is off, Home may show a gentle **Protect your nudges** tip. Use **Turn on app lock** or **Not now**.
+v2 and v3 can both sit on the same iPhone. Data is **not** shared.
 
 ---
 
-## 3. Find your way
+## 2. Find your way
 
-| Place | What it’s for |
+| Tab | What it’s for |
 | --- | --- |
-| **Home** | Calm hub — Focus, My Nudges, Ready4Packs, My Crew, Completed |
-| **Today** | Your open nudges (or the person you support) |
-| **+nudge** | Capture — create or browse by type |
-| **Focus** | One thing at a time |
-| **More** | Ready4Packs, Crew, Profile, Settings, Legal |
+| **Home** | What’s coming up, next action, Ready4 packs |
+| **Nudges** | Open list — Later, Sorted, Smaller, Ask |
+| **Add** | Say it, six everyday paths, or Something else |
+| **Menu** | Crew, My money, timeline, Reward Bank, Ready4Packs, Settings |
+| **Focus** | One thing at a time, with a smaller step if it’s hard |
+
+![Home, Add, and Menu](../../website/manual/images/guide-home.png)
+
+![Add — What do you want to do?](../../website/manual/images/guide-add.png)
+
+![Menu](../../website/manual/images/guide-menu.png)
 
 ---
 
-## 4. Add and edit nudges
+## 3. Add something you don’t want to forget
 
-### Create
+Everyday paths work with **no Ready4 pack**.
 
-1. Tap **+nudge**  
-2. Pick a type (reminder, list, appointment, note, …) or use voice if available  
-3. Fill title, time, notes, checklist items as needed  
-4. Save  
+```mermaid
+flowchart LR
+  A[Add] --> B[Say it or type]
+  B --> C[Saved with a time]
+  C --> D[Nudges + Coming Up]
+  D --> E[Lock-screen nudge if Push is on]
+```
 
-### Edit anytime
+### Say it
 
-Open the nudge → change anything → save. All Ready4 pack items are editable after install.
+1. Tap **Add** → **Say it**.
+2. Speak naturally: “remind me to take the bins out tomorrow evening”.
+3. If you said what and when, it saves straight away.
+4. The first save may ask to turn on quiet phone reminders.
 
-### Kind actions
+### Six paths
 
-- **Done** when finished  
-- **Snooze / reschedule** when timing needs to move  
-- **Dismiss / cancel** without penalty  
-- Skip checklist steps — that is allowed  
-
----
-
-## 5. Nudge types (quick guide)
-
-| Type | Typical use |
+| Path | When |
 | --- | --- |
-| Reminder | One timed nudge |
-| Routine | Repeatable steps |
-| List | Tickable items |
-| Task / project | Work with steps |
-| Appointment | Time + place + guests + calendar |
-| Event / occasion | Life events and special days |
-| Chore | Household jobs |
-| Note | Free text / journals |
+| Plan it | Something is coming up |
+| Remember it | Don’t let me forget |
+| Do it | Get something done (optional drink / meal / move lists) |
+| Book & go | Somewhere to be |
+| Buy & pay | Buy, pay, or renew |
+| Life & people | People and celebrations |
+
+**+ Something else** is for anything that doesn’t fit. Every item stays editable:
+
+![Item details stay editable](../../website/manual/images/guide-details.png)
 
 ---
 
-## 6. Ready4Packs (Ready4)
+## 4. Act from the list
 
-### Browse
+![Later, Sorted, Smaller, Ask on each row](../../website/manual/images/guide-nudges.png)
 
-**Home → Ready4Packs** or **More → Ready4Packs**
+| Chip | What it does |
+| --- | --- |
+| **Later** | Moves it to tomorrow — allowed, no penalty |
+| **Sorted** | Done, and can add a small Reward Bank point |
+| **Smaller** | A tinier first step when it feels like too much |
+| **Ask** | Opens Ask for help about that item |
 
-### Preview
-
-Open a pack to see summary, features and templates.
-
-### Install
-
-Tap install / add. Items appear in **My Nudges** with pack provenance where shown. Edit freely.
-
-### Free packs
-
-- **Ready4 Home**  
-- **Ready4 Wellbeing**  
-
-### Paid packs
-
-Marked in the catalogue. On TestFlight, if purchases are not enabled, the app tells you you **will not be charged** and still lets you install for testing.
-
-### Health-related packs
-
-**Medication** and **Emergencies** (and similar wellbeing organisation) are **organisational support only** — not medical advice. Follow your clinician. For immediate danger, contact emergency services.
-
-### Uninstall / remove
-
-Use pack management in Ready4Packs / Settings flows where available; editing or completing items never requires keeping unused templates.
+There is no “failed streak”. Skip, snooze, and hard days are part of the design.
 
 ---
 
-## 7. Appointments, contacts and calendar
+## 5. Home and What’s coming up
 
-1. Create an **appointment**  
-2. Add **guests** from Contacts (allow permission when asked)  
-3. Optionally **link to your phone calendar**  
-4. Add travel / prep lists if using Ready4 Appointments or Travel  
+Home leads with the next real thing, then **See what’s coming up** for today / this week / later.
 
-Import phone calendar events from Settings when offered.
+![What's coming up timeline](../../website/manual/images/guide-coming-up.png)
 
----
-
-## 8. My Crew (shared support)
-
-### Invite someone
-
-1. **My Crew → Invite**  
-2. Share link via Messages / WhatsApp / email  
-3. They open the link with the app installed  
-
-### Accepting an invite
-
-1. Open the invite link  
-2. Read **Crew supporter terms** — everyday support, not emergencies  
-3. Accept  
-
-You may start in **supporter-only** mode (their nudges). Use **Set up for myself** on Home when you want your own world.
-
-### Ask for Help
-
-From Help / Ask for Help, request support from Crew without shame.
+**Show my appointments here** (when offered) pulls phone calendar events onto the same timeline. Holidays and similar noise are skipped.
 
 ---
 
-## 9. Focus
+## 6. Focus
 
-Open **Focus**, pick one nudge or intention, run a calm session. Breaks are part of the plan.
+![Focus with Why is this hard and a 25 minute timer](../../website/manual/images/guide-focus.png)
 
----
-
-## 10. Voice
-
-Where the build supports it:
-
-- Use the mic to fill titles / notes  
-- Add speaking text so reminders can be spoken  
-
-Needs a full install (TestFlight), microphone and speech permissions.
+Open **Focus**, take a smaller step if offered, start a calm timed session. Pause or stop whenever you need.
 
 ---
 
-## 11. Documents and photos
+## 7. Reward Bank
 
-Attach photos or files to a nudge (e.g. tickets, letters). Treat sensitive docs carefully; keep device passcode + app lock on.
+![Reward Bank treats](../../website/manual/images/guide-rewards.png)
+
+One bank. Small points. Claim Favourite coffee, a £10 treat, or rename treats. Progress over perfection.
 
 ---
 
-## 12. Settings checklist
+## 8. Ready4Packs
+
+![Ready4Packs catalogue](../../website/manual/images/guide-packs.png)
+
+Packs add templates into the same six paths. They are not separate apps. Pack-specific choices only appear after install.
+
+Health-related organisation (medication, emergencies, and similar) is **not medical advice**.
+
+On TestFlight, if billing is off, the app says you will **not be charged**.
+
+---
+
+## 9. Crew and Ask
+
+Crew lives **on this phone**. Invites and Ask send a message you share yourself. The other person does **not** see your list live yet.
+
+![Crew hub](../../website/manual/images/guide-crew.png)
+
+![Invite](../../website/manual/images/guide-invite.png)
+
+![Ask for help](../../website/manual/images/guide-ask.png)
+
+**Menu → Crew → Invite**. From a Nudges row, **Ask** can mention that item.
+
+Nudge me Ready is everyday support, not an emergency service.
+
+---
+
+## 10. Settings checklist
+
+![Settings — Push, Quiet hours, Daily summary](../../website/manual/images/guide-settings.png)
 
 | Setting | Why |
 | --- | --- |
-| Notifications | Speaking / timed nudges |
+| Push | Timed lock-screen nudges for dated open items |
 | Quiet hours | Rest without interruption |
-| Security | App lock, recovery email, new recovery code |
-| Contacts & calendars | Guests and sync |
-| Leaving home | Optional location nudges |
-| Ready4Packs purchases | Restore when billing is live |
+| Daily summary | Morning ping names today’s real titles |
+| Security | App lock, recovery email, recovery code |
+| This is home | Optional leaving-home checklist |
+| Voice | Speak / hear / spoken reminders |
+| Contacts & calendars | Guests and Show my appointments here |
+
+Forgetting PIN/password resets the lock — it does **not** delete nudges. Uninstalling the app does.
 
 ---
 
-## 13. Partner / shop links
+## 11. My money
 
-Some packs (especially Travel) open shops or booking sites. Affiliate commission only applies when programmes are configured; you are not charged extra. Official airport assistance pages are never affiliate. See Legal in-app.
+**Menu → My money** works with no pack: what’s coming in, going out, and left. Ready4 project budgets only appear when that pack is installed.
 
 ---
 
-## 14. Troubleshooting
+## 12. Troubleshooting
 
 | Issue | Try |
 | --- | --- |
-| Face ID / voice / calendar missing | Use TestFlight build, not Expo Go; check iPhone Settings permissions |
-| Locked out | Forgot path + Face ID / recovery code / email |
-| Pack says free / no charge | Expected while store billing is off |
-| Data gone after reinstall | Local-only storage — reinstall clears data |
+| Reminders don’t fire | TestFlight v3 app; iOS Notifications; in-app Push; check Quiet hours |
+| Face ID / voice / calendar missing | Full TestFlight install, not Expo Go / web |
+| Still on the old app | Open **Nudge me Ready v3**, not the 0.2.0 icon |
+| Data gone after reinstall | Local-only storage — expected |
 | Need help | support@nudgemeready.app · https://nudgemeready.app/support/ |
 
 ---
 
-## 15. Tester smoke list (short)
+## Recapture screenshots
 
-1. Register → optional lock → save recovery code  
-2. Install Home + Wellbeing  
-3. Install one paid Ready4 pack (confirm honesty copy)  
-4. Add appointment + guest + calendar  
-5. Invite Crew (or accept invite)  
-6. Lock app → unlock  
-7. Complete / snooze a nudge without guilt copy  
+From the project root (web preview):
 
-Full sheet: `TESTFLIGHT_TESTER_INSTRUCTIONS.md`
+```bash
+CI=1 APP_VARIANT=v3 npm run screenshots
+```
+
+Images are written to `website/manual/images/guide-*.png`.

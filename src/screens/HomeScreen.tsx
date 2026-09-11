@@ -23,6 +23,7 @@ import {
   dismissSecurityLockPrompt,
   loadSecurityLockPromptState
 } from "../services/securityLockPrompt";
+import { isScreenshotMode } from "../navigation/screenshotState";
 import { colors, radii, spacing } from "../theme/theme";
 
 function greetingForNow(date = new Date()) {
@@ -48,9 +49,14 @@ export function HomeScreen() {
   const [showLockTip, setShowLockTip] = useState(false);
   const [showCalendarInvite, setShowCalendarInvite] = useState(false);
   const [calendarBusy, setCalendarBusy] = useState(false);
+  const screenshotMode = isScreenshotMode();
 
   useEffect(() => {
     let active = true;
+    if (screenshotMode) {
+      setShowLockTip(false);
+      return;
+    }
     if (!securityReady) {
       return;
     }
@@ -66,10 +72,14 @@ export function HomeScreen() {
     return () => {
       active = false;
     };
-  }, [securityReady, settings.lockEnabled, settings.hasCredential]);
+  }, [screenshotMode, securityReady, settings.lockEnabled, settings.hasCredential]);
 
   useEffect(() => {
     let active = true;
+    if (screenshotMode) {
+      setShowCalendarInvite(false);
+      return;
+    }
     loadAppPreferences().then((prefs) => {
       if (active) {
         setShowCalendarInvite(!prefs.importFromPhoneCalendar);
@@ -78,7 +88,7 @@ export function HomeScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [screenshotMode]);
 
   const installedPacks = useMemo(
     () => packs.filter((pack) => pack.kind === "content" && isInstalled(pack.id)).slice(0, 6),

@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import { getEncryptedItem, setEncryptedItem } from "../services/encryptedStorage";
+import { shouldUseScreenshotDemoProfile } from "../navigation/screenshotState";
 import type { SocialAuthProvider } from "../services/socialSignIn";
 
 const PROFILE_KEY = "do-enough-done:profile";
@@ -83,6 +84,21 @@ export function ProfileProvider({ children }: PropsWithChildren) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    if (shouldUseScreenshotDemoProfile()) {
+      setProfile({
+        name: "Helen",
+        icon: "sun",
+        email: "hello@nudgemeready.app",
+        phone: "",
+        dateOfBirth: "1980-01-15",
+        authProvider: "email",
+        registeredAt: "2026-01-01T09:00:00.000Z",
+        termsOfUseAcceptedAt: "2026-01-01T09:00:00.000Z",
+        termsOfUseVersion: "1.1"
+      });
+      setIsReady(true);
+      return;
+    }
     getEncryptedItem(PROFILE_KEY)
       .then((raw) => {
         if (raw) {
@@ -98,7 +114,7 @@ export function ProfileProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    if (isReady) {
+    if (isReady && !shouldUseScreenshotDemoProfile()) {
       void setEncryptedItem(PROFILE_KEY, JSON.stringify(profile));
     }
   }, [isReady, profile]);

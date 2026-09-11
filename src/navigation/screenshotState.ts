@@ -84,5 +84,15 @@ export function getScreenshotScreenId() {
     return undefined;
   }
   const params = new URLSearchParams(window.location.search);
-  return params.get("screenshot") ?? undefined;
+  return params.get("screenshot") ?? params.get("screen") ?? undefined;
+}
+
+export function isScreenshotMode() {
+  return Boolean(getScreenshotScreenId());
+}
+
+/** Splash stays on first-open registration. Other shots use a completed demo profile. */
+export function shouldUseScreenshotDemoProfile() {
+  const screenId = getScreenshotScreenId();
+  return Boolean(screenId && screenId !== "Splash");
 }
