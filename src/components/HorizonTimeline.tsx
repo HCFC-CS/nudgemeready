@@ -15,6 +15,7 @@ import type { HorizonEntry, NudgeHorizonId, SimplifyMode } from "../types/nudgeH
 type Props = {
   horizon: NudgeHorizonId;
   showSimplify?: boolean;
+  chronologicalWeek?: boolean;
   onOpenCalendar?: () => void;
 };
 
@@ -39,7 +40,12 @@ export function openHorizonEntry(
   }
 }
 
-export function HorizonTimelineView({ horizon, showSimplify = true, onOpenCalendar }: Props) {
+export function HorizonTimelineView({
+  horizon,
+  showSimplify = true,
+  chronologicalWeek = false,
+  onOpenCalendar
+}: Props) {
   const navigation = useNavigation<any>();
   const {
     isReady,
@@ -117,7 +123,7 @@ export function HorizonTimelineView({ horizon, showSimplify = true, onOpenCalend
       {horizon === "week" ? (
         <WeekBody
           week={week}
-          showAll={showAllWeek}
+          showAll={showAllWeek || chronologicalWeek}
           expandedDays={expandedDays}
           onToggleDay={(key) => setExpandedDays((current) => ({ ...current, [key]: !current[key] }))}
           onShowAll={() => setShowAllWeek(true)}

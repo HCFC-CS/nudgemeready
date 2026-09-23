@@ -328,7 +328,8 @@ export function TodayScreen() {
       {horizonTab !== "all" ? (
         <HorizonTimelineView
           horizon={horizonTab as NudgeHorizonId}
-          showSimplify={horizonTab === "week"}
+          showSimplify={false}
+          chronologicalWeek={horizonTab === "week"}
           onOpenCalendar={() => navigation.navigate("CalendarHub")}
         />
       ) : null}
