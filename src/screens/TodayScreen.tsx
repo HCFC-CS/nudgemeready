@@ -6,6 +6,7 @@ import { Alert, Pressable, StyleSheet, View } from "react-native";
 
 import { CrewSwitcher } from "../components/CrewSwitcher";
 import { HelpTip } from "../components/HelpTip";
+import { HorizonTimelineView } from "../components/HorizonTimeline";
 import { NudgeListRow, nudgeRowMeta } from "../components/NudgeListRow";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { RewardGlance } from "../components/RewardGlance";
@@ -31,8 +32,9 @@ import {
 import { colors, radii, shadows, spacing } from "../theme/theme";
 import { whyHardActionNotice } from "../services/whyHardToday";
 import type { NudgeItem, NudgeItemWithParent } from "../types/nudge";
-import type { TabParamList } from "../types/navigation";
+import type { NudgesHorizonTab, TabParamList } from "../types/navigation";
 import type { RewardDifficulty } from "../types/rewards";
+import type { NudgeHorizonId } from "../types/nudgeHorizon";
 
 function difficultyForItem(item: NudgeItem): RewardDifficulty {
   if (item.estimatedEffort === "large") {
@@ -61,7 +63,15 @@ const VIEW_BUCKET_OPTIONS = [
 ] as const;
 
 const TODAY_HELP =
-  `Your nudges are listed in date and time order. Tick Confirm when something is sorted — it leaves this open list. Use Show to narrow the list. ${READY_4_PACKS_LABEL} are optional templates.`;
+  `Today, this week, this month and this year share one timeline — including Ready4 dates. All is where search and filters live. Tick Sorted when something is done.`;
+
+const HORIZON_TABS: { id: NudgesHorizonTab; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "week", label: "Week" },
+  { id: "month", label: "Month" },
+  { id: "year", label: "Year" },
+  { id: "all", label: "All" }
+];
 
 
 function matchesViewBucket(item: NudgeItem, bucket: ViewBucket) {
@@ -112,10 +122,18 @@ export function TodayScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showReady4, setShowReady4] = useState(route.params?.typeFilter === "ready4");
   const [supportItem, setSupportItem] = useState<NudgeItem | null>(null);
+  const [horizonTab, setHorizonTab] = useState<NudgesHorizonTab>(route.params?.horizon ?? "today");
+
+  useEffect(() => {
+    if (route.params?.horizon) {
+      setHorizonTab(route.params.horizon);
+    }
+  }, [route.params?.horizon]);
 
   useEffect(() => {
     if (route.params?.typeFilter === "ready4") {
       setShowReady4(true);
+      setHorizonTab("all");
     } else if (route.params?.typeFilter === "allTypes") {
       setShowReady4(false);
     }
@@ -284,7 +302,38 @@ export function TodayScreen() {
 
       <RewardGlance />
 
-      {supportItem && statusFilter === "open" ? (
+      <View style={styles.chipRow}>
+        {HORIZON_TABS.map((tab) => (
+          <CuteChip
+            key={tab.id}
+            label={tab.label}
+            icon={
+              tab.id === "today"
+                ? "sunny-outline"
+                : tab.id === "week"
+                  ? "calendar-outline"
+                  : tab.id === "month"
+                    ? "calendar-number-outline"
+                    : tab.id === "year"
+                      ? "planet-outline"
+                      : "apps-outline"
+            }
+            selected={horizonTab === tab.id}
+            onPress={() => setHorizonTab(tab.id)}
+            accessibilityLabel={`${tab.label} timeline`}
+          />
+        ))}
+      </View>
+
+      {horizonTab !== "all" ? (
+        <HorizonTimelineView
+          horizon={horizonTab as NudgeHorizonId}
+          showSimplify={horizonTab === "week"}
+          onOpenCalendar={() => navigation.navigate("CalendarHub")}
+        />
+      ) : null}
+
+      {horizonTab === "all" && supportItem && statusFilter === "open" ? (
         <View style={styles.support}>
           <AppText variant="caption" style={styles.packGroupTitle}>
             {supportItem.title}
@@ -327,7 +376,7 @@ export function TodayScreen() {
           </Pressable>
         </View>
       ) : null}
-      {stalledItem ? (
+      {horizonTab === "all" && stalledItem ? (
         <AdaptationCard
           itemTitle={stalledItem.title}
           onMakeSmaller={() => navigation.navigate("ItemDetails", { draft: stalledItem })}
@@ -358,6 +407,8 @@ export function TodayScreen() {
         />
       ) : null}
 
+      {horizonTab === "all" ? (
+        <>
       <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search…" />
 
       <View style={styles.chipRow}>
@@ -455,6 +506,8 @@ export function TodayScreen() {
             </Pressable>
           ) : null}
         </View>
+      ) : null}
+        </>
       ) : null}
     </Screen>
   );

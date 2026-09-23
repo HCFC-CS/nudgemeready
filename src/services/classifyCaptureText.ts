@@ -162,7 +162,7 @@ function cleanTitle(input: string) {
     .replace(/\btonight\b/i, "")
     .replace(/\bthis (morning|afternoon|evening)\b/i, "")
     .replace(/\bin the morning\b/i, "")
-    .replace(/\b(evening|afternoon)\b/i, "")
+    .replace(/\b(morning|evening|afternoon)\b/i, "")
     .replace(/\b(tuesday|monday|wednesday|thursday|friday|saturday|sunday)\b/i, "")
     .replace(/\b\d{1,2}(:\d{2})?\s?(am|pm)\b/i, "")
     .replace(/\s+/g, " ")
@@ -204,7 +204,44 @@ function extractDate(text: string) {
     const year = numericDate[3] ? normaliseYear(Number(numericDate[3])) : new Date().getFullYear();
     return toIsoDate(new Date(year, month - 1, day));
   }
+  return extractNamedMonthDate(text);
+}
+
+const MONTH_NAMES = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december"
+];
+
+function extractNamedMonthDate(text: string, now = new Date()) {
+  const names = MONTH_NAMES.join("|");
+  const dayFirst = text.match(new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${names})(?:\\s+(\\d{2,4}))?\\b`));
+  if (dayFirst) {
+    return namedMonthToIso(Number(dayFirst[1]), dayFirst[2], dayFirst[3], now);
+  }
+  const monthFirst = text.match(new RegExp(`\\b(${names})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:\\s+(\\d{2,4}))?\\b`));
+  if (monthFirst) {
+    return namedMonthToIso(Number(monthFirst[2]), monthFirst[1], monthFirst[3], now);
+  }
   return undefined;
+}
+
+function namedMonthToIso(day: number, monthName: string, yearText: string | undefined, now: Date) {
+  const month = MONTH_NAMES.indexOf(monthName);
+  if (month < 0) {
+    return undefined;
+  }
+  const year = yearText ? normaliseYear(Number(yearText)) : now.getFullYear();
+  return toIsoDate(new Date(year, month, day));
 }
 
 function extractTime(text: string) {
@@ -231,7 +268,12 @@ function extractTime(text: string) {
   if (/\bafternoon\b/.test(text)) {
     return "14:00";
   }
-  if (/\bthis morning\b/.test(text) || /\bin the morning\b/.test(text) || /\bevery morning\b/.test(text)) {
+  if (
+    /\bthis morning\b/.test(text) ||
+    /\bin the morning\b/.test(text) ||
+    /\bevery morning\b/.test(text) ||
+    /\bmorning\b/.test(text)
+  ) {
     return "09:00";
   }
   return undefined;

@@ -147,7 +147,7 @@ function inferIntentFromText(text: string, type: NudgeItemType): NudgeIntent {
 /** Soft hints only — never force a pack if not installed. */
 function detectPackHint(text: string): string | undefined {
   const lower = text.toLowerCase();
-  if (/\b(mov(e|ing)|solicitor|mortgage|removal|packing)\b/.test(lower)) {
+  if (/\b(mov(e|ing)|solicitor|mortgage|removals?|packing)\b/.test(lower)) {
     return "ready4-moving";
   }
   if (/\b(baby|hospital bag|pram|nursery|christening|baptism|sip\s*&\s*see)\b/.test(lower)) {
