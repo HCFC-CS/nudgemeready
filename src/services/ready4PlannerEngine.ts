@@ -121,7 +121,7 @@ export function plannerStatusLabel(status: PlannerItemStatus): string {
     case "in_progress":
       return "In progress";
     case "done":
-      return "Done";
+      return "Sorted";
     case "moved":
       return "Moved";
     case "not_needed":

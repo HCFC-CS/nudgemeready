@@ -463,6 +463,40 @@ export function VoiceCaptureButton({
   }
 
   if (layout === "heroMic") {
+    if (!useSpeech) {
+      return (
+        <View style={styles.heroMicWrap}>
+          <AppText variant="heading" style={styles.heroMicLabel}>
+            Voice works on iPhone
+          </AppText>
+          <AppText variant="muted" style={styles.heroMicHint}>
+            On this device, type what you want to remember. The microphone is for iPhone and iPad.
+          </AppText>
+          <TextInput
+            value={fallbackInput}
+            onChangeText={setFallbackInput}
+            placeholder={placeholder}
+            placeholderTextColor={colors.mutedText}
+            style={styles.input}
+            accessibilityLabel="Type instead of speaking"
+          />
+          <Button
+            tone={idleTone}
+            onPress={() => {
+              const capturedText = fallbackInput.trim();
+              if (!capturedText || !isEditable) {
+                return;
+              }
+              onCaptured?.(capturedText, `typed-note://${Date.now()}`);
+              setFallbackInput("");
+            }}
+            disabled={!isEditable}
+          >
+            Use this text
+          </Button>
+        </View>
+      );
+    }
     return (
       <View style={styles.heroMicWrap}>
         <Pressable

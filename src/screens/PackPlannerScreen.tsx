@@ -9,8 +9,11 @@ import { PageHeader, PrimaryButton, SecondaryButton, SectionHeading, SoftCard } 
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useReady4Planner } from "../hooks/useReady4Planner";
+import { useBudget } from "../hooks/useBudget";
+import { useNudgeItems } from "../hooks/useNudgeItems";
 import { activeItems, itemsForThisWeek, itemsForToday } from "../services/ready4PlannerEngine";
 import { getPlannerConfig } from "../services/ready4PlannerConfigs";
+import { READY4_BUDGET_EXTENSIONS } from "../services/ready4BudgetExtensions";
 import { formatDateInput } from "../services/reminderDates";
 import { spacing } from "../theme/theme";
 import type { PlannerItemType } from "../types/ready4Planner";
@@ -42,6 +45,8 @@ export function PackPlannerScreen() {
     addAssignmentBreakdown,
     installedConfigs
   } = useReady4Planner();
+  const { ensureProjectBudgetFromExtension } = useBudget();
+  const { items: nudges } = useNudgeItems();
 
   const config = getPlannerConfig(packId);
   const isInstalled = installedConfigs.some((entry) => entry.packId === packId);
@@ -100,6 +105,32 @@ export function PackPlannerScreen() {
     }
     setQuickTitle("");
     setQuickDate("");
+  }
+
+  function openPlannerItem(itemId: string) {
+    const item = packItems.find((entry) => entry.id === itemId);
+    if (!item) {
+      return;
+    }
+    const linked = linkNudge(item.id, item);
+    if (linked.draft) {
+      navigation.navigate("ItemDetails", { draft: linked.draft });
+      return;
+    }
+    const existing = nudges.find((entry) => entry.id === linked.nudgeDraftId || entry.id === item.nudgeItemId);
+    if (existing) {
+      navigation.navigate("ItemDetails", { draft: existing });
+    }
+  }
+
+  function openBudget() {
+    const extension = READY4_BUDGET_EXTENSIONS.find((entry) => entry.packId === packId);
+    if (!extension) {
+      navigation.navigate("Budget");
+      return;
+    }
+    const budgetId = ensureProjectBudgetFromExtension(extension);
+    navigation.navigate("BudgetProject", { budgetId });
   }
 
   if (!isReady) {
@@ -163,6 +194,23 @@ export function PackPlannerScreen() {
       <PrimaryButton onPress={() => navigation.navigate("PlannerQuickAdd", { packId })}>
         + Add something
       </PrimaryButton>
+      <View style={styles.sectionTabs}>
+        {config.supportsBudget ? (
+          <SecondaryButton size="compact" onPress={openBudget}>
+            Budget
+          </SecondaryButton>
+        ) : null}
+        {config.supportsDocuments ? (
+          <SecondaryButton size="compact" onPress={() => navigation.navigate("DocumentsHub")}>
+            Documents
+          </SecondaryButton>
+        ) : null}
+        {config.supportsCrew ? (
+          <SecondaryButton size="compact" onPress={() => navigation.navigate("CrewHub")}>
+            Crew
+          </SecondaryButton>
+        ) : null}
+      </View>
       <SecondaryButton size="compact" onPress={() => navigation.navigate("PlannerHub")}>
         See combined Today / This week
       </SecondaryButton>
@@ -254,6 +302,7 @@ export function PackPlannerScreen() {
                   onNotNeeded={() => setStatus(item.id, "not_needed")}
                   onStart={() => navigation.navigate("Tabs", { screen: "Focus" })}
                   onLinkNudge={() => linkNudge(item.id)}
+                  onOpen={() => openPlannerItem(item.id)}
                 />
               ))
             )}
