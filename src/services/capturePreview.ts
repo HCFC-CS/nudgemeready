@@ -21,3 +21,13 @@ export function buildCapturePreview(text: string, installedPackIds: string[] = [
     confidence: classified.confidence
   };
 }
+
+/** Keep dates from the original words even if the person edited the title. */
+export function resolveCaptureSave(originalText: string, title: string, installedPackIds: string[] = []) {
+  const source = originalText.trim() || title.trim();
+  const resolved = resolveSomethingElse(source, installedPackIds);
+  return {
+    ...resolved,
+    title: title.trim() || resolved.title
+  };
+}
