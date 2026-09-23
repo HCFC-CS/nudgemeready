@@ -42,11 +42,20 @@ const TAB_ORDER = ["Home", "Today", "Capture", "More", "Focus"] as const;
 
 const EXTRA_STACK_SCREENS = new Set([
   "Budget",
+  "BudgetProject",
   "CalendarHub",
   "DocumentsHub",
   "SavedThings",
   "ReadyPacks",
-  "ComingUp"
+  "ComingUp",
+  "FirstRun",
+  "DidSomething",
+  "CrewHub",
+  "Circle",
+  "MyCrew",
+  "NudgyCrew",
+  "CrewsISupport",
+  "AddTask"
 ]);
 
 function createRoute(name: string, params?: object) {

@@ -208,7 +208,7 @@ export function FirstRunScreen() {
                 multiline
                 accessibilityLabel="Type the thing you don't want to forget"
               />
-              {preview.title ? (
+              {composeText.trim() && preview.title ? (
                 <AppText variant="muted">
                   We'll save “{preview.title}”
                   {preview.whenLabel ? ` · ${preview.whenLabel}` : ""}

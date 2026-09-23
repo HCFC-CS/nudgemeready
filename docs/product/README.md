@@ -9,6 +9,9 @@ Living documentation for the **0.3.1** TestFlight v3 product line. Sourced from 
 | [What still needs doing](./What_Needs_Doing.md) | Useful / in-life / easy / natural — remaining daily-path work |
 | [NMR Master Spec Audit](./NMR_Master_Spec_Audit.md) | Master prompt vs current engines |
 | [Platform consolidation audit (Sep 2026)](./Platform_Consolidation_Audit_Sep2026.md) | One-timeline UX: Nudges / Calendar / Capture / Home — no schema rewrite |
+| [Platform functional QA (Sep 2026)](./Platform_Functional_QA_Sep2026.md) | Interactive journeys, PASS/FAIL, repairs |
+| [Ready4 pack functional audit (Sep 2026)](./Ready4_Pack_Functional_Audit_Sep2026.md) | Pack-by-pack matrix for all 18 catalogue packs |
+| [Platform QA completion (Sep 2026)](./Platform_QA_Completion_Report_Sep2026.md) | TestFlight readiness: READY FOR TESTFLIGHT USER TESTING |
 | [01 — Product Spec Catalogue](./01-Product_Spec_Catalogue.md) | Full platform feature inventory, principles, modules, billing honesty, out of scope |
 | [02 — Ready4 Catalogue (Edition 1)](./02-Ready4_Catalogue_Edition_1.md) | Pack-by-pack catalogue matching Edition 1 Volume 2, aligned to shipped templates |
 | [Ready4 — Per-pack product specs](./ready4/README.md) | Individual product specs for all 15 Ready4 content packs |
