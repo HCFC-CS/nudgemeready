@@ -81,8 +81,8 @@ import {
 } from "../services/appointmentReminders";
 import { getPlannerConfig } from "../services/ready4PlannerConfigs";
 import { removeItemFromPhoneCalendar, syncItemToPhoneCalendar } from "../services/calendarSync";
-import { formatNudgeTypeLabel } from "../services/typeAccent";
-import { colors, radii, shadows, spacing, taskTypeAccentColors } from "../theme/theme";
+import { formatNudgeTypeLabel, getTypeChipColors } from "../services/typeAccent";
+import { colors, radii, shadows, spacing } from "../theme/theme";
 import type {
   AppointmentGuest,
   ListShare,
@@ -962,32 +962,35 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           <AppText variant="heading">Add to this project</AppText>
           <AppText variant="muted">Any nudge type can be a step under this project.</AppText>
           <View style={styles.projectAddRow}>
-            {projectChildTypes.map((type) => (
-              <Pressable
-                key={type}
-                accessibilityRole="button"
-                disabled={!editable}
-                onPress={() => navigation.navigate("ItemDetails", { draft: buildProjectChildDraft(type) })}
-                style={({ pressed }) => [
-                  styles.projectTypeChip,
-                  {
-                    borderColor: `${taskTypeAccentColors[type] ?? colors.accent}55`,
-                    backgroundColor: `${taskTypeAccentColors[type] ?? colors.accent}14`
-                  },
-                  pressed && styles.pressed
-                ]}
-              >
-                <AppText
-                  style={{
-                    color: taskTypeAccentColors[type] ?? colors.accent,
-                    fontWeight: "700",
-                    fontSize: 13
-                  }}
+            {projectChildTypes.map((type) => {
+              const chip = getTypeChipColors(type);
+              return (
+                <Pressable
+                  key={type}
+                  accessibilityRole="button"
+                  disabled={!editable}
+                  onPress={() => navigation.navigate("ItemDetails", { draft: buildProjectChildDraft(type) })}
+                  style={({ pressed }) => [
+                    styles.projectTypeChip,
+                    {
+                      borderColor: chip.borderColor,
+                      backgroundColor: chip.backgroundColor
+                    },
+                    pressed && styles.pressed
+                  ]}
                 >
-                  {formatNudgeTypeLabel(type)}
-                </AppText>
-              </Pressable>
-            ))}
+                  <AppText
+                    style={{
+                      color: chip.color,
+                      fontWeight: "700",
+                      fontSize: 13
+                    }}
+                  >
+                    {formatNudgeTypeLabel(type)}
+                  </AppText>
+                </Pressable>
+              );
+            })}
           </View>
           {projectChildren.length ? (
             <View style={styles.section}>

@@ -71,7 +71,11 @@ export function getScreenshotInitialState(screenId: string): PartialState<Naviga
   }
 
   if (screenId === "ItemDetails") {
-    const draft = mockNudgeItems.find((item) => item.id === "subtask-paint") ?? mockNudgeItems[0];
+    const itemId = getScreenshotItemId();
+    const draft =
+      mockNudgeItems.find((item) => item.id === itemId) ??
+      mockNudgeItems.find((item) => item.id === "subtask-paint") ??
+      mockNudgeItems[0];
     return {
       index: 0,
       routes: [createRoute("ItemDetails", { draft })]
@@ -115,6 +119,13 @@ export function getScreenshotPackId() {
     return undefined;
   }
   return new URLSearchParams(window.location.search).get("pack") ?? undefined;
+}
+
+export function getScreenshotItemId() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+  return new URLSearchParams(window.location.search).get("item") ?? undefined;
 }
 
 export function isScreenshotMode() {
