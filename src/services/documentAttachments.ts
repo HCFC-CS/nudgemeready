@@ -18,6 +18,9 @@ export const DOCUMENT_CATEGORIES: { id: DocumentCategory; label: string; hint: s
 ];
 
 const ENCRYPTED_EXT = ".nmr1";
+export const WEB_DOC_SCHEME = "nmr-doc://";
+
+const memoryDocs = new Map<string, string>();
 
 export function documentCategoryLabel(category?: DocumentCategory) {
   return DOCUMENT_CATEGORIES.find((entry) => entry.id === category)?.label ?? "Document";
@@ -30,13 +33,17 @@ function createAttachmentId() {
 function attachmentsRoot() {
   const root = FileSystem.documentDirectory;
   if (!root) {
-    throw new Error("Document storage is not available on this device.");
+    return null;
   }
   return `${root}nudge-attachments/`;
 }
 
 function itemFolder(itemId: string) {
-  return `${attachmentsRoot()}${sanitizePathPart(itemId)}/`;
+  const root = attachmentsRoot();
+  if (!root) {
+    return null;
+  }
+  return `${root}${sanitizePathPart(itemId)}/`;
 }
 
 function sanitizePathPart(value: string) {
@@ -87,6 +94,67 @@ function isEncryptedAttachmentPath(path: string) {
   return path.endsWith(ENCRYPTED_EXT);
 }
 
+function isWebDocUrl(url: string) {
+  return url.startsWith(WEB_DOC_SCHEME);
+}
+
+function webDocKey(id: string) {
+  return `nmr-doc:${id}`;
+}
+
+function webDocStore() {
+  if (typeof localStorage !== "undefined") {
+    return {
+      get: (key: string) => localStorage.getItem(key),
+      set: (key: string, value: string) => localStorage.setItem(key, value),
+      remove: (key: string) => localStorage.removeItem(key)
+    };
+  }
+  return {
+    get: (key: string) => memoryDocs.get(key) ?? null,
+    set: (key: string, value: string) => {
+      memoryDocs.set(key, value);
+    },
+    remove: (key: string) => {
+      memoryDocs.delete(key);
+    }
+  };
+}
+
+function shouldUseWebStore() {
+  return Platform.OS === "web" || !FileSystem.documentDirectory;
+}
+
+async function readPickedBytes(sourceUri: string): Promise<Uint8Array> {
+  if (
+    sourceUri.startsWith("blob:") ||
+    sourceUri.startsWith("data:") ||
+    sourceUri.startsWith("http://") ||
+    sourceUri.startsWith("https://")
+  ) {
+    const response = await fetch(sourceUri);
+    if (!response.ok) {
+      throw new Error("Could not read that file.");
+    }
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  try {
+    const base64 = await FileSystem.readAsStringAsync(sourceUri, {
+      encoding: FileSystem.EncodingType.Base64
+    });
+    return bytesFromBase64(base64);
+  } catch (error) {
+    if (typeof fetch === "function") {
+      const response = await fetch(sourceUri);
+      if (response.ok) {
+        return new Uint8Array(await response.arrayBuffer());
+      }
+    }
+    throw error;
+  }
+}
+
 async function persistPickedFile(
   itemId: string,
   sourceUri: string,
@@ -94,25 +162,31 @@ async function persistPickedFile(
   mimeType?: string,
   category: DocumentCategory = "other"
 ) {
-  const folder = itemFolder(itemId);
-  await ensureDir(folder);
   const id = createAttachmentId();
   const safeName = sanitizeFileName(fileName);
-  const destination = `${folder}${id}-${safeName}${ENCRYPTED_EXT}`;
-
-  const base64 = await FileSystem.readAsStringAsync(sourceUri, {
-    encoding: FileSystem.EncodingType.Base64
-  });
-  const plain = bytesFromBase64(base64);
+  const plain = await readPickedBytes(sourceUri);
   const encrypted = await encryptBytes(plain);
-  await FileSystem.writeAsStringAsync(destination, base64FromBytes(encrypted), {
-    encoding: FileSystem.EncodingType.Base64
-  });
+
+  let url: string;
+  if (shouldUseWebStore()) {
+    url = `${WEB_DOC_SCHEME}${id}`;
+    webDocStore().set(webDocKey(id), base64FromBytes(encrypted));
+  } else {
+    const folder = itemFolder(itemId);
+    if (!folder) {
+      throw new Error("Document storage is not available on this device.");
+    }
+    await ensureDir(folder);
+    url = `${folder}${id}-${safeName}${ENCRYPTED_EXT}`;
+    await FileSystem.writeAsStringAsync(url, base64FromBytes(encrypted), {
+      encoding: FileSystem.EncodingType.Base64
+    });
+  }
 
   const attachment: NudgeAttachment = {
     id,
     name: fileName.trim() || safeName,
-    url: destination,
+    url,
     mimeType,
     category,
     addedAt: new Date().toISOString()
@@ -122,13 +196,7 @@ async function persistPickedFile(
 
 export async function pickDocumentFile(itemId: string, category: DocumentCategory): Promise<NudgeAttachment | null> {
   const result = await DocumentPicker.getDocumentAsync({
-    type: [
-      "application/pdf",
-      "image/*",
-      "text/*",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ],
+    type: "*/*",
     copyToCacheDirectory: true,
     multiple: false
   });
@@ -138,7 +206,7 @@ export async function pickDocumentFile(itemId: string, category: DocumentCategor
   }
 
   const asset = result.assets[0];
-  return persistPickedFile(itemId, asset.uri, asset.name, asset.mimeType, category);
+  return persistPickedFile(itemId, asset.uri, asset.name ?? "document", asset.mimeType, category);
 }
 
 export async function pickDocumentPhoto(
@@ -190,6 +258,10 @@ export async function takeDocumentPhoto(
 
 export async function removeStoredAttachment(attachment: NudgeAttachment) {
   try {
+    if (isWebDocUrl(attachment.url)) {
+      webDocStore().remove(webDocKey(attachment.id));
+      return;
+    }
     const info = await FileSystem.getInfoAsync(attachment.url);
     if (info.exists) {
       await FileSystem.deleteAsync(attachment.url, { idempotent: true });
@@ -203,6 +275,9 @@ export async function cleanupAttachmentsForItem(itemId: string, attachments: Nud
   await Promise.all(attachments.map((attachment) => removeStoredAttachment(attachment)));
   try {
     const folder = itemFolder(itemId);
+    if (!folder) {
+      return;
+    }
     const info = await FileSystem.getInfoAsync(folder);
     if (info.exists) {
       await FileSystem.deleteAsync(folder, { idempotent: true });
@@ -212,7 +287,40 @@ export async function cleanupAttachmentsForItem(itemId: string, attachments: Nud
   }
 }
 
+async function materializeAttachmentBytes(attachment: NudgeAttachment) {
+  if (isWebDocUrl(attachment.url)) {
+    const stored = webDocStore().get(webDocKey(attachment.id));
+    if (!stored) {
+      throw new Error("File missing");
+    }
+    return decryptBytes(bytesFromBase64(stored));
+  }
+
+  const info = await FileSystem.getInfoAsync(attachment.url);
+  if (!info.exists) {
+    throw new Error("File missing");
+  }
+
+  const payload = await FileSystem.readAsStringAsync(attachment.url, {
+    encoding: FileSystem.EncodingType.Base64
+  });
+  const bytes = bytesFromBase64(payload);
+  if (!isEncryptedAttachmentPath(attachment.url)) {
+    return bytes;
+  }
+  return decryptBytes(bytes);
+}
+
 async function materializeAttachmentForOpen(attachment: NudgeAttachment) {
+  if (isWebDocUrl(attachment.url) || Platform.OS === "web") {
+    const plain = await materializeAttachmentBytes(attachment);
+    const copy = Uint8Array.from(plain);
+    const blob = new Blob([copy.buffer as ArrayBuffer], {
+      type: attachment.mimeType || "application/octet-stream"
+    });
+    return URL.createObjectURL(blob);
+  }
+
   const info = await FileSystem.getInfoAsync(attachment.url);
   if (!info.exists) {
     throw new Error("File missing");
@@ -243,6 +351,17 @@ async function materializeAttachmentForOpen(attachment: NudgeAttachment) {
 export async function openAttachment(attachment: NudgeAttachment) {
   try {
     const uri = await materializeAttachmentForOpen(attachment);
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const link = document.createElement("a");
+      link.href = uri;
+      link.download = attachment.name;
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      return;
+    }
     const openUri = Platform.OS === "android" && !uri.startsWith("file://") ? `file://${uri}` : uri;
     const canOpen = await Linking.canOpenURL(openUri);
     if (!canOpen) {
@@ -253,4 +372,10 @@ export async function openAttachment(attachment: NudgeAttachment) {
   } catch {
     Alert.alert("Cannot open", `Unable to open ${attachment.name}. Try saving it again.`);
   }
+}
+
+export function titleFromAttachmentName(name: string) {
+  const trimmed = name.trim();
+  const withoutExt = trimmed.replace(/\.[^.]+$/, "").trim();
+  return withoutExt || "Document";
 }

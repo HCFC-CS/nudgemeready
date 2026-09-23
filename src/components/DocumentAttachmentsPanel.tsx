@@ -1,8 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, View } from "react-native";
 
-import { SoftCard } from "./NudgeComponents";
+import { PrimaryButton, SecondaryButton, SoftCard } from "./NudgeComponents";
 import { AppText } from "./Text";
 import {
   DOCUMENT_CATEGORIES,
@@ -25,8 +25,9 @@ type Props = {
 
 export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editable = true }: Props) {
   const [busy, setBusy] = useState(false);
+  const [category, setCategory] = useState<DocumentCategory>("other");
 
-  async function addFromPicker(kind: "file" | "photo" | "camera", category: DocumentCategory) {
+  async function addFromPicker(kind: "file" | "photo" | "camera") {
     if (!editable || busy) {
       return;
     }
@@ -56,32 +57,6 @@ export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editab
     }
   }
 
-  function askHowToAdd(category: DocumentCategory) {
-    Alert.alert("Add document", documentCategoryLabel(category), [
-      { text: "Cancel", style: "cancel" },
-      { text: "File", onPress: () => void addFromPicker("file", category) },
-      { text: "Photo", onPress: () => void addFromPicker("photo", category) },
-      { text: "Camera", onPress: () => void addFromPicker("camera", category) }
-    ]);
-  }
-
-  function startUpload() {
-    if (!editable || busy) {
-      return;
-    }
-    Alert.alert(
-      "Document type",
-      "What kind of document is this?",
-      [
-        { text: "Cancel", style: "cancel" },
-        ...DOCUMENT_CATEGORIES.map((entry) => ({
-          text: entry.label,
-          onPress: () => askHowToAdd(entry.id)
-        }))
-      ]
-    );
-  }
-
   function confirmRemove(attachment: NudgeAttachment) {
     if (!editable) {
       return;
@@ -104,18 +79,53 @@ export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editab
   return (
     <SoftCard>
       <AppText variant="heading">Documents</AppText>
+      <AppText variant="muted">Keep letters, tickets, or photos with this nudge.</AppText>
 
       {editable ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Upload document"
-          disabled={busy}
-          onPress={startUpload}
-          style={({ pressed }) => [styles.uploadBtn, (pressed || busy) && styles.pressed]}
-        >
-          <Ionicons name="cloud-upload-outline" size={20} color={colors.primaryDark} />
-          <AppText>Upload document</AppText>
-        </Pressable>
+        <View style={styles.uploadBlock}>
+          <AppText variant="small">What kind of document?</AppText>
+          <View style={styles.chips}>
+            {DOCUMENT_CATEGORIES.map((entry) => {
+              const selected = category === entry.id;
+              return (
+                <Pressable
+                  key={entry.id}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  onPress={() => setCategory(entry.id)}
+                  style={[styles.chip, selected && styles.chipSelected]}
+                >
+                  <AppText style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{entry.label}</AppText>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View style={styles.actions}>
+            <PrimaryButton
+              accessibilityLabel="Upload document"
+              disabled={busy}
+              onPress={() => void addFromPicker("file")}
+            >
+              Upload document
+            </PrimaryButton>
+            <SecondaryButton
+              accessibilityLabel="Choose photo"
+              disabled={busy}
+              onPress={() => void addFromPicker("photo")}
+            >
+              Choose photo
+            </SecondaryButton>
+            {Platform.OS !== "web" ? (
+              <SecondaryButton
+                accessibilityLabel="Take photo"
+                disabled={busy}
+                onPress={() => void addFromPicker("camera")}
+              >
+                Take photo
+              </SecondaryButton>
+            ) : null}
+          </View>
+        </View>
       ) : null}
 
       {busy ? <ActivityIndicator color={colors.primaryDark} style={styles.spinner} /> : null}
@@ -162,19 +172,38 @@ export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editab
 }
 
 const styles = StyleSheet.create({
-  uploadBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    alignSelf: "flex-start",
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+  uploadBlock: {
+    gap: spacing.sm,
     marginTop: spacing.sm,
     marginBottom: spacing.sm
+  },
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.ivoryElevated,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm
+  },
+  chipSelected: {
+    borderColor: colors.primaryDark,
+    backgroundColor: colors.ivoryElevated
+  },
+  chipLabel: {
+    color: colors.text,
+    fontWeight: "600",
+    fontSize: 13
+  },
+  chipLabelSelected: {
+    color: colors.primaryDark
+  },
+  actions: {
+    gap: spacing.sm
   },
   spinner: {
     marginBottom: spacing.sm
