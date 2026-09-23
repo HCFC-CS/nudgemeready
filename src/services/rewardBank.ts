@@ -96,6 +96,14 @@ export function earnPoints(
   if (isRestrictionRewardTitle(input.title)) {
     return wallet;
   }
+  if (input.sourceItemId && input.kind !== "tiny_step") {
+    const already = wallet.ledger.some(
+      (event) => event.sourceItemId === input.sourceItemId && event.kind === input.kind
+    );
+    if (already) {
+      return wallet;
+    }
+  }
   const points = pointsForDifficulty(input.difficulty);
   const event: RewardEarnEvent = {
     id: createId("earn"),

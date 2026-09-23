@@ -112,4 +112,30 @@ describe("rewardBank", () => {
     expect(wallet.availablePoints).toBe(1);
     expect(formatRewardEarnNotice(0, "Lost 2kg", "+{points}")).toMatch(/don't award points for weight/i);
   });
+
+  it("awards completion points once per source item and kind", () => {
+    let wallet = createDefaultRewardWallet();
+    wallet = earnPoints(wallet, {
+      difficulty: "normal",
+      title: "Call dentist",
+      kind: "task",
+      sourceItemId: "nudge-1"
+    });
+    wallet = earnPoints(wallet, {
+      difficulty: "normal",
+      title: "Call dentist",
+      kind: "task",
+      sourceItemId: "nudge-1"
+    });
+    expect(wallet.availablePoints).toBe(1);
+    expect(wallet.lifetimePoints).toBe(1);
+    expect(wallet.ledger).toHaveLength(1);
+    wallet = earnPoints(wallet, {
+      difficulty: "normal",
+      title: "Tiny step",
+      kind: "tiny_step",
+      sourceItemId: "nudge-1"
+    });
+    expect(wallet.availablePoints).toBe(2);
+  });
 });

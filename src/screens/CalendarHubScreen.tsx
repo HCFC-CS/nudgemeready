@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   cell: {
     width: "14.28%",
-    minHeight: 52,
+    minHeight: 56,
     alignItems: "center",
     paddingVertical: spacing.xs,
     borderRadius: radii.md

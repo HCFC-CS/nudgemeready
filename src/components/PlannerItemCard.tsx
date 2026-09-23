@@ -97,7 +97,7 @@ export function PlannerItemCard({
           {onStart && (item.type === "revision" || item.type === "study" || item.type === "task") ? (
             <ActionChip label="Start" onPress={onStart} />
           ) : null}
-          {onDone ? <ActionChip label="Done" onPress={onDone} /> : null}
+          {onDone ? <ActionChip label="Sorted" onPress={onDone} /> : null}
           {onMove ? <ActionChip label="Move" onPress={onMove} /> : null}
           <ActionChip label={showMore ? "Less" : "More"} onPress={() => setShowMore((value) => !value)} />
         </View>

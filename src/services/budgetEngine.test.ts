@@ -134,6 +134,47 @@ describe("budgetEngine summary", () => {
     expect(project.totalBudgetMinor).toBe(180000);
     expect(project.spentMinor).toBe(30000);
     expect(project.committedMinor).toBe(150000);
+    expect(project.leftMinor).toBe(150000);
+    expect(project.overspent).toBe(false);
+  });
+
+  it("uses an overall envelope and allows a calm overspend remaining", () => {
+    const state = createDefaultBudgetState();
+    const core = getCoreBudget(state);
+    state.budgets.push({
+      id: "wedding",
+      name: "Wedding",
+      type: "project",
+      period: "monthly",
+      currency: "GBP",
+      readyPackId: "ready4-wedding",
+      envelopeMinor: 100000,
+      createdAt: core.createdAt,
+      updatedAt: core.updatedAt
+    });
+    state.items.push({
+      id: "photo",
+      budgetId: "wedding",
+      categoryId: null,
+      name: "Photographer",
+      itemType: "expense",
+      expectedAmountMinor: 180000,
+      actualAmountMinor: 120000,
+      frequency: "one_off",
+      customInterval: null,
+      dueDate: null,
+      nextDueDate: null,
+      isSubscription: false,
+      notes: null,
+      archived: false,
+      createdAt: core.createdAt,
+      updatedAt: core.updatedAt
+    });
+    const project = summariseProjectBudget(state, "wedding");
+    expect(project.totalBudgetMinor).toBe(100000);
+    expect(project.spentMinor).toBe(120000);
+    expect(project.leftMinor).toBe(-20000);
+    expect(project.overspent).toBe(true);
   });
 });
 

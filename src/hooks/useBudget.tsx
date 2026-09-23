@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import type {
+  Budget,
   BudgetCategory,
   BudgetItem,
   BudgetState,
@@ -46,6 +47,7 @@ type BudgetContextValue = {
   addGoal: (input: Pick<SavingsGoal, "name" | "targetAmountMinor"> & Partial<SavingsGoal>) => SavingsGoal;
   updateGoal: (goalId: string, patch: Partial<SavingsGoal>) => void;
   ensureProjectBudgetFromExtension: (extension: Ready4BudgetExtension) => string;
+  updateBudget: (budgetId: string, patch: Partial<Budget>) => void;
 };
 
 const BudgetContext = createContext<BudgetContextValue | undefined>(undefined);
@@ -304,6 +306,18 @@ export function BudgetProvider({ children }: PropsWithChildren) {
     [persist, state.budgets]
   );
 
+  const updateBudget = useCallback(
+    (budgetId: string, patch: Partial<Budget>) => {
+      persist((current) => ({
+        ...current,
+        budgets: current.budgets.map((budget) =>
+          budget.id === budgetId ? { ...budget, ...patch, updatedAt: new Date().toISOString() } : budget
+        )
+      }));
+    },
+    [persist]
+  );
+
   const value: BudgetContextValue = {
     state,
     isReady,
@@ -323,7 +337,8 @@ export function BudgetProvider({ children }: PropsWithChildren) {
     addItemFromDraft,
     addGoal,
     updateGoal,
-    ensureProjectBudgetFromExtension
+    ensureProjectBudgetFromExtension,
+    updateBudget
   };
 
   return <BudgetContext.Provider value={value}>{children}</BudgetContext.Provider>;

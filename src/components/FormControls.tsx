@@ -33,7 +33,7 @@ export function Field({
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
-  keyboardType?: "default" | "number-pad" | "email-address";
+  keyboardType?: "default" | "number-pad" | "email-address" | "decimal-pad" | "phone-pad";
   multiline?: boolean;
   onSubmitEditing?: TextInputProps["onSubmitEditing"];
   returnKeyType?: TextInputProps["returnKeyType"];

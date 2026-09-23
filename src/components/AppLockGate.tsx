@@ -47,7 +47,8 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
         route?.name === "TermsOfUse" ||
         route?.name === "CrewTerms" ||
         route?.name === "LegalInfo" ||
-        route?.name === "AcceptInvite"
+        route?.name === "AcceptInvite" ||
+        route?.name === "FirstRun"
       ) {
         return;
       }

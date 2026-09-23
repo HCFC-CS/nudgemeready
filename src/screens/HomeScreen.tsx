@@ -23,7 +23,6 @@ import {
   dismissSecurityLockPrompt,
   loadSecurityLockPromptState
 } from "../services/securityLockPrompt";
-import { countTodayProgress } from "../services/dailyControlCentre";
 import { isScreenshotMode } from "../navigation/screenshotState";
 import { colors, radii, spacing } from "../theme/theme";
 
@@ -42,11 +41,10 @@ export function HomeScreen() {
   const navigation = useNavigation<any>();
   const { profile } = useProfile();
   const { isSupporterOnly, activeProfile, enableOwnNudgeWorld } = useCrew();
-  const { items: nudges, replaceItems } = useNudgeItems();
+  const { items: nudges, replaceItems, loadError, clearLoadError } = useNudgeItems();
   const actor = useNudgeActor();
   const { packs, isInstalled } = useReadyPacks();
   const { homePeek, isReady: horizonReady } = useNudgeHorizon();
-  const dayProgress = useMemo(() => countTodayProgress(nudges), [nudges]);
   const { settings, isReady: securityReady } = useAppSecurity();
   const [showLockTip, setShowLockTip] = useState(false);
   const [showCalendarInvite, setShowCalendarInvite] = useState(false);
@@ -177,6 +175,19 @@ export function HomeScreen() {
         </SoftCard>
       ) : null}
 
+      {loadError ? (
+        <SoftCard style={styles.card}>
+          <AppText variant="heading">Couldn't load your nudges</AppText>
+          <AppText variant="muted">
+            Something went wrong reading what's saved on this phone. Try again in a moment. Your other
+            screens should still work.
+          </AppText>
+          <SecondaryButton size="compact" onPress={clearLoadError}>
+            Dismiss
+          </SecondaryButton>
+        </SoftCard>
+      ) : null}
+
       <SoftCard style={styles.card}>
         <AppText variant="heading">Right now</AppText>
         {horizonReady ? (
@@ -200,15 +211,12 @@ export function HomeScreen() {
       <SoftCard style={styles.card}>
         <AppText variant="heading">Your day</AppText>
         <AppText variant="muted">
-          {dayProgress.total === 0
-            ? "Nothing dated for today yet."
-            : `${dayProgress.total} thing${dayProgress.total === 1 ? "" : "s"} today`}
+          {!horizonReady
+            ? "Loading…"
+            : homePeek.todayCount === 0
+              ? "Nothing dated for today yet."
+              : `${homePeek.todayCount} thing${homePeek.todayCount === 1 ? "" : "s"} today`}
         </AppText>
-        {dayProgress.total > 0 ? (
-          <AppText variant="muted">
-            {dayProgress.done} done · {dayProgress.left} left
-          </AppText>
-        ) : null}
         <PrimaryButton onPress={() => navigation.navigate("Tabs", { screen: "Today", params: { horizon: "today" } })}>
           See my day
         </PrimaryButton>

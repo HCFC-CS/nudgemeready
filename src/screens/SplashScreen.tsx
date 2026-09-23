@@ -57,7 +57,7 @@ type SignInStep =
   | "recoveryShown";
 
 export function SplashScreen({ navigation, route }: Props) {
-  const { profile, completeRegistration, needsRegistration, isProfileReady } = useProfile();
+  const { profile, completeRegistration, needsRegistration, needsFirstRun, isProfileReady } = useProfile();
   const { renameSelfProfile, setHasOwnNudgeWorld, myCrewMembers } = useCrew();
   const {
     isReady,
@@ -272,6 +272,13 @@ export function SplashScreen({ navigation, route }: Props) {
       setStep("setup");
       setRecoveryEmail(profile.email || recoveryEmail);
       setEnableFaceId(biometricsAvailable);
+      return;
+    }
+    if (needsFirstRun) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "FirstRun" }]
+      });
       return;
     }
     navigation.reset({
@@ -709,7 +716,7 @@ export function SplashScreen({ navigation, route }: Props) {
     finishPasswordReset();
     cancelPasswordRecovery();
     setFreshRecoveryCode("");
-    setStep("welcome");
+    enterApp("Home");
   }
 
   return (

@@ -71,8 +71,8 @@ export function PlannerQuickAddScreen() {
           {draft.rewardNote ? <AppText variant="muted">Reward note: {draft.rewardNote}</AppText> : null}
           <AppText variant="caption">
             {alsoNudge
-              ? "Will also create a linked nudge (and calendar sync when enabled on the nudge)."
-              : "Planner only — you can link a nudge later."}
+              ? "This also appears on Nudges and Calendar when it has a date. Saving again updates the same item."
+              : "Planner only — you can add it to Nudges later."}
           </AppText>
           <SecondaryButton size="compact" onPress={() => setAlsoNudge((value) => !value)}>
             {alsoNudge ? "Planner only this time" : "Also add nudge"}

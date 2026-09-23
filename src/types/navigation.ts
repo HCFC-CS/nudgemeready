@@ -51,6 +51,7 @@ export type RootStackParamList = {
   DocumentsHub: undefined;
   SavedThings: undefined;
   CalendarHub: { dateKey?: string; view?: "day" | "week" | "month" | "year" } | undefined;
+  FirstRun: undefined;
 };
 
 export type NudgesHorizonTab = "today" | "week" | "month" | "year" | "all";
