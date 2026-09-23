@@ -13,7 +13,7 @@ import { useCrew } from "../hooks/useCrew";
 import { useNudgeHorizon } from "../hooks/useNudgeHorizon";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useProfile } from "../hooks/useProfile";
-import { READY_4_LABEL, READY_4_PACKS_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
+import { READY_4_LABEL, READY_PACKS_SHOP_LABEL } from "../content/ready4Copy";
 import { useReadyPacks } from "../hooks/useReadyPacks";
 import { getPlannerConfig } from "../services/ready4PlannerConfigs";
 import { loadAppPreferences, saveAppPreferences } from "../services/appPreferencesStorage";
@@ -23,6 +23,7 @@ import {
   dismissSecurityLockPrompt,
   loadSecurityLockPromptState
 } from "../services/securityLockPrompt";
+import { countTodayProgress } from "../services/dailyControlCentre";
 import { isScreenshotMode } from "../navigation/screenshotState";
 import { colors, radii, spacing } from "../theme/theme";
 
@@ -45,6 +46,7 @@ export function HomeScreen() {
   const actor = useNudgeActor();
   const { packs, isInstalled } = useReadyPacks();
   const { homePeek, isReady: horizonReady } = useNudgeHorizon();
+  const dayProgress = useMemo(() => countTodayProgress(nudges), [nudges]);
   const { settings, isReady: securityReady } = useAppSecurity();
   const [showLockTip, setShowLockTip] = useState(false);
   const [showCalendarInvite, setShowCalendarInvite] = useState(false);
@@ -96,6 +98,11 @@ export function HomeScreen() {
   );
 
   const firstName = (profile.name || activeProfile.name || "").split(" ")[0];
+  const todayLabel = new Date().toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  });
 
   function openPeekEntry(sourceKind: string, sourceId: string, packId?: string | null) {
     if (sourceKind === "nudge") {
@@ -148,6 +155,9 @@ export function HomeScreen() {
         {greetingForNow()}
         {firstName ? `, ${firstName}` : ""}
       </AppText>
+      <AppText variant="muted" style={styles.dateLine}>
+        {todayLabel}
+      </AppText>
 
       {isSupporterOnly ? (
         <SoftCard style={styles.banner}>
@@ -164,6 +174,84 @@ export function HomeScreen() {
           >
             Set up for myself
           </PrimaryButton>
+        </SoftCard>
+      ) : null}
+
+      <SoftCard style={styles.card}>
+        <AppText variant="heading">Right now</AppText>
+        {horizonReady ? (
+          homePeek.next ? (
+            <HorizonEntryCard
+              entry={homePeek.next}
+              compact
+              showLeaveBy
+              onPress={() =>
+                openPeekEntry(homePeek.next!.sourceKind, homePeek.next!.sourceId, homePeek.next!.packId)
+              }
+            />
+          ) : (
+            <AppText variant="muted">Nothing urgent right now.</AppText>
+          )
+        ) : (
+          <AppText variant="muted">Loading…</AppText>
+        )}
+      </SoftCard>
+
+      <SoftCard style={styles.card}>
+        <AppText variant="heading">Your day</AppText>
+        <AppText variant="muted">
+          {dayProgress.total === 0
+            ? "Nothing dated for today yet."
+            : `${dayProgress.total} thing${dayProgress.total === 1 ? "" : "s"} today`}
+        </AppText>
+        {dayProgress.total > 0 ? (
+          <AppText variant="muted">
+            {dayProgress.done} done · {dayProgress.left} left
+          </AppText>
+        ) : null}
+        <PrimaryButton onPress={() => navigation.navigate("Tabs", { screen: "Today", params: { horizon: "today" } })}>
+          See my day
+        </PrimaryButton>
+      </SoftCard>
+
+      <RewardGlance />
+
+      <WeeklyReviewCard />
+
+      <SoftCard style={styles.card}>
+        <AppText variant="heading">Coming up</AppText>
+        <AppText variant="muted">
+          Tomorrow · {homePeek.tomorrowCount} thing{homePeek.tomorrowCount === 1 ? "" : "s"}
+        </AppText>
+        <AppText variant="muted">
+          This week · {homePeek.weekCount} thing{homePeek.weekCount === 1 ? "" : "s"}
+        </AppText>
+        <SecondaryButton
+          onPress={() => navigation.navigate("Tabs", { screen: "Today", params: { horizon: "week" } })}
+        >
+          See what's coming
+        </SecondaryButton>
+        {homePeek.next ? (
+          <SecondaryButton size="compact" onPress={() => navigation.navigate("Tabs", { screen: "Focus" })}>
+            Focus on this
+          </SecondaryButton>
+        ) : (
+          <PrimaryButton onPress={() => navigation.navigate("Tabs", { screen: "Capture" })}>
+            Add a nudge
+          </PrimaryButton>
+        )}
+      </SoftCard>
+
+      {showCalendarInvite ? (
+        <SoftCard style={styles.card}>
+          <AppText variant="heading">Phone calendar</AppText>
+          <AppText variant="muted">Show my appointments here — holidays and similar noise are skipped.</AppText>
+          <PrimaryButton size="compact" disabled={calendarBusy} onPress={() => void showAppointmentsHere()}>
+            {calendarBusy ? "Checking…" : "Show my appointments here"}
+          </PrimaryButton>
+          <SecondaryButton size="compact" onPress={() => setShowCalendarInvite(false)}>
+            Not now
+          </SecondaryButton>
         </SoftCard>
       ) : null}
 
@@ -188,63 +276,8 @@ export function HomeScreen() {
       ) : null}
 
       <SoftCard style={styles.card}>
-        <AppText variant="heading">What's coming up</AppText>
-        {horizonReady ? (
-          <>
-            <AppText variant="muted">{homePeek.todaySummary}</AppText>
-            {homePeek.next ? (
-              <HorizonEntryCard
-                entry={homePeek.next}
-                compact
-                showLeaveBy
-                onPress={() =>
-                  openPeekEntry(homePeek.next!.sourceKind, homePeek.next!.sourceId, homePeek.next!.packId)
-                }
-              />
-            ) : (
-              <>
-                <AppText variant="muted">Add something you don’t want to forget.</AppText>
-                <PrimaryButton onPress={() => navigation.navigate("Tabs", { screen: "Capture" })}>
-                  Add a nudge
-                </PrimaryButton>
-              </>
-            )}
-          </>
-        ) : (
-          <AppText variant="muted">Loading…</AppText>
-        )}
-        {homePeek.next ? (
-          <PrimaryButton onPress={() => navigation.navigate("ComingUp")}>See what's coming up</PrimaryButton>
-        ) : (
-          <SecondaryButton onPress={() => navigation.navigate("ComingUp")}>See what's coming up</SecondaryButton>
-        )}
-        {homePeek.next ? (
-          <SecondaryButton size="compact" onPress={() => navigation.navigate("Tabs", { screen: "Focus" })}>
-            Focus on this
-          </SecondaryButton>
-        ) : null}
-      </SoftCard>
-
-      {showCalendarInvite ? (
-        <SoftCard style={styles.card}>
-          <AppText variant="heading">Phone calendar</AppText>
-          <AppText variant="muted">Show my appointments here — holidays and similar noise are skipped.</AppText>
-          <PrimaryButton size="compact" disabled={calendarBusy} onPress={() => void showAppointmentsHere()}>
-            {calendarBusy ? "Checking…" : "Show my appointments here"}
-          </PrimaryButton>
-          <SecondaryButton size="compact" onPress={() => setShowCalendarInvite(false)}>
-            Not now
-          </SecondaryButton>
-        </SoftCard>
-      ) : null}
-
-      <RewardGlance />
-
-      <WeeklyReviewCard />
-
-      <SoftCard style={styles.card}>
         <View style={styles.headerRow}>
-          <AppText variant="heading">My {READY_4_PACKS_LABEL}</AppText>
+          <AppText variant="heading">{READY_4_LABEL}</AppText>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Browse ${READY_PACKS_SHOP_LABEL}`}
@@ -284,7 +317,9 @@ const styles = StyleSheet.create({
   greeting: {
     color: colors.accent,
     fontWeight: "700",
-    letterSpacing: 0.3,
+    letterSpacing: 0.3
+  },
+  dateLine: {
     marginBottom: spacing.sm
   },
   banner: {

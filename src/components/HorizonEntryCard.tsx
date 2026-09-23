@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { SoftCard } from "./NudgeComponents";
 import { AppText } from "./Text";
+import { horizonDisplayTag } from "../services/nudgeHorizonEngine";
 import { colors, spacing } from "../theme/theme";
 import type { HorizonEntry } from "../types/nudgeHorizon";
 
@@ -41,7 +42,7 @@ export function HorizonEntryCard({ entry, onPress, showLeaveBy, compact }: Props
       <SoftCard style={[styles.card, compact && styles.compact]}>
         <View style={styles.row}>
           <AppText variant="caption" style={styles.label}>
-            {entry.label}
+            {horizonDisplayTag(entry)}
           </AppText>
           {when ? (
             <AppText variant="caption" style={styles.when}>
@@ -88,9 +89,9 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   label: {
-    color: colors.babyBlue,
+    color: colors.babyBlueInk,
     fontWeight: "700",
-    letterSpacing: 0.4
+    letterSpacing: 0.2
   },
   when: {
     color: colors.mutedText

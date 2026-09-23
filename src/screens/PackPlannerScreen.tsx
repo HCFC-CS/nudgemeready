@@ -83,7 +83,7 @@ export function PackPlannerScreen() {
     const section = config.plannerSections.find((entry) => entry.id === sectionId) ?? config.plannerSections[0];
     const type: PlannerItemType = section?.suggestedItemTypes[0] ?? "custom";
     const dueAt = parseQuickDate(quickDate);
-    addItem({
+    const item = addItem({
       ready4PackId: packId,
       sectionId: section?.id ?? null,
       type,
@@ -95,6 +95,9 @@ export function PackPlannerScreen() {
       crewMemberIds: [],
       archived: false
     });
+    if (dueAt) {
+      linkNudge(item.id, item);
+    }
     setQuickTitle("");
     setQuickDate("");
   }
@@ -140,7 +143,7 @@ export function PackPlannerScreen() {
         title={config.title}
         subtitle="Plan it once. See it where you need it."
         showBack
-        helpText="Use sections for structure, or add freeform items in your own words. Link to nudges and calendar when you want a reminder."
+        helpText="Use sections for structure, or add freeform items in your own words. Dated items also appear on Nudges and Calendar."
       />
 
       <SoftCard style={styles.card}>

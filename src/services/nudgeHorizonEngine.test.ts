@@ -6,6 +6,7 @@ import type { PlannerItem } from "../types/ready4Planner";
 import { createDefaultBudgetState } from "./budgetStorage";
 import {
   applySimplify,
+  buildHomeComingUpPeek,
   buildLaterView,
   buildMonthView,
   buildQuarterView,
@@ -16,6 +17,7 @@ import {
   dedupeByTitleAndDay,
   flexibilityForNudge,
   flexibilityForPlanner,
+  horizonDisplayTag,
   shouldIncludeNudgeInHorizon,
   stillNeedCopy
 } from "./nudgeHorizonEngine";
@@ -262,5 +264,34 @@ describe("nudgeHorizonEngine", () => {
     const week = buildWeekView(entries, now);
     expect(week.overwhelm).toBe(true);
     expect(week.whatMattersMost.length).toBeLessThanOrEqual(3);
+  });
+
+  it("home peek includes today, tomorrow and week counts", () => {
+    const entries = [
+      {
+        id: "today",
+        sourceKind: "nudge" as const,
+        sourceId: "today",
+        title: "Dentist",
+        at: new Date(2026, 4, 4, 14, 30, 0, 0).toISOString(),
+        flexibility: "fixed" as const,
+        label: "BOOK & GO"
+      },
+      {
+        id: "tomorrow",
+        sourceKind: "nudge" as const,
+        sourceId: "tomorrow",
+        title: "Call solicitor",
+        at: new Date(2026, 4, 5, 10, 0, 0, 0).toISOString(),
+        flexibility: "flexible" as const,
+        label: "DO"
+      }
+    ];
+    const peek = buildHomeComingUpPeek(entries, now);
+    expect(peek.todayCount).toBe(1);
+    expect(peek.tomorrowCount).toBe(1);
+    expect(peek.weekCount).toBe(2);
+    expect(peek.nothingUrgent).toBe(false);
+    expect(horizonDisplayTag({ packId: "ready4-moving", label: "MOVE" })).toBe("Moving");
   });
 });

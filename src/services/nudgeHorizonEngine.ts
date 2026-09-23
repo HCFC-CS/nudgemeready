@@ -105,11 +105,46 @@ export function flexibilityForPlanner(item: PlannerItem): HorizonFlexibility {
   return "flexible";
 }
 
+const PACK_DISPLAY_TAGS: Record<string, string> = {
+  "ready4-moving": "Moving",
+  "ready4-study": "Study",
+  "ready4-medication": "Medication",
+  "ready4-finance": "Finance",
+  "ready4-wedding": "Wedding",
+  "ready4-baby": "Baby",
+  "ready4-travel": "Travel",
+  "ready4-work": "Work",
+  "ready4-home": "Home",
+  "ready4-family": "Family",
+  "ready4-pets": "Pets",
+  "ready4-appointments": "Appointments",
+  "ready4-shopping": "Shopping",
+  "ready4-wellbeing": "Wellbeing",
+  "ready4-party": "Party",
+  "ready4-digital-life": "Digital life",
+  "ready4-life-admin": "Life admin",
+  "ready4-emergencies": "Emergencies",
+  "ready4-independence": "Independence"
+};
+
 function packLabel(packId?: string | null) {
   if (!packId) {
     return "NUDGE";
   }
   return getPlannerConfig(packId)?.shortLabel ?? packId.replace(/^ready4-/, "").toUpperCase();
+}
+
+export function horizonDisplayTag(entry: { packId?: string | null; label: string }) {
+  if (entry.packId && PACK_DISPLAY_TAGS[entry.packId]) {
+    return PACK_DISPLAY_TAGS[entry.packId];
+  }
+  if (entry.label === "NUDGE") {
+    return "Nudge";
+  }
+  return entry.label
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function intentLabel(intent?: string | null) {
@@ -584,12 +619,17 @@ export function buildLaterView(entries: HorizonEntry[]): LaterHorizonView {
   };
 }
 
-/** Home peek — summary + next item only; full detail lives on Coming Up. */
+/** Home peek — next item + quiet counts. Full timeline lives on Nudges. */
 export function buildHomeComingUpPeek(entries: HorizonEntry[], now = new Date()) {
   const today = buildTodayView(entries, now);
+  const week = buildWeekView(entries, now);
   return {
     todaySummary: today.summary,
-    next: today.next
+    next: today.next,
+    todayCount: today.totalCount,
+    tomorrowCount: today.tomorrowCount,
+    weekCount: week.totalCount,
+    nothingUrgent: !today.next
   };
 }
 

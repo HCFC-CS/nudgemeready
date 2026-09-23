@@ -32,7 +32,7 @@ Maps the [Master Ready4 Platform Spec](./Ready4_Master_Platform_Spec.md) to the 
 | Help me find it / I already have this / shop toggle | SubtleOutboundLinks + Settings | **Shipped (Phase 1)** |
 | 10-destination tab bar | 5 tabs: Home → Nudges → Add → Menu → Focus | Deferred |
 | Packs without planner configs | All catalogue content packs have planner configs | **Shipped** |
-| Documents / Calendar hubs | Thin Menu hubs over item attachments / calendar-linked nudges | **Shipped** (light) |
+| Documents / Calendar hubs | Menu Calendar is a visual month/week/day/year grid over the same horizon entries. Phone sync stays on items. Documents hub over attachments. | **Shipped** |
 | Cloud sync / multi-device | Local encrypted storage only | By design for now |
 
 ## IA (locked)
@@ -41,7 +41,7 @@ Maps the [Master Ready4 Platform Spec](./Ready4_Master_Platform_Spec.md) to the 
 | --- | --- |
 | Add | Add tab → Capture |
 | Working list | Nudges tab |
-| Life timeline | Coming Up (Home + Menu) |
+| Life timeline | Nudges tab (Today–Year) + Calendar grid |
 | Pack Today / week | Menu → Ready4 today & this week (when a planner pack is installed) |
 | Money / Rewards / Crew / Packs | Menu |
 | Everything / Calendar / Documents | Menu hubs (browse engines already on items) |

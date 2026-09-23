@@ -16,9 +16,14 @@ import type { IoniconName } from "../components/iconTypes";
 type MenuLink = {
   label: string;
   subtitle: string;
-  route: string;
   icon: IoniconName;
   accent: string;
+  onPress: () => void;
+};
+
+type MenuGroup = {
+  title: string;
+  links: MenuLink[];
 };
 
 export function MoreScreen() {
@@ -31,116 +36,111 @@ export function MoreScreen() {
     [packs, isInstalled]
   );
 
-  const links = useMemo(() => {
-    const base: MenuLink[] = [
+  const groups = useMemo<MenuGroup[]>(() => {
+    const myLife: MenuLink[] = [
       {
-        label: "Crew",
-        subtitle: "People on this phone — invites and Ask send a message",
-        route: "CrewHub",
-        icon: "people-outline",
-        accent: colors.primary
-      },
-      {
-        label: "My money",
-        subtitle: "What's coming in, going out, and left",
-        route: "Budget",
-        icon: "wallet-outline",
-        accent: colors.primary
-      },
-      {
-        label: "What's coming up",
-        subtitle: "Today through later — one life timeline",
-        route: "ComingUp",
-        icon: "sunny-outline",
-        accent: colors.softGold
-      }
-    ];
-
-    if (hasPlannerPack) {
-      base.push({
-        label: READY_4_TODAY_LABEL,
-        subtitle: "Combined view across your pack planners",
-        route: "PlannerHub",
-        icon: "calendar-outline",
-        accent: colors.babyBlue
-      });
-    }
-
-    base.push(
-      {
-        label: "Reward Bank",
-        subtitle: "Points, treats, and wins you logged",
-        route: "RewardBank",
-        icon: "star-outline",
-        accent: colors.softGold
+        label: "Calendar",
+        subtitle: "Month, week and day — same timeline as Nudges",
+        icon: "calendar-number-outline",
+        accent: colors.babyBlue,
+        onPress: () => navigation.navigate("CalendarHub")
       },
       {
         label: READY_PACKS_SHOP_LABEL,
         subtitle: "Specialist planners and checklists",
-        route: "ReadyPacks",
         icon: "cube-outline",
-        accent: colors.softGold
+        accent: colors.softGold,
+        onPress: () => navigation.navigate("ReadyPacks")
       },
       {
-        label: "Everything",
-        subtitle: "Search and filter all your nudges",
-        route: "MyWorld",
-        icon: "albums-outline",
-        accent: colors.primaryDark
+        label: "Crew",
+        subtitle: "People who can help, and people I support",
+        icon: "people-outline",
+        accent: colors.primary,
+        onPress: () => navigation.navigate("CrewHub")
       },
       {
-        label: "Calendar",
-        subtitle: "Appointments and events linked to your phone",
-        route: "CalendarHub",
-        icon: "calendar-number-outline",
-        accent: colors.babyBlue
-      },
-      {
-        label: "Documents",
-        subtitle: "Files attached to your nudges",
-        route: "DocumentsHub",
-        icon: "folder-outline",
-        accent: colors.primaryDark
-      },
-      {
-        label: "Saved Things",
-        subtitle: "Find-it ideas you set aside to compare",
-        route: "SavedThings",
-        icon: "bookmark-outline",
-        accent: colors.softGold
-      },
-      {
-        label: "Profile",
-        subtitle: "Your name, photo, and account details",
-        route: "Profile",
-        icon: "person-outline",
-        accent: colors.softWarning
-      },
-      {
-        label: "Settings",
-        subtitle: "Reminders, places, notifications, preferences",
-        route: "Settings",
-        icon: "settings-outline",
-        accent: colors.primaryDark
-      },
-      {
-        label: "Privacy & support",
-        subtitle: "Privacy, terms and partner links",
-        route: "LegalInfo",
-        icon: "document-text-outline",
-        accent: colors.charcoal
+        label: "Rewards",
+        subtitle: "Points, treats, and I did something",
+        icon: "star-outline",
+        accent: colors.softGold,
+        onPress: () => navigation.navigate("RewardBank")
       }
-    );
+    ];
 
-    return base;
-  }, [hasPlannerPack]);
+    if (hasPlannerPack) {
+      myLife.splice(1, 0, {
+        label: READY_4_TODAY_LABEL,
+        subtitle: "Filtered view of the same dates in your packs",
+        icon: "calendar-outline",
+        accent: colors.babyBlue,
+        onPress: () => navigation.navigate("PlannerHub")
+      });
+    }
+
+    return [
+      { title: "My life", links: myLife },
+      {
+        title: "Tools",
+        links: [
+          {
+            label: "Money",
+            subtitle: "Bills, spending and pack budgets",
+            icon: "wallet-outline",
+            accent: colors.primary,
+            onPress: () => navigation.navigate("Budget")
+          },
+          {
+            label: "Documents",
+            subtitle: "Files attached to your nudges",
+            icon: "folder-outline",
+            accent: colors.primaryDark,
+            onPress: () => navigation.navigate("DocumentsHub")
+          },
+          {
+            label: "Saved Things",
+            subtitle: "Find-it ideas you set aside to compare",
+            icon: "bookmark-outline",
+            accent: colors.softGold,
+            onPress: () => navigation.navigate("SavedThings")
+          }
+        ]
+      },
+      {
+        title: "App",
+        links: [
+          {
+            label: "Profile",
+            subtitle: "Your name, photo, and account details",
+            icon: "person-outline",
+            accent: colors.softWarning,
+            onPress: () => navigation.navigate("Profile")
+          },
+          {
+            label: "Settings",
+            subtitle: "Reminders, notifications, accessibility, places",
+            icon: "settings-outline",
+            accent: colors.primaryDark,
+            onPress: () => navigation.navigate("Settings")
+          },
+          {
+            label: "Help & privacy",
+            subtitle: "Privacy, terms and partner links",
+            icon: "document-text-outline",
+            accent: colors.charcoal,
+            onPress: () => navigation.navigate("LegalInfo")
+          }
+        ]
+      }
+    ];
+  }, [hasPlannerPack, navigation]);
 
   return (
     <Screen>
       <PageHeader
         title="Menu"
         showBack={false}
-        helpText="Crew, money, timeline, rewards, packs, and settings. Add lives on the Add tab; your open list on Nudges."
+        helpText="Calendar, Ready4, Crew and Rewards live here. Add is on the Add tab; your timeline is on Nudges."
       />
       {isSupporterOnly ? (
         <SoftCard style={styles.banner}>
@@ -158,28 +158,45 @@ export function MoreScreen() {
           </PrimaryButton>
         </SoftCard>
       ) : null}
-      <View style={styles.list}>
-        {links.map((link) => (
-          <MenuTile
-            key={link.label}
-            title={link.label}
-            subtitle={link.subtitle}
-            icon={link.icon}
-            accent={link.accent}
-            onPress={() => navigation.navigate(link.route)}
-          />
-        ))}
-      </View>
+      {groups.map((group) => (
+        <View key={group.title} style={styles.group}>
+          <AppText variant="caption" style={styles.groupTitle}>
+            {group.title}
+          </AppText>
+          <View style={styles.list}>
+            {group.links.map((link) => (
+              <MenuTile
+                key={link.label}
+                title={link.label}
+                subtitle={link.subtitle}
+                icon={link.icon}
+                accent={link.accent}
+                onPress={link.onPress}
+              />
+            ))}
+          </View>
+        </View>
+      ))}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  group: {
+    gap: spacing.xs,
+    marginBottom: spacing.md
+  },
+  groupTitle: {
+    color: colors.mutedText,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    textTransform: "uppercase"
+  },
   list: {
     gap: spacing.sm
   },
   banner: {
     gap: spacing.sm,
-    marginBottom: spacing.sm
+    marginBottom: spacing.md
   }
 });

@@ -50,13 +50,15 @@ export type RootStackParamList = {
   ComingUp: { horizon?: import("./nudgeHorizon").NudgeHorizonId } | undefined;
   DocumentsHub: undefined;
   SavedThings: undefined;
-  CalendarHub: undefined;
+  CalendarHub: { dateKey?: string; view?: "day" | "week" | "month" | "year" } | undefined;
 };
+
+export type NudgesHorizonTab = "today" | "week" | "month" | "year" | "all";
 
 export type TabParamList = {
   Home: undefined;
   Capture: undefined;
-  Today: { typeFilter?: "ready4" | "allTypes" } | undefined;
+  Today: { typeFilter?: "ready4" | "allTypes"; horizon?: NudgesHorizonTab } | undefined;
   Focus: undefined;
   More: undefined;
 };

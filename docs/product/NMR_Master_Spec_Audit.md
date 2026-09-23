@@ -131,7 +131,9 @@ Hydration / meal-check / movement lists as **core nudges** (no Ready4 pack requi
 
 ### What still needs doing for a useful daily companion
 
-See [What_Needs_Doing.md](./What_Needs_Doing.md). Remaining work is the **short daily path** (quick save, reminders that fire, act from the list, Coming Up as the habit) — not more engines, not a diet tracker, not a 10-tab bar.
+See [What_Needs_Doing.md](./What_Needs_Doing.md). Remaining work is the **short daily path** (quick save, reminders that fire, act from the list, one timeline as the habit) — not more engines, not a diet tracker, not a 10-tab bar.
+
+September 2026 consolidation (Nudges TODAY–ALL, visual Calendar, capture-first Add, calm Home): [Platform_Consolidation_Audit_Sep2026.md](./Platform_Consolidation_Audit_Sep2026.md).
 
 ### Still missing vs the prompt (polish / do not start until A–F feel natural)
 
