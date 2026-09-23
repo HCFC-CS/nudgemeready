@@ -15,7 +15,7 @@ import {
   resolveSomethingElse,
   type UnifiedNudgeAction
 } from "../services/nudgeIntentCatalog";
-import { buildCapturePreview } from "../services/capturePreview";
+import { buildCapturePreview, resolveCaptureSave } from "../services/capturePreview";
 import { createItem } from "../services/nudgeItems";
 import {
   applyDefaultWhen,
@@ -206,7 +206,28 @@ export function CaptureScreen() {
   }
 
   function saveConfirmed() {
-    createFromSomethingElse(previewTitle.trim() || composeText, voiceNoteUrl);
+    const resolved = resolveCaptureSave(composeText, previewTitle, installedPackIds);
+    const draft = createItem({
+      title: resolved.title,
+      type: resolved.itemType,
+      createdBy: actor,
+      nudgeIntent: resolved.intent,
+      sourcePackId: resolved.packId,
+      dueDate: resolved.suggestedFields.dueDate,
+      startDate: resolved.suggestedFields.startDate,
+      reminderDate: resolved.suggestedFields.reminderDate,
+      repeatRule: resolved.suggestedFields.repeatRule,
+      contactName: resolved.suggestedFields.contactName,
+      speakingReminderText: resolved.title,
+      notes: resolved.suggestedFields.notes || composeText,
+      voiceNoteUrl,
+      listItems: resolved.suggestedFields.listItems?.map((title, index) => ({
+        id: `list-${index}`,
+        title,
+        status: "open" as const
+      }))
+    });
+    finishDraft(draft);
   }
 
   if (step === "compose") {
@@ -236,7 +257,7 @@ export function CaptureScreen() {
   }
 
   if (step === "confirm") {
-    const preview = buildCapturePreview(previewTitle.trim() || composeText, installedPackIds);
+    const preview = buildCapturePreview(composeText.trim() || previewTitle, installedPackIds);
     return (
       <Screen>
         <BackButton onPress={() => setStep("compose")} />
@@ -268,7 +289,7 @@ export function CaptureScreen() {
           </PrimaryButton>
           <SecondaryButton
             onPress={() => {
-              const resolved = resolveSomethingElse(previewTitle.trim() || composeText, installedPackIds);
+              const resolved = resolveCaptureSave(composeText, previewTitle, installedPackIds);
               const fields = resolved.suggestedFields;
               const draft = createItem({
                 title: resolved.title,
