@@ -18,8 +18,12 @@ export const brand = {
   ivoryElevated: "#E6E0D8",
   softRose: "#A65D5D",
   softRoseMuted: "#E8D4D4",
+  /** Text/border rose that stays readable on taupe and the soft fill. */
+  softRoseInk: "#5A2424",
   calmGreen: "#3F7A5A",
-  calmGreenSoft: "#D7E8DE"
+  calmGreenSoft: "#D7E8DE",
+  /** Text/border green that stays readable on taupe and the soft fill. */
+  calmGreenInk: "#1E4632",
 } as const;
 
 export const colors = {
@@ -86,6 +90,30 @@ export const classificationColors = {
     accent: brand.softGold
   }
 };
+
+/** Action chips (Save · Sorted · Later · Ask · Remove) — ink on a pale fill, not wash-on-wash. */
+export const actionChipColors = {
+  save: {
+    color: brand.babyBlueInk,
+    borderColor: brand.babyBlueInk,
+    backgroundColor: brand.ivoryElevated
+  },
+  done: {
+    color: brand.calmGreenInk,
+    borderColor: brand.calmGreenInk,
+    backgroundColor: brand.calmGreenSoft
+  },
+  quiet: {
+    color: brand.midnightBlue,
+    borderColor: brand.charcoal,
+    backgroundColor: brand.ivoryElevated
+  },
+  danger: {
+    color: brand.softRoseInk,
+    borderColor: brand.softRoseInk,
+    backgroundColor: brand.softRoseMuted
+  }
+} as const;
 
 export const taskTypeAccentColors: Record<string, string> = {
   task: brand.babyBlueInk,
