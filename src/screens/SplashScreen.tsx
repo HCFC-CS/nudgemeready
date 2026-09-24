@@ -241,9 +241,13 @@ export function SplashScreen({ navigation, route }: Props) {
   ]);
 
   useEffect(() => {
-    if (step === "unlock" && settings.biometricsEnabled && biometricsAvailable && needsUnlock) {
-      void unlockWithBiometrics();
+    if (step !== "unlock" || !settings.biometricsEnabled || !biometricsAvailable || !needsUnlock) {
+      return;
     }
+    const timer = setTimeout(() => {
+      void unlockWithBiometrics().catch(() => undefined);
+    }, 400);
+    return () => clearTimeout(timer);
   }, [step, settings.biometricsEnabled, biometricsAvailable, needsUnlock, unlockWithBiometrics]);
 
   useEffect(() => {

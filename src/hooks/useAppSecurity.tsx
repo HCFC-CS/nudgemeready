@@ -212,15 +212,19 @@ export function AppSecurityProvider({
       return false;
     }
     const fallback = `Use ${credentialLabel(settings.credentialType)}`;
-    const ok = await authenticateWithBiometrics("Unlock Nudge me Ready", fallback);
-    if (ok) {
-      setIsLocked(false);
-      setRecoveryAuthorized(false);
-      clearLockout();
-    } else {
-      registerFailedUnlock();
+    try {
+      const ok = await authenticateWithBiometrics("Unlock Nudge me Ready", fallback);
+      if (ok) {
+        setIsLocked(false);
+        setRecoveryAuthorized(false);
+        clearLockout();
+      } else {
+        registerFailedUnlock();
+      }
+      return ok;
+    } catch {
+      return false;
     }
-    return ok;
   }, [
     biometricsAvailable,
     clearLockout,

@@ -106,15 +106,21 @@ export function ProfileProvider({ children }: PropsWithChildren) {
     }
     getEncryptedItem(PROFILE_KEY)
       .then((raw) => {
-        if (raw) {
+        if (!raw) {
+          return;
+        }
+        try {
           const parsed = { ...defaultProfile, ...JSON.parse(raw) } as Profile;
           // Existing installs that already chose a name shouldn't be forced through registration again.
           if (parsed.name.trim() && !parsed.registeredAt) {
             parsed.registeredAt = "migrated";
           }
           setProfile(parsed);
+        } catch {
+          // Keep the empty default profile rather than crash splash.
         }
       })
+      .catch(() => undefined)
       .finally(() => setIsReady(true));
   }, []);
 

@@ -34,54 +34,60 @@ export function useSpeakingReminderNotifications() {
   itemsRef.current = items;
 
   useEffect(() => {
-    const received = Notifications.addNotificationReceivedListener((notification) => {
-      handleSpeakingReminderNotification(notification, itemsRef.current, actor.id);
-    });
+    let received: { remove: () => void } | undefined;
+    let response: { remove: () => void } | undefined;
+    try {
+      received = Notifications.addNotificationReceivedListener((notification) => {
+        handleSpeakingReminderNotification(notification, itemsRef.current, actor.id);
+      });
 
-    const response = Notifications.addNotificationResponseReceivedListener((responseNotification) => {
-      handledResponseId.current = responseNotification.notification.request.identifier;
-      const data = responseNotification.notification.request.content.data as
-        | { role?: string; placeId?: string; payUrl?: string }
-        | undefined;
+      response = Notifications.addNotificationResponseReceivedListener((responseNotification) => {
+        handledResponseId.current = responseNotification.notification.request.identifier;
+        const data = responseNotification.notification.request.content.data as
+          | { role?: string; placeId?: string; payUrl?: string }
+          | undefined;
 
-      if (data?.role === PAY_LATER_CONFIRM_ROLE) {
-        void handlePayLaterConfirmResponse(
-          responseNotification.actionIdentifier,
-          data.placeId
-        ).then((handled) => {
-          if (!handled && data.payUrl) {
-            void Linking.openURL(data.payUrl).catch(() => undefined);
-          }
-        });
-        handleSpeakingReminderNotification(
+        if (data?.role === PAY_LATER_CONFIRM_ROLE) {
+          void handlePayLaterConfirmResponse(
+            responseNotification.actionIdentifier,
+            data.placeId
+          ).then((handled) => {
+            if (!handled && data.payUrl) {
+              void Linking.openURL(data.payUrl).catch(() => undefined);
+            }
+          });
+          handleSpeakingReminderNotification(
+            responseNotification.notification,
+            itemsRef.current,
+            actor.id
+          );
+          return;
+        }
+
+        if (openPayLaterLinkIfPresent(responseNotification.notification)) {
+          handleSpeakingReminderNotification(
+            responseNotification.notification,
+            itemsRef.current,
+            actor.id
+          );
+          return;
+        }
+        const item = handleSpeakingReminderNotification(
           responseNotification.notification,
           itemsRef.current,
           actor.id
         );
-        return;
-      }
-
-      if (openPayLaterLinkIfPresent(responseNotification.notification)) {
-        handleSpeakingReminderNotification(
-          responseNotification.notification,
-          itemsRef.current,
-          actor.id
-        );
-        return;
-      }
-      const item = handleSpeakingReminderNotification(
-        responseNotification.notification,
-        itemsRef.current,
-        actor.id
-      );
-      if (item) {
-        navigateToItemDetails(item);
-      }
-    });
+        if (item) {
+          navigateToItemDetails(item);
+        }
+      });
+    } catch {
+      return;
+    }
 
     return () => {
-      received.remove();
-      response.remove();
+      received?.remove();
+      response?.remove();
     };
   }, [actor.id]);
 
@@ -91,28 +97,30 @@ export function useSpeakingReminderNotifications() {
     }
 
     let active = true;
-    void Notifications.getLastNotificationResponseAsync().then(async (last) => {
-      if (!active || !last) {
-        return;
-      }
-      const responseId = last.notification.request.identifier;
-      if (handledResponseId.current === responseId) {
-        return;
-      }
-      handledResponseId.current = responseId;
-      if (openPayLaterLinkIfPresent(last.notification)) {
+    void Notifications.getLastNotificationResponseAsync()
+      .then(async (last) => {
+        if (!active || !last) {
+          return;
+        }
+        const responseId = last.notification.request.identifier;
+        if (handledResponseId.current === responseId) {
+          return;
+        }
+        handledResponseId.current = responseId;
+        if (openPayLaterLinkIfPresent(last.notification)) {
+          await Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+          return;
+        }
+        const data = last.notification.request.content.data as { itemId?: string } | undefined;
+        const item = data?.itemId
+          ? itemsRef.current.find((candidate) => candidate.id === data.itemId)
+          : undefined;
+        if (item && item.status !== "done" && item.status !== "cancelled") {
+          navigateToItemDetails(item);
+        }
         await Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
-        return;
-      }
-      const data = last.notification.request.content.data as { itemId?: string } | undefined;
-      const item = data?.itemId
-        ? itemsRef.current.find((candidate) => candidate.id === data.itemId)
-        : undefined;
-      if (item && item.status !== "done" && item.status !== "cancelled") {
-        navigateToItemDetails(item);
-      }
-      await Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
-    });
+      })
+      .catch(() => undefined);
 
     return () => {
       active = false;
