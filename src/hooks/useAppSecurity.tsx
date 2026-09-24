@@ -31,6 +31,7 @@ import {
   verifyRecoveryCode
 } from "../services/appSecurity";
 import { isDevAdminAvailable } from "../services/devAdmin";
+import { waitForSplashNative } from "../services/expoNotifications";
 import { requestPasswordResetEmail } from "../services/passwordResetEmail";
 
 const MAX_FAILED_ATTEMPTS = 5;
@@ -115,21 +116,27 @@ export function AppSecurityProvider({
 
   const refresh = useCallback(async () => {
     const next = await loadAppSecuritySettings();
-    const capability = await getBiometricCapability();
     setSettings(next);
-    setBiometricLabel(capability.label);
-    setBiometricsAvailable(capability.available);
-    setHasFaceId(capability.hasFace);
+    try {
+      await waitForSplashNative();
+      const capability = await getBiometricCapability();
+      setBiometricLabel(capability.label);
+      setBiometricsAvailable(capability.available);
+      setHasFaceId(capability.hasFace);
+    } catch {
+      // Face ID probe must not kill splash.
+    }
   }, []);
 
   useEffect(() => {
     (async () => {
-      await refresh();
       const next = await loadAppSecuritySettings();
+      setSettings(next);
       if (!bypassLock && next.lockEnabled && next.hasCredential) {
         setIsLocked(true);
       }
       setIsReady(true);
+      void refresh();
     })();
   }, [bypassLock, refresh]);
 

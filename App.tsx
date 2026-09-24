@@ -1,11 +1,9 @@
 import "react-native-gesture-handler";
-import "./src/services/leavingHomeGeofence";
-import "./src/services/payLaterGeofence";
 
 import * as ExpoLinking from "expo-linking";
 import { NavigationContainer, getStateFromPath as defaultGetStateFromPath, type LinkingOptions } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -13,22 +11,24 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppProviders } from "./src/AppProviders";
 import { AppLockGate } from "./src/components/AppLockGate";
 import { AppSecurityProvider } from "./src/hooks/useAppSecurity";
-import { useLeavingHomeMonitor } from "./src/hooks/useLeavingHomeMonitor";
-import { usePayLaterMonitor } from "./src/hooks/usePayLaterMonitor";
-import { usePhoneCalendarImport } from "./src/hooks/usePhoneCalendarImport";
-import { useSpeakingReminderNotifications } from "./src/hooks/useSpeakingReminderNotifications";
 import { navigationRef } from "./src/navigation/navigationRef";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { getScreenshotInitialState, getScreenshotScreenId } from "./src/navigation/screenshotState";
 import { parseInviteFromUrl } from "./src/services/crewInvites";
+import { waitForSplashNative } from "./src/services/expoNotifications";
 import { installNotificationHandler } from "./src/services/notifications";
 import {
   isDeepLinkLockActive,
   stashPendingInvite,
   stashPendingRecoverToken
 } from "./src/services/pendingDeepLinks";
+import { completeAuthSessionAfterSplash } from "./src/services/socialSignIn";
 import { colors } from "./src/theme/theme";
 import type { RootStackParamList } from "./src/types/navigation";
+
+const NativeMonitors = lazy(() =>
+  import("./src/native/NativeMonitors").then((mod) => ({ default: mod.NativeMonitors }))
+);
 
 function extractInviteParams(url: string) {
   const parsed = parseInviteFromUrl(url);
@@ -125,19 +125,31 @@ const appLinking: LinkingOptions<RootStackParamList> = {
 };
 
 function AppContent() {
-  useSpeakingReminderNotifications();
-  useLeavingHomeMonitor();
-  usePayLaterMonitor();
-  usePhoneCalendarImport();
+  const [nativeReady, setNativeReady] = useState(false);
 
   useEffect(() => {
+    completeAuthSessionAfterSplash();
     installNotificationHandler();
+    let cancelled = false;
+    void waitForSplashNative().then(() => {
+      if (!cancelled) {
+        setNativeReady(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
     <>
       <StatusBar style="dark" backgroundColor={colors.background} />
       <RootNavigator />
+      {nativeReady ? (
+        <Suspense fallback={null}>
+          <NativeMonitors />
+        </Suspense>
+      ) : null}
     </>
   );
 }
@@ -145,6 +157,22 @@ function AppContent() {
 export default function App() {
   const screenshotScreenId = Platform.OS === "web" ? getScreenshotScreenId() : undefined;
   const initialState = screenshotScreenId ? getScreenshotInitialState(screenshotScreenId) : undefined;
+  const [linkingReady, setLinkingReady] = useState(Boolean(screenshotScreenId));
+
+  useEffect(() => {
+    if (screenshotScreenId) {
+      return;
+    }
+    let cancelled = false;
+    void waitForSplashNative().then(() => {
+      if (!cancelled) {
+        setLinkingReady(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [screenshotScreenId]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -155,7 +183,7 @@ export default function App() {
               <NavigationContainer
                 ref={navigationRef}
                 initialState={initialState}
-                linking={screenshotScreenId ? undefined : appLinking}
+                linking={screenshotScreenId || !linkingReady ? undefined : appLinking}
               >
                 <AppContent />
               </NavigationContainer>
