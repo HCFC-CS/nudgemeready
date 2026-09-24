@@ -101,7 +101,7 @@ export async function purchaseRevenueCatProduct(
   const Purchases = await getPurchasesSdk();
   await ensureRevenueCatConfigured();
 
-  // ReadyPacks are one-time purchases (non-subscription products), so prefer INAPP.
+  // Ready4Packs are one-time purchases (non-subscription products), so prefer INAPP.
   // The SDK's enum shape may evolve, so keep this defensive.
   const PURCHASE_TYPE = Purchases?.PURCHASE_TYPE as any | undefined;
   const inappType =

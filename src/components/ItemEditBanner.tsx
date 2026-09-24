@@ -1,8 +1,7 @@
-import { StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 
 import { useOptionalItemEdit } from "../hooks/useItemEdit";
 import { colors, radii, spacing } from "../theme/theme";
-import { ToggleRow } from "./FormControls";
 import { AppText } from "./Text";
 
 export function ItemEditBanner() {
@@ -11,41 +10,55 @@ export function ItemEditBanner() {
     return null;
   }
 
-  const { editable, canToggleLock, isLocked, creatorLabel, setLocked } = edit;
+  const { canToggleLock, isLocked, setLocked } = edit;
+
+  if (!canToggleLock) {
+    return null;
+  }
+
+  function chooseLocked() {
+    Alert.alert("Locked", undefined, [
+      { text: "Cancel", style: "cancel" },
+      { text: "No", onPress: () => setLocked(false) },
+      { text: "Yes", onPress: () => setLocked(true) }
+    ]);
+  }
 
   return (
     <View style={styles.banner}>
-      <AppText variant="small" style={styles.meta}>
-        Added by {creatorLabel}
-        {isLocked ? " · Locked" : " · Editable"}
-      </AppText>
-      {!editable && isLocked ? (
-        <AppText variant="muted">Only {creatorLabel} can change this while it is locked.</AppText>
-      ) : null}
-      {canToggleLock ? (
-        <ToggleRow
-          label="Lock editing"
-          note="Only you can edit or unlock this nudge."
-          value={isLocked}
-          onValueChange={setLocked}
-          disabled={false}
-        />
-      ) : null}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Locked ${isLocked ? "yes" : "no"}`}
+        onPress={chooseLocked}
+        style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+      >
+        <AppText>Locked</AppText>
+        <AppText style={styles.value}>{isLocked ? "Yes" : "No"}</AppText>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   banner: {
-    gap: spacing.xs,
-    borderRadius: radii.md,
+    alignSelf: "flex-start"
+  },
+  button: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.card,
-    padding: spacing.md
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: 14,
+    paddingVertical: 10
   },
-  meta: {
+  value: {
     color: colors.primaryDark,
     fontWeight: "600"
+  },
+  pressed: {
+    opacity: 0.75
   }
 });

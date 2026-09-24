@@ -1,15 +1,18 @@
 import { ready4Pack } from "../packFactory";
+import { getCoreWellbeing, wellbeingListRows } from "../../coreWellbeingNudges";
 
 export const ready4WellbeingPack = ready4Pack({
   slug: "wellbeing",
   name: "Wellbeing",
   icon: "heart-outline",
   category: "wellbeing",
+  version: "1.1.0",
   summary:
     "Gentle structure for mornings, hydration, movement, sleep and gratitude — supportive, not pressured.",
   features: [
     "Morning reset",
     "Hydration",
+    "I ate something",
     "Movement",
     "Mindfulness pause",
     "Sleep routine",
@@ -33,23 +36,26 @@ export const ready4WellbeingPack = ready4Pack({
     },
     {
       id: "hydration",
-      title: "Hydration nudge",
-      type: "reminder",
-      repeatRule: { frequency: "daily" },
-      notes: "A quiet reminder only. No streak pressure.",
-      speakingReminderText: "A quiet reminder to have some water."
+      title: getCoreWellbeing("hydration").title,
+      type: "list",
+      repeatRule: getCoreWellbeing("hydration").repeatRule,
+      notes: getCoreWellbeing("hydration").notes,
+      speakingReminderText: "A quiet reminder to have some water, if you would like to.",
+      listItems: wellbeingListRows("hydration")
+    },
+    {
+      id: "meal-check",
+      title: getCoreWellbeing("meal").title,
+      type: "list",
+      notes: getCoreWellbeing("meal").notes,
+      listItems: wellbeingListRows("meal")
     },
     {
       id: "movement",
-      title: "Movement choices",
+      title: getCoreWellbeing("movement").title,
       type: "list",
-      notes: "Whatever feels doable. Rest days are valid.",
-      listItems: [
-        { title: "Short walk" },
-        { title: "Stretch" },
-        { title: "Move at home" },
-        { title: "Rest day — also valid" }
-      ]
+      notes: getCoreWellbeing("movement").notes,
+      listItems: wellbeingListRows("movement")
     },
     {
       id: "mindfulness",

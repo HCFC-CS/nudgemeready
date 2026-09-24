@@ -14,7 +14,6 @@ import {
   authenticateWithBiometrics,
   adminResetLockKeepData,
   buildSupportRecoveryMailto,
-  createEmailResetLink,
   credentialLabel,
   type CredentialType,
   disableAppLock,
@@ -32,6 +31,8 @@ import {
   verifyRecoveryCode
 } from "../services/appSecurity";
 import { isDevAdminAvailable } from "../services/devAdmin";
+import { waitForSplashNative } from "../services/expoNotifications";
+import { requestPasswordResetEmail } from "../services/passwordResetEmail";
 
 const MAX_FAILED_ATTEMPTS = 5;
 const BASE_LOCKOUT_MS = 30_000;
@@ -60,7 +61,7 @@ type AppSecurityContextValue = {
   updateLockOnBackground: (enabled: boolean) => Promise<void>;
   beginForgotPasswordWithDevice: () => Promise<boolean>;
   beginForgotPasswordWithRecoveryCode: (code: string) => Promise<boolean>;
-  beginForgotPasswordWithEmailLink: () => Promise<void>;
+  beginForgotPasswordWithEmailLink: () => Promise<{ message: string }>;
   beginForgotPasswordWithEmailToken: (token: string) => Promise<boolean>;
   emailSupportForRecovery: () => Promise<void>;
   updateRecoveryEmail: (currentCredential: string, email: string) => Promise<void>;
@@ -115,21 +116,27 @@ export function AppSecurityProvider({
 
   const refresh = useCallback(async () => {
     const next = await loadAppSecuritySettings();
-    const capability = await getBiometricCapability();
     setSettings(next);
-    setBiometricLabel(capability.label);
-    setBiometricsAvailable(capability.available);
-    setHasFaceId(capability.hasFace);
+    try {
+      await waitForSplashNative();
+      const capability = await getBiometricCapability();
+      setBiometricLabel(capability.label);
+      setBiometricsAvailable(capability.available);
+      setHasFaceId(capability.hasFace);
+    } catch {
+      // Face ID probe must not kill splash.
+    }
   }, []);
 
   useEffect(() => {
     (async () => {
-      await refresh();
       const next = await loadAppSecuritySettings();
+      setSettings(next);
       if (!bypassLock && next.lockEnabled && next.hasCredential) {
         setIsLocked(true);
       }
       setIsReady(true);
+      void refresh();
     })();
   }, [bypassLock, refresh]);
 
@@ -212,15 +219,19 @@ export function AppSecurityProvider({
       return false;
     }
     const fallback = `Use ${credentialLabel(settings.credentialType)}`;
-    const ok = await authenticateWithBiometrics("Unlock Nudge me Ready", fallback);
-    if (ok) {
-      setIsLocked(false);
-      setRecoveryAuthorized(false);
-      clearLockout();
-    } else {
-      registerFailedUnlock();
+    try {
+      const ok = await authenticateWithBiometrics("Unlock Nudge me Ready", fallback);
+      if (ok) {
+        setIsLocked(false);
+        setRecoveryAuthorized(false);
+        clearLockout();
+      } else {
+        registerFailedUnlock();
+      }
+      return ok;
+    } catch {
+      return false;
     }
-    return ok;
   }, [
     biometricsAvailable,
     clearLockout,
@@ -317,12 +328,15 @@ export function AppSecurityProvider({
   );
 
   const beginForgotPasswordWithEmailLink = useCallback(async () => {
-    const reset = await createEmailResetLink();
-    const canOpen = await Linking.canOpenURL(reset.mailtoUrl);
-    if (!canOpen) {
-      throw new Error("No email app is available on this phone");
+    const result = await requestPasswordResetEmail();
+    if (result.mailtoUrl) {
+      const canOpen = await Linking.canOpenURL(result.mailtoUrl);
+      if (!canOpen) {
+        throw new Error("No email app is available on this phone");
+      }
+      await Linking.openURL(result.mailtoUrl);
     }
-    await Linking.openURL(reset.mailtoUrl);
+    return { message: result.message };
   }, []);
 
   const beginForgotPasswordWithEmailToken = useCallback(

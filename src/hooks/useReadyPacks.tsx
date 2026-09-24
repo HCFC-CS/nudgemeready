@@ -9,6 +9,8 @@ import {
 } from "react";
 
 import { getPack, listPacks } from "../data/readyPacks/catalogue";
+import { READY_4_PACK_LABEL } from "../content/ready4Copy";
+import { getScreenshotPackId, isScreenshotMode } from "../navigation/screenshotState";
 import { useNudgeItems } from "./useNudgeItems";
 import {
   defaultAppPreferences,
@@ -72,6 +74,29 @@ export function ReadyPacksProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let active = true;
+    if (isScreenshotMode()) {
+      const packId = getScreenshotPackId();
+      const pack = packId ? getPack(packId) : undefined;
+      setInstallState(
+        pack
+          ? {
+              installed: {
+                [pack.id]: {
+                  packId: pack.id,
+                  version: pack.version,
+                  installedAt: "2026-01-01T09:00:00.000Z",
+                  templateItemIds: {}
+                }
+              }
+            }
+          : emptyReadyPackInstallState()
+      );
+      setLedger(defaultEntitlementLedger);
+      setIsReady(true);
+      return () => {
+        active = false;
+      };
+    }
     Promise.all([loadReadyPackInstallState(), loadEntitlementLedger()]).then(([state, entitlements]) => {
       if (!active) {
         return;
@@ -87,7 +112,9 @@ export function ReadyPacksProvider({ children }: PropsWithChildren) {
 
   const persistState = useCallback(async (next: ReadyPackInstallState) => {
     setInstallState(next);
-    await saveReadyPackInstallState(next);
+    if (!isScreenshotMode()) {
+      await saveReadyPackInstallState(next);
+    }
   }, []);
 
   const applyCosmeticPreferences = useCallback(async (pack: ReadyPack) => {
@@ -111,7 +138,7 @@ export function ReadyPacksProvider({ children }: PropsWithChildren) {
     async (packId: string) => {
       const pack = getPack(packId);
       if (!pack) {
-        throw new Error("ReadyPack not found.");
+        throw new Error(`${READY_4_PACK_LABEL} not found.`);
       }
       if (isCosmeticPackKind(pack.kind) && !READY_PACK_COSMETICS_ENABLED) {
         throw new Error("Themes, voices and characters are coming in a later update.");
@@ -143,7 +170,7 @@ export function ReadyPacksProvider({ children }: PropsWithChildren) {
     async (packId: string) => {
       const pack = getPack(packId);
       if (!pack) {
-        throw new Error("ReadyPack not found.");
+        throw new Error(`${READY_4_PACK_LABEL} not found.`);
       }
       const result = migratePack(pack, items, installState);
       replaceItems(result.items);

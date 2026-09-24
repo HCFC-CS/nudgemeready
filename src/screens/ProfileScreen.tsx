@@ -1,18 +1,17 @@
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Button } from "../components/Button";
 import { Field } from "../components/FormControls";
-import { HomeLocationPicker } from "../components/HomeLocationPicker";
-import { PageHeader, PrimaryButton, SoftCard } from "../components/NudgeComponents";
+import { PageHeader, PrimaryButton, SecondaryButton, SectionHeading, SoftCard } from "../components/NudgeComponents";
 import { ProfileAvatarPicker } from "../components/ProfileAvatarPicker";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
-import { useHomeSettings } from "../hooks/useHomeSettings";
 import { type ProfileDraft, useProfile } from "../hooks/useProfile";
-import { hasHomeCoordinates, hasReminderPlaces } from "../services/homeSettingsStorage";
-import { colors, spacing } from "../theme/theme";
+import { useCrew } from "../hooks/useCrew";
+import { spacing } from "../theme/theme";
+import { formatDateOfBirthDisplay, validateDateOfBirthForSignup } from "../utils/dateOfBirth";
 
 function cloneProfile(profile: ProfileDraft): ProfileDraft {
   return {
@@ -20,19 +19,24 @@ function cloneProfile(profile: ProfileDraft): ProfileDraft {
     icon: profile.icon,
     avatarUri: profile.avatarUri,
     email: profile.email,
-    phone: profile.phone
+    phone: profile.phone,
+    dateOfBirth: profile.dateOfBirth,
+    authProvider: profile.authProvider
   };
 }
 
 export function ProfileScreen() {
+  const navigation = useNavigation<any>();
   const { profile, saveProfile } = useProfile();
-  const { homeSettings } = useHomeSettings();
+  const { renameSelfProfile } = useCrew();
   const [draft, setDraft] = useState<ProfileDraft>(() => cloneProfile(profile));
+  const [dobInput, setDobInput] = useState(() => formatDateOfBirthDisplay(profile.dateOfBirth));
   const [notice, setNotice] = useState("");
 
   useFocusEffect(
     useCallback(() => {
       setDraft(cloneProfile(profile));
+      setDobInput(formatDateOfBirthDisplay(profile.dateOfBirth));
       setNotice("");
     }, [profile])
   );
@@ -42,28 +46,38 @@ export function ProfileScreen() {
       draft.name !== profile.name ||
       draft.email !== profile.email ||
       draft.phone !== profile.phone ||
+      draft.dateOfBirth !== profile.dateOfBirth ||
       draft.icon !== profile.icon ||
       draft.avatarUri !== profile.avatarUri,
     [draft, profile]
   );
 
   function handleSave() {
-    if (!isDirty) {
+    if (!isDirty && dobInput === formatDateOfBirthDisplay(profile.dateOfBirth)) {
       setNotice("No changes to save.");
       return;
     }
-    saveProfile(draft);
-    setNotice("Profile saved.");
+    try {
+      const dateOfBirth = validateDateOfBirthForSignup(dobInput);
+      saveProfile({ ...draft, dateOfBirth });
+      renameSelfProfile(draft.name);
+      setDraft((current) => ({ ...current, dateOfBirth }));
+      setDobInput(formatDateOfBirthDisplay(dateOfBirth));
+      setNotice("Profile saved.");
+    } catch (caught) {
+      setNotice(caught instanceof Error ? caught.message : "Could not save profile.");
+    }
   }
 
   function handleDiscard() {
     setDraft(cloneProfile(profile));
+    setDobInput(formatDateOfBirthDisplay(profile.dateOfBirth));
     setNotice("Changes discarded.");
   }
 
   return (
     <Screen>
-      <PageHeader title="Profile" subtitle="Your account details and preferences." />
+      <PageHeader title="Profile" subtitle="Your account details. Places and reminders live in Settings." />
 
       <SoftCard>
         <AppText variant="heading">Account</AppText>
@@ -84,6 +98,15 @@ export function ProfileScreen() {
             setDraft((current) => ({ ...current, email }));
           }}
           placeholder="you@example.com"
+        />
+        <Field
+          label="Date of birth"
+          value={dobInput}
+          onChangeText={(value) => {
+            setNotice("");
+            setDobInput(value.slice(0, 10));
+          }}
+          placeholder="DD/MM/YYYY"
         />
         <Field
           label="Phone"
@@ -130,14 +153,13 @@ export function ProfileScreen() {
       </SoftCard>
 
       <SoftCard>
-        <AppText variant="heading">Places</AppText>
-        {hasHomeCoordinates(homeSettings) ? (
-          <AppText variant="caption" style={{ color: colors.mutedText }}>
-            {homeSettings.thresholdMeters} m ·{" "}
-            {homeSettings.enabled && hasReminderPlaces(homeSettings) ? "Reminders on" : "Reminders off"}
-          </AppText>
-        ) : null}
-        <HomeLocationPicker />
+        <SectionHeading
+          title="Places & reminders"
+          info="Home, work, school and leaving reminders are managed in Settings — not duplicated here."
+        />
+        <SecondaryButton size="compact" onPress={() => navigation.navigate("Settings")}>
+          Open Settings
+        </SecondaryButton>
       </SoftCard>
     </Screen>
   );

@@ -26,6 +26,8 @@ type PlaceInput = {
   longitude: number;
   locationSource: HomeLocationSource;
   reminderEnabled?: boolean;
+  thresholdMeters?: HomeThresholdMeters;
+  checklistItems?: string[];
 };
 
 type HomeSettingsContextValue = {
@@ -36,11 +38,11 @@ type HomeSettingsContextValue = {
   clearPlace: (kind: PlaceKind) => void;
   setPlaceReminder: (kind: PlaceKind, reminderEnabled: boolean) => void;
   setAllPlaceReminders: (reminderEnabled: boolean) => void;
-  setThresholdMeters: (thresholdMeters: HomeThresholdMeters) => void;
-  setChecklistItems: (checklistItems: string[]) => void;
-  updateChecklistItem: (index: number, value: string) => void;
-  addChecklistItem: () => void;
-  removeChecklistItem: (index: number) => void;
+  setPlaceThreshold: (kind: PlaceKind, thresholdMeters: HomeThresholdMeters) => void;
+  setPlaceChecklist: (kind: PlaceKind, checklistItems: string[]) => void;
+  updatePlaceChecklistItem: (kind: PlaceKind, index: number, value: string) => void;
+  addPlaceChecklistItem: (kind: PlaceKind) => void;
+  removePlaceChecklistItem: (kind: PlaceKind, index: number) => void;
 };
 
 const HomeSettingsContext = createContext<HomeSettingsContextValue | undefined>(undefined);
@@ -91,7 +93,9 @@ export function HomeSettingsProvider({ children }: PropsWithChildren) {
         latitude: place.latitude,
         longitude: place.longitude,
         locationSource: place.locationSource,
-        ...(typeof place.reminderEnabled === "boolean" ? { reminderEnabled: place.reminderEnabled } : {})
+        ...(typeof place.reminderEnabled === "boolean" ? { reminderEnabled: place.reminderEnabled } : {}),
+        ...(typeof place.thresholdMeters === "number" ? { thresholdMeters: place.thresholdMeters } : {}),
+        ...(place.checklistItems ? { checklistItems: place.checklistItems } : {})
       }),
     [patchPlace]
   );
@@ -127,38 +131,59 @@ export function HomeSettingsProvider({ children }: PropsWithChildren) {
     }));
   }, []);
 
-  const setThresholdMeters = useCallback(
-    (thresholdMeters: HomeThresholdMeters) => patchSettings({ thresholdMeters }),
-    [patchSettings]
+  const setPlaceThreshold = useCallback(
+    (kind: PlaceKind, thresholdMeters: HomeThresholdMeters) => patchPlace(kind, { thresholdMeters }),
+    [patchPlace]
   );
 
-  const setChecklistItems = useCallback(
-    (checklistItems: string[]) => patchSettings({ checklistItems }),
-    [patchSettings]
+  const setPlaceChecklist = useCallback(
+    (kind: PlaceKind, checklistItems: string[]) => patchPlace(kind, { checklistItems }),
+    [patchPlace]
   );
 
-  const updateChecklistItem = useCallback((index: number, value: string) => {
+  const updatePlaceChecklistItem = useCallback((kind: PlaceKind, index: number, value: string) => {
     setHomeSettings((current) => ({
       ...current,
-      checklistItems: current.checklistItems.map((item, itemIndex) => (itemIndex === index ? value : item))
+      places: {
+        ...current.places,
+        [kind]: {
+          ...current.places[kind],
+          checklistItems: current.places[kind].checklistItems.map((item, itemIndex) =>
+            itemIndex === index ? value : item
+          )
+        }
+      }
     }));
   }, []);
 
-  const addChecklistItem = useCallback(() => {
+  const addPlaceChecklistItem = useCallback((kind: PlaceKind) => {
     setHomeSettings((current) => ({
       ...current,
-      checklistItems: [...current.checklistItems, ""]
+      places: {
+        ...current.places,
+        [kind]: {
+          ...current.places[kind],
+          checklistItems: [...current.places[kind].checklistItems, ""]
+        }
+      }
     }));
   }, []);
 
-  const removeChecklistItem = useCallback((index: number) => {
+  const removePlaceChecklistItem = useCallback((kind: PlaceKind, index: number) => {
     setHomeSettings((current) => {
-      if (current.checklistItems.length <= 1) {
+      const items = current.places[kind].checklistItems;
+      if (items.length <= 1) {
         return current;
       }
       return {
         ...current,
-        checklistItems: current.checklistItems.filter((_, itemIndex) => itemIndex !== index)
+        places: {
+          ...current.places,
+          [kind]: {
+            ...current.places[kind],
+            checklistItems: items.filter((_, itemIndex) => itemIndex !== index)
+          }
+        }
       };
     });
   }, []);
@@ -173,11 +198,11 @@ export function HomeSettingsProvider({ children }: PropsWithChildren) {
         clearPlace,
         setPlaceReminder,
         setAllPlaceReminders,
-        setThresholdMeters,
-        setChecklistItems,
-        updateChecklistItem,
-        addChecklistItem,
-        removeChecklistItem
+        setPlaceThreshold,
+        setPlaceChecklist,
+        updatePlaceChecklistItem,
+        addPlaceChecklistItem,
+        removePlaceChecklistItem
       }}
     >
       {children}

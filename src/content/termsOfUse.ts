@@ -1,5 +1,5 @@
 /** Versioned Terms of Use — bump when material terms change. */
-export const TERMS_OF_USE_VERSION = "1.0";
+export const TERMS_OF_USE_VERSION = "1.1";
 
 export const TERMS_OF_USE_TITLE = "Terms of Use";
 
@@ -9,7 +9,7 @@ export const TERMS_OF_USE_INTRO =
   "Nudge me Ready is a personal guidance and supportive reminder tool only. It is not medical, legal, financial, emergency, or professional care advice. By using the app you accept these terms.";
 
 export const TERMS_OF_USE_ACCEPT_LABEL =
-  "I have read and agree to the Terms of Use, including that Nudge me Ready has no liability for missed items, deleted data, downtime, or outcomes of using this supportive tool.";
+  "I have read and agree to the Terms of Use, including that Nudge me Ready has no liability for missed reminders (including location, GPS, toll or leaving prompts), deleted data, downtime, or outcomes of using this supportive tool — and that location reminders need GPS, permissions, confirmations, and connectivity which remain my responsibility.";
 
 export type TermsSection = { title: string; body: string };
 
@@ -23,6 +23,11 @@ export const TERMS_OF_USE_SECTIONS: TermsSection[] = [
     title: "You are responsible",
     body:
       "You are solely responsible for what you enter, check, act on, share, or ignore. You decide whether a reminder is correct, complete, and timely. Crew members who support you are also responsible for how they use any access you give them. The app does not supervise, verify, or guarantee that anything will be done."
+  },
+  {
+    title: "Location, GPS, and pay / leaving reminders",
+    body:
+      "Optional features such as leaving-place reminders and toll, congestion-zone, clean-air-zone, or drive-away parking prompts rely on your device. It is your responsibility to keep location (GPS) enabled with appropriate permissions (including background/always where required), to keep Push notifications enabled for those features, to respond to confirmation prompts (for example “Were you there?”), and to maintain internet connectivity when the feature needs it — including when you are not actively using the app. The app provider accepts no responsibility or liability if a reminder, ask, or pay nudge does not appear, is late, or is wrong because GPS was off, permissions were denied or limited, battery or OS settings restricted background location, you did not confirm a prompt, the phone was offline, Do Not Disturb or Quiet Hours silenced alerts, or for any similar device or user-side reason. Always check official payment and travel channels yourself for charges, deadlines, and fines."
   },
   {
     title: "No liability for missed, late, or incomplete items",
@@ -47,12 +52,12 @@ export const TERMS_OF_USE_SECTIONS: TermsSection[] = [
   {
     title: "Absolute limitation of liability",
     body:
-      "To the fullest extent permitted by applicable law, the app provider (including Helen Cunliffe and any contributors, partners, or distributors) has no liability whatsoever to you or any third party for any loss, damage, cost, claim, or consequence arising from or related to use of (or inability to use) Nudge me Ready — including indirect, incidental, special, consequential, or punitive losses, loss of data, missed appointments, health outcomes, financial loss, distress, or reputational harm — whether based in contract, tort (including negligence), statute, or otherwise. Where liability cannot legally be excluded, it is limited to the maximum extent allowed, and in any event to £0 for free use of the app."
+      "To the fullest extent permitted by applicable law, the app provider (including Helen Cunliffe and any contributors, partners, or distributors) has no liability whatsoever to you or any third party for any loss, damage, cost, claim, or consequence arising from or related to use of (or inability to use) Nudge me Ready — including indirect, incidental, special, consequential, or punitive losses, loss of data, missed appointments, missed toll or parking payments, fines, health outcomes, financial loss, distress, or reputational harm — whether based in contract, tort (including negligence), statute, or otherwise. Where liability cannot legally be excluded, it is limited to the maximum extent allowed, and in any event to £0 for free use of the app."
   },
   {
     title: "Third-party services and your device",
     body:
-      "Face ID, notifications, calendars, contacts, maps, email, SMS, WhatsApp, speech, and similar features depend on your device and third-party platforms. Those providers have their own terms. The app provider is not responsible for their failures or for settings you choose on your phone."
+      "Face ID, notifications, calendars, contacts, maps, email, SMS, WhatsApp, speech, and similar features depend on your device and third-party platforms. Phone contacts and calendar import/export only work when you grant permission and keep those services available. Those providers have their own terms. The app provider is not responsible for their failures, for missing or incorrect contact or calendar data, or for settings you choose on your phone."
   },
   {
     title: "Crew and sharing",

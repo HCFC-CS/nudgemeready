@@ -2,16 +2,19 @@ import { useNavigation } from "@react-navigation/native";
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { EmptyStateLight, NudgeListRow, SectionHeader, nudgeRowMeta } from "../components/NudgeListRow";
+import { EmptyStateLight, NudgeListRow, nudgeRowMeta } from "../components/NudgeListRow";
 import { FilterScroll, SearchBar, StatPill } from "../components/ModernUI";
 import { PageHeader } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { useNudgeItems } from "../hooks/useNudgeItems";
+import { compareNudgesByDate, isReady4PackItem } from "../services/nudgeItems";
+import { READY_4_PACKS_LABEL } from "../content/ready4Copy";
 import { spacing } from "../theme/theme";
 import type { NudgeItem, NudgeItemType } from "../types/nudge";
 
 type WorldFilter =
   | "All"
+  | "Ready4"
   | "Tasks"
   | "Projects"
   | "Lists"
@@ -25,6 +28,7 @@ type WorldFilter =
 
 const filters: WorldFilter[] = [
   "All",
+  "Ready4",
   "Tasks",
   "Projects",
   "Lists",
@@ -37,20 +41,48 @@ const filters: WorldFilter[] = [
   "Completed"
 ];
 
+const filterLabels: Record<WorldFilter, string> = {
+  All: "All",
+  Ready4: READY_4_PACKS_LABEL,
+  Tasks: "Tasks",
+  Projects: "Projects",
+  Lists: "Lists",
+  Notes: "Notes",
+  Reminders: "Reminders",
+  Routines: "Routines",
+  Appointments: "Appointments",
+  Events: "Events",
+  Occasions: "Occasions",
+  Completed: "Completed"
+};
+
 export function MyWorldScreen() {
   const navigation = useNavigation<any>();
   const { items, setItemStatus } = useNudgeItems();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<WorldFilter>("All");
   const itemsWithParents = useMemo(() => addParentProjectNames(items), [items]);
-  const filteredItems = itemsWithParents.filter((item) => matchesFilter(item, filter) && matchesSearch(item, search));
+  const filteredItems = useMemo(() => {
+    return itemsWithParents
+      .filter((item) => matchesFilter(item, filter) && matchesSearch(item, search))
+      .sort(compareNudgesByDate);
+  }, [itemsWithParents, filter, search]);
   const openCount = filteredItems.filter((item) => item.status !== "done").length;
 
   return (
     <Screen>
       <PageHeader title="Everything" subtitle="Search, filter, and open anything." />
       <SearchBar value={search} onChangeText={setSearch} placeholder="Search anything..." />
-      <FilterScroll options={filters} selected={filter} onSelect={(value) => setFilter(value as WorldFilter)} />
+      <FilterScroll
+        options={filters.map((value) => filterLabels[value])}
+        selected={filterLabels[filter]}
+        onSelect={(label) => {
+          const match = filters.find((value) => filterLabels[value] === label);
+          if (match) {
+            setFilter(match);
+          }
+        }}
+      />
       <View style={styles.stats}>
         <StatPill label="Showing" value={filteredItems.length} />
         <StatPill label="Open" value={openCount} />
@@ -92,14 +124,19 @@ function addParentProjectNames(items: NudgeItem[]): WorldItem[] {
 }
 
 function matchesFilter(item: NudgeItem, filter: WorldFilter) {
+  if (filter === "Ready4") {
+    return isReady4PackItem(item) && item.status !== "cancelled";
+  }
+  if (isReady4PackItem(item) && filter !== "Completed") {
+    return false;
+  }
   if (filter === "All") {
     return item.status !== "done";
   }
   if (filter === "Completed") {
-    return item.status === "done";
+    return item.status === "done" && !isReady4PackItem(item);
   }
-  const typeMap: Record<WorldFilter, NudgeItemType[]> = {
-    All: [],
+  const typeMap: Record<Exclude<WorldFilter, "All" | "Ready4" | "Completed">, NudgeItemType[]> = {
     Tasks: ["task", "subtask", "chore"],
     Projects: ["project"],
     Lists: ["list"],
@@ -108,8 +145,7 @@ function matchesFilter(item: NudgeItem, filter: WorldFilter) {
     Routines: ["routine"],
     Appointments: ["appointment"],
     Events: ["event"],
-    Occasions: ["occasion", "special_day"],
-    Completed: []
+    Occasions: ["occasion", "special_day"]
   };
   return typeMap[filter].includes(item.type);
 }
@@ -119,7 +155,11 @@ function matchesSearch(item: NudgeItem, search: string) {
   if (!query) {
     return true;
   }
-  return [item.title, item.notes, item.contactName, item.type].filter(Boolean).join(" ").toLowerCase().includes(query);
+  return [item.title, item.notes, item.contactName, item.type]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .includes(query);
 }
 
 const styles = StyleSheet.create({

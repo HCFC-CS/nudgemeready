@@ -15,6 +15,18 @@ Nudge Me Ready is a supportive reminder, routine and shared-care application.
 - Apply accessibility standards to every interface.
 - Preserve existing working functionality.
 - Do not introduce medical diagnosis or treatment advice.
+- Build shared engines once; Ready4 packs are configuration, not separate apps.
+- Progress over perfection — never punish skip, snooze, or hard days.
+- Ready4 planners enrich packs; combined Today/This Week lives in Planner hub — do not duplicate calendar, reward, crew, or budget systems.
+- Universal Nudge Horizon (What's coming up) is core — no Ready4 pack required; packs only enrich the same timeline.
+
+## Core first. Packs enhance.
+
+- Six core “What do you want to do?” categories work immediately after signup — no Ready4 pack required.
+- Ready4 packs only add actions into those categories when installed.
+- A nudge must not depend on a Ready4 pack (`sourcePackId` / pack link is optional).
+- Do not show pack-specific choices (wedding, moving, baby, etc.) until that pack is installed.
+- Core **My Money** budget works without Ready4Finance or any pack; Ready4 project budgets appear only when installed.
 
 ## Brand
 

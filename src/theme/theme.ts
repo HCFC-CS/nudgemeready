@@ -7,6 +7,8 @@ export const brand = {
   babyBlue: "#7BA8C9",
   babyBlueDark: "#5A8AAF",
   babyBlueSoft: "#B4C9DC",
+  /** Text/border blue that stays readable on taupe and ivory. */
+  babyBlueInk: "#1A425C",
   softGrey: "#8E959E",
   charcoal: "#3A3F45",
   softGold: "#B8954F",
@@ -15,7 +17,13 @@ export const brand = {
   taupeLight: "#C9C2B8",
   ivoryElevated: "#E6E0D8",
   softRose: "#A65D5D",
-  softRoseMuted: "#E8D4D4"
+  softRoseMuted: "#E8D4D4",
+  /** Text/border rose that stays readable on taupe and the soft fill. */
+  softRoseInk: "#5A2424",
+  calmGreen: "#3F7A5A",
+  calmGreenSoft: "#D7E8DE",
+  /** Text/border green that stays readable on taupe and the soft fill. */
+  calmGreenInk: "#1E4632",
 } as const;
 
 export const colors = {
@@ -23,6 +31,7 @@ export const colors = {
   warmIvory: brand.warmIvory,
   softTaupe: brand.softTaupe,
   babyBlue: brand.babyBlue,
+  babyBlueInk: brand.babyBlueInk,
   softGrey: brand.softGrey,
   charcoal: brand.charcoal,
   midnightBlue: brand.midnightBlue,
@@ -30,7 +39,7 @@ export const colors = {
   surface: brand.warmIvory,
   surfaceMuted: brand.taupeLight,
   text: brand.midnightBlue,
-  mutedText: brand.midnightBlueMuted,
+  mutedText: brand.charcoal,
   accent: brand.softGold,
   primary: brand.babyBlue,
   primaryDark: brand.midnightBlue,
@@ -45,6 +54,8 @@ export const colors = {
   progress: brand.softGold,
   danger: brand.softRose,
   dangerSoft: brand.softRoseMuted,
+  done: brand.calmGreen,
+  doneSoft: brand.calmGreenSoft,
   ivoryElevated: brand.ivoryElevated,
   fab: brand.babyBlue,
   link: brand.softGold,
@@ -80,21 +91,45 @@ export const classificationColors = {
   }
 };
 
+/** Action chips (Save · Sorted · Later · Ask · Remove) — ink on a pale fill, not wash-on-wash. */
+export const actionChipColors = {
+  save: {
+    color: brand.babyBlueInk,
+    borderColor: brand.babyBlueInk,
+    backgroundColor: brand.ivoryElevated
+  },
+  done: {
+    color: brand.calmGreenInk,
+    borderColor: brand.calmGreenInk,
+    backgroundColor: brand.calmGreenSoft
+  },
+  quiet: {
+    color: brand.midnightBlue,
+    borderColor: brand.charcoal,
+    backgroundColor: brand.ivoryElevated
+  },
+  danger: {
+    color: brand.softRoseInk,
+    borderColor: brand.softRoseInk,
+    backgroundColor: brand.softRoseMuted
+  }
+} as const;
+
 export const taskTypeAccentColors: Record<string, string> = {
-  task: brand.babyBlueDark,
-  taskJob: brand.babyBlueDark,
-  subtask: brand.babyBlue,
+  task: brand.babyBlueInk,
+  taskJob: brand.babyBlueInk,
+  subtask: brand.babyBlueInk,
   project: brand.midnightBlue,
   reminder: brand.softGold,
-  appointment: brand.babyBlueDark,
+  appointment: brand.babyBlueInk,
   event: brand.softGold,
-  list: brand.softTaupe,
+  list: brand.charcoal,
   alert: brand.midnightBlue,
   occasion: brand.softGold,
   special_day: brand.softGold,
-  chore: brand.babyBlue,
-  routine: brand.babyBlue,
-  note: brand.softGrey
+  chore: brand.babyBlueInk,
+  routine: brand.babyBlueInk,
+  note: brand.charcoal
 };
 
 export const spacing = {
@@ -116,11 +151,11 @@ export const radii = {
 
 export const typography = {
   title: 28,
-  heading: 17,
+  heading: 18,
   section: 14,
   body: 16,
-  small: 13,
-  caption: 11,
+  small: 14,
+  caption: 15,
   timer: 56,
   fontFamily: {
     regular: "System",

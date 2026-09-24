@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   permissionPill: {
-    minHeight: 28,
+    minHeight: 44,
     borderRadius: radii.sm,
     backgroundColor: colors.primarySoft,
     paddingHorizontal: spacing.sm,

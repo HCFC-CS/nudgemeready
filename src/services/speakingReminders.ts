@@ -1,9 +1,18 @@
-import * as Notifications from "expo-notifications";
-import * as Speech from "expo-speech";
-
+import { loadExpoNotifications } from "./expoNotifications";
+import { getTimedNudgeAt, shouldScheduleTimedNudge } from "./timedNudge";
 import { resolveItemCreator } from "./itemPermissions";
 import { adjustDateForQuietHours, shouldAllowNotifications } from "./notificationPrefs";
 import type { NudgeItem } from "../types/nudge";
+
+type ReceivedNotification = {
+  request: {
+    identifier: string;
+    content: {
+      body?: string | null;
+      data?: unknown;
+    };
+  };
+};
 
 const TEN_MINUTES_SECONDS = 10 * 60;
 
@@ -20,12 +29,19 @@ export function playSpeakingReminder(item: NudgeItem) {
   if (!text) {
     return;
   }
-  Speech.stop();
-  Speech.speak(text);
+  void import("expo-speech")
+    .then((Speech) => {
+      Speech.stop();
+      Speech.speak(text);
+    })
+    .catch(() => undefined);
 }
+
+export { getTimedNudgeAt, shouldScheduleTimedNudge } from "./timedNudge";
 
 export async function cancelSpeakingReminderNotifications(item: NudgeItem) {
   const ids = new Set(item.reminderNotificationIds ?? []);
+  const Notifications = await loadExpoNotifications();
 
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -47,7 +63,7 @@ export async function cancelSpeakingReminderNotifications(item: NudgeItem) {
 export async function syncSpeakingReminderNotifications(item: NudgeItem): Promise<string[]> {
   await cancelSpeakingReminderNotifications(item);
 
-  if (item.type !== "reminder" || item.status === "done" || item.status === "cancelled") {
+  if (!shouldScheduleTimedNudge(item)) {
     return [];
   }
 
@@ -64,8 +80,9 @@ export async function syncSpeakingReminderNotifications(item: NudgeItem): Promis
   const speakingText = getSpeakingReminderText(item);
   const creator = resolveItemCreator(item);
   const ids: string[] = [];
+  const Notifications = await loadExpoNotifications();
 
-  const reminderDateRaw = item.reminderDate ? new Date(item.reminderDate) : undefined;
+  const reminderDateRaw = getTimedNudgeAt(item);
   const reminderDate =
     reminderDateRaw && !Number.isNaN(reminderDateRaw.getTime())
       ? adjustDateForQuietHours(reminderDateRaw, gate.prefs.quietHours)
@@ -98,8 +115,8 @@ export async function syncSpeakingReminderNotifications(item: NudgeItem): Promis
     ids.push(
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Still waiting",
-          body: `${item.title} has not been marked done yet.`,
+          title: "Gentle check-in",
+          body: `${item.title} is still open if you need it — no pressure.`,
           data: {
             itemId: item.id,
             role: "nudger",
@@ -119,8 +136,16 @@ export async function syncSpeakingReminderNotifications(item: NudgeItem): Promis
   return ids.filter(Boolean);
 }
 
+export async function resyncTimedNudges(items: NudgeItem[]): Promise<Record<string, string[]>> {
+  const next: Record<string, string[]> = {};
+  for (const item of items) {
+    next[item.id] = await syncSpeakingReminderNotifications(item);
+  }
+  return next;
+}
+
 export function handleSpeakingReminderNotification(
-  notification: Notifications.Notification,
+  notification: ReceivedNotification,
   items: NudgeItem[],
   actorId: string
 ): NudgeItem | undefined {
@@ -143,7 +168,7 @@ export function handleSpeakingReminderNotification(
 
   if (data.itemId) {
     const item = items.find((candidate) => candidate.id === data.itemId);
-    if (item && (item.status === "done" || item.status === "cancelled")) {
+    if (item && (item.status === "done" || item.status === "cancelled" || item.status === "paused")) {
       void cancelSpeakingReminderNotifications(item);
       return undefined;
     }
@@ -155,8 +180,12 @@ export function handleSpeakingReminderNotification(
 
   const speakText = data.speakText ?? notification.request.content.body;
   if (speakText) {
-    Speech.stop();
-    Speech.speak(String(speakText));
+    void import("expo-speech")
+      .then((Speech) => {
+        Speech.stop();
+        Speech.speak(String(speakText));
+      })
+      .catch(() => undefined);
   }
   return undefined;
 }
@@ -171,7 +200,7 @@ function buildNudgeeNotificationContent(
     speakingText ||
     (phase === "repeat"
       ? "This reminder repeats every 10 minutes until you mark it done."
-      : "Your reminder is ready.");
+      : "This is ready when you are.");
 
   return {
     title,
@@ -187,6 +216,7 @@ function buildNudgeeNotificationContent(
 }
 
 async function ensureNotificationPermission() {
+  const Notifications = await loadExpoNotifications();
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) {
     return true;

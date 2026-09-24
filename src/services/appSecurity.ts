@@ -1,6 +1,5 @@
 import * as Crypto from "expo-crypto";
-import * as LocalAuthentication from "expo-local-authentication";
-import * as SecureStore from "expo-secure-store";
+import * as SecureStore from "./secureStore";
 import { pbkdf2 } from "@noble/hashes/pbkdf2.js";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex, hexToBytes, utf8ToBytes } from "@noble/ciphers/utils.js";
@@ -21,7 +20,7 @@ const RESET_TOKEN_EXPIRES_KEY = "nudge.security.resetTokenExpires";
 const PBKDF2_ITERATIONS = 100_000;
 const HASH_PREFIX = "pbkdf2$";
 const RESET_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
-const SUPPORT_EMAIL = "support@nudgemeready.app";
+export const SUPPORT_EMAIL = "support@nudgemeready.app";
 
 export type CredentialType = "pin" | "password";
 
@@ -449,6 +448,7 @@ export type BiometricCapability = {
 };
 
 export async function getBiometricCapability(): Promise<BiometricCapability> {
+  const LocalAuthentication = await import("expo-local-authentication");
   const compatible = await LocalAuthentication.hasHardwareAsync();
   const enrolled = compatible ? await LocalAuthentication.isEnrolledAsync() : false;
   const types = enrolled ? await LocalAuthentication.supportedAuthenticationTypesAsync() : [];
@@ -466,6 +466,7 @@ export async function authenticateWithBiometrics(
   if (!capability.available) {
     return false;
   }
+  const LocalAuthentication = await import("expo-local-authentication");
   const result = await LocalAuthentication.authenticateAsync({
     promptMessage,
     cancelLabel,
@@ -478,6 +479,7 @@ export async function authenticateWithBiometrics(
 export async function authenticateDeviceOwner(
   promptMessage = "Confirm it’s you to reset your Nudge me Ready password"
 ) {
+  const LocalAuthentication = await import("expo-local-authentication");
   const hasHardware = await LocalAuthentication.hasHardwareAsync();
   const result = await LocalAuthentication.authenticateAsync({
     promptMessage,

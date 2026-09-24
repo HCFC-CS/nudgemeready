@@ -1,5 +1,7 @@
+import { READY_4_LABEL } from "../../content/ready4Copy";
 import type {
   ReadyPack,
+  ReadyPackAffiliateConfig,
   ReadyPackBadgeDef,
   ReadyPackCrewRecommendation,
   ReadyPackKind,
@@ -9,6 +11,7 @@ import type {
   ThemePackPayload,
   VoicePackPayload
 } from "../../types/readyPacks";
+import { affiliateConfigForPack } from "./affiliateCategories";
 
 export function defineContentPack(input: {
   meta: Omit<ReadyPackMeta, "kind"> & { kind?: ReadyPackKind };
@@ -16,6 +19,7 @@ export function defineContentPack(input: {
   aiCoachPrompts?: string[];
   badges?: ReadyPackBadgeDef[];
   crewRecommendations?: ReadyPackCrewRecommendation[];
+  affiliate?: ReadyPackAffiliateConfig;
 }): ReadyPack {
   return {
     ...input.meta,
@@ -24,7 +28,8 @@ export function defineContentPack(input: {
       templates: input.templates,
       aiCoachPrompts: input.aiCoachPrompts ?? [],
       badges: input.badges ?? [],
-      crewRecommendations: input.crewRecommendations ?? []
+      crewRecommendations: input.crewRecommendations ?? [],
+      affiliate: input.affiliate
     }
   };
 }
@@ -74,7 +79,7 @@ export const organisationalHealthNote =
 type Ready4PackInput = {
   /** Short slug after `ready4-`, e.g. `study` → id `ready4-study`. */
   slug: string;
-  /** Display name after “Ready 4 ”, e.g. `Study`. */
+  /** Display name after “Ready4 ”, e.g. `Study`. */
   name: string;
   summary: string;
   category: ReadyPackMeta["category"];
@@ -88,9 +93,10 @@ type Ready4PackInput = {
   aiCoachPrompts?: string[];
   badges?: ReadyPackBadgeDef[];
   crewRecommendations?: ReadyPackCrewRecommendation[];
+  affiliate?: ReadyPackAffiliateConfig;
 };
 
-/** Edition 1 catalogue helper — consistent Ready 4 ids, titles and product ids. */
+/** Edition 1 catalogue helper — consistent Ready4 ids, titles and product ids. */
 export function ready4Pack(input: Ready4PackInput): ReadyPack {
   const id = `ready4-${input.slug}`;
   return defineContentPack({
@@ -99,7 +105,7 @@ export function ready4Pack(input: Ready4PackInput): ReadyPack {
       version: input.version ?? "1.0.0",
       icon: input.icon,
       category: input.category,
-      title: `Ready 4 ${input.name}`,
+      title: `${READY_4_LABEL} ${input.name}`,
       summary: input.summary,
       features: input.features,
       productId: input.productId,
@@ -108,6 +114,7 @@ export function ready4Pack(input: Ready4PackInput): ReadyPack {
     templates: input.templates,
     aiCoachPrompts: input.aiCoachPrompts,
     badges: input.badges,
-    crewRecommendations: input.crewRecommendations
+    crewRecommendations: input.crewRecommendations,
+    affiliate: input.affiliate ?? affiliateConfigForPack(id)
   });
 }

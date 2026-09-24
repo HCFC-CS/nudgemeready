@@ -1,0 +1,2081 @@
+[
+  {
+    "id": "ready4-study",
+    "file": "study.ts",
+    "name": "Study",
+    "title": "Ready4 Study",
+    "slug": "study",
+    "summary": "Assignments, revision, exams and calm study routines — without shame around deadlines.",
+    "features": [
+      "What would help today",
+      "Assignment planner",
+      "Revision planner",
+      "Exam countdown",
+      "Weekly budget glance",
+      "I'm overwhelmed"
+    ],
+    "productId": "ready.pack.ready4_study",
+    "health": false,
+    "templates": [
+      {
+        "id": "what-helps",
+        "title": "What would help today?",
+        "type": "list",
+        "notes": "Pick one, then open that tool. Missing a deadline does not mean you failed — edit and restart.",
+        "listItems": []
+      },
+      {
+        "id": "assignment-planner",
+        "title": "Assignment due soon",
+        "type": "task",
+        "notes": "Break the work into smaller steps on this card. Edit the due date.",
+        "listItems": []
+      },
+      {
+        "id": "assignment-steps",
+        "title": "Assignment tiny steps",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "revision-planner",
+        "title": "Revision topic list",
+        "type": "list",
+        "notes": "Short sessions with a clear topic. Start tiny.",
+        "listItems": []
+      },
+      {
+        "id": "exam-countdown",
+        "title": "Exam day checklist",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "exam-night-before",
+        "title": "Night before exam",
+        "type": "list",
+        "notes": "Gentle prep only — rest matters. Pick your exam in the planner to set this date.",
+        "listItems": []
+      },
+      {
+        "id": "lecture-prep",
+        "title": "Class bag checklist",
+        "type": "list",
+        "notes": "Bag, charger, reading glance. Skip what you do not need.",
+        "listItems": []
+      },
+      {
+        "id": "class-follow-up",
+        "title": "After class — anything to remember?",
+        "type": "note",
+        "notes": "One line is enough. Capture a date, task, or question while it is fresh.",
+        "listItems": []
+      },
+      {
+        "id": "study-routine",
+        "title": "Study routine block",
+        "type": "reminder",
+        "notes": "A short focus window. A break afterwards is part of the plan.",
+        "listItems": []
+      },
+      {
+        "id": "weekly-budget",
+        "title": "Student money glance",
+        "type": "list",
+        "notes": "A glance, not a lecture. Amounts optional — organisational only.",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "overwhelm",
+        "title": "I'm overwhelmed — one tiny step",
+        "type": "list",
+        "notes": "Shrink the day to one startable action. Everything else can wait.",
+        "listItems": []
+      },
+      {
+        "id": "weekly-reset",
+        "title": "Week ahead glance",
+        "type": "list",
+        "notes": "One calm look at the week.",
+        "repeat": "weekly",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-study",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "assignment",
+        "label": "Assignment planner"
+      },
+      {
+        "packId": "ready4-study",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "revision",
+        "label": "Revision planner"
+      },
+      {
+        "packId": "ready4-study",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "exam",
+        "label": "Exam countdown"
+      },
+      {
+        "packId": "ready4-study",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "study-session",
+        "label": "Study session"
+      }
+    ],
+    "budgetName": null,
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-home",
+    "file": "home.ts",
+    "name": "Home",
+    "title": "Ready4 Home",
+    "slug": "home",
+    "summary": "Calm home routines — daily reset, cleaning, bins, maintenance and bills — without overwhelm.",
+    "features": [
+      "Daily reset",
+      "Cleaning planner",
+      "Leaving-home check",
+      "Bin collection",
+      "Home maintenance",
+      "Bill reminders"
+    ],
+    "productId": null,
+    "health": false,
+    "templates": [
+      {
+        "id": "what-helps",
+        "title": "What would help at home?",
+        "type": "list",
+        "notes": "Pick one. Rest counts. Open that tool next.",
+        "listItems": []
+      },
+      {
+        "id": "daily-reset",
+        "title": "Daily home reset",
+        "type": "routine",
+        "notes": "Keep it short. One or two steps still count.",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "leaving-home",
+        "title": "Leaving-home check",
+        "type": "list",
+        "notes": "Edit to match your day.",
+        "listItems": []
+      },
+      {
+        "id": "cleaning-planner",
+        "title": "Cleaning planner",
+        "type": "list",
+        "notes": "Room by room — skip what does not need doing.",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "bin-day",
+        "title": "Bin collection",
+        "type": "reminder",
+        "notes": "Edit the day to match your collection. Put bins out the night before if that helps.",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "maintenance",
+        "title": "Home maintenance checklist",
+        "type": "list",
+        "notes": "A gentle quarterly glance. Edit freely.",
+        "listItems": []
+      },
+      {
+        "id": "bill-reminders",
+        "title": "Household bills glance",
+        "type": "list",
+        "notes": "Organisational only — not financial advice.",
+        "repeat": "monthly",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-home",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "daily-reset",
+        "label": "10-minute home reset"
+      },
+      {
+        "packId": "ready4-home",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "cleaning",
+        "label": "Cleaning planner"
+      },
+      {
+        "packId": "ready4-home",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "bins",
+        "label": "Bin day"
+      },
+      {
+        "packId": "ready4-home",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "maintenance",
+        "label": "Home maintenance"
+      },
+      {
+        "packId": "ready4-home",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "bills",
+        "label": "Household bills"
+      }
+    ],
+    "budgetName": null,
+    "access": "Free — included with the app"
+  },
+  {
+    "id": "ready4-finance",
+    "file": "finance.ts",
+    "name": "Finance",
+    "title": "Ready4 Finance",
+    "slug": "finance",
+    "summary": "Bills, subscriptions, renewals and a simple budget glance — organised calmly, not judged.",
+    "features": [
+      "Bill calendar",
+      "Subscription tracker",
+      "Savings goals",
+      "Annual renewals",
+      "Budget planner"
+    ],
+    "productId": "ready.pack.ready4_finance",
+    "health": false,
+    "templates": [
+      {
+        "id": "what-helps",
+        "title": "What would help with money admin?",
+        "type": "list",
+        "notes": "Pick one section. Open that tool next. Amounts stay optional.",
+        "listItems": []
+      },
+      {
+        "id": "bill-calendar",
+        "title": "Upcoming bills",
+        "type": "list",
+        "notes": "Organisational only — not financial advice. Edit amounts and dates to suit you. When ready, tap Sorted / Later / Ask.",
+        "repeat": "monthly",
+        "listItems": []
+      },
+      {
+        "id": "subscriptions",
+        "title": "Subscription review",
+        "type": "list",
+        "notes": "Keep, Review later, Cancelled, or Not sure — your choice. No shame for unused trials.",
+        "repeat": "monthly",
+        "listItems": []
+      },
+      {
+        "id": "savings-goals",
+        "title": "Savings goal note",
+        "type": "note",
+        "notes": "One goal is enough. Track progress kindly — not financial advice.",
+        "listItems": []
+      },
+      {
+        "id": "annual-renewals",
+        "title": "Annual renewals checklist",
+        "type": "list",
+        "notes": "Insurance, MOT, tax, memberships — edit to suit.",
+        "listItems": []
+      },
+      {
+        "id": "budget-planner",
+        "title": "Simple monthly budget glance",
+        "type": "list",
+        "notes": "Rough categories only. Not a formal budget product.",
+        "repeat": "monthly",
+        "listItems": []
+      },
+      {
+        "id": "payment-nudge",
+        "title": "Payment due soon",
+        "type": "reminder",
+        "notes": "Edit to match a real payment. Organisational only.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-finance",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "bills",
+        "label": "Bill calendar"
+      },
+      {
+        "packId": "ready4-finance",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "subscriptions",
+        "label": "Subscriptions"
+      },
+      {
+        "packId": "ready4-finance",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "renewals",
+        "label": "Annual renewals"
+      },
+      {
+        "packId": "ready4-finance",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "budget",
+        "label": "Budget planner"
+      },
+      {
+        "packId": "ready4-finance",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "payment",
+        "label": "Payment nudge"
+      }
+    ],
+    "budgetName": "Finance focus",
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-medication",
+    "file": "medication.ts",
+    "name": "Medication",
+    "title": "Ready4 Medication",
+    "slug": "medication",
+    "summary": "Medication organisation, refill checks and appointment prep — organisational support only, not medical advice.",
+    "features": [
+      "Medication schedule",
+      "Prescription tracker",
+      "Pharmacy collection",
+      "Health appointments",
+      "Symptom journal"
+    ],
+    "productId": "ready.pack.ready4_medication",
+    "health": true,
+    "templates": [
+      {
+        "id": "med-schedule",
+        "title": "Medication organisation check",
+        "type": "reminder",
+        "notes": "Organisational support only — not medical advice.",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "med-times",
+        "title": "Daily medication times",
+        "type": "list",
+        "notes": "Organisational support only — not medical advice.",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "prescription-tracker",
+        "title": "Prescription / supply check",
+        "type": "list",
+        "notes": "Organisational support only — not medical advice.",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "pharmacy-collection",
+        "title": "Pharmacy collection / delivery",
+        "type": "reminder",
+        "notes": "Organisational only. Confirm collection or delivery with your pharmacy.",
+        "listItems": []
+      },
+      {
+        "id": "health-appointment",
+        "title": "Health appointment prep",
+        "type": "list",
+        "notes": "Organisational support only — not medical advice.",
+        "listItems": []
+      },
+      {
+        "id": "symptom-journal",
+        "title": "Symptom / wellbeing journal",
+        "type": "note",
+        "notes": "For your own records and clinician visits. Not a diagnosis tool. Do not change medication based on this note — ask your clinician.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-medication",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "dose",
+        "label": "Medication reminder"
+      },
+      {
+        "packId": "ready4-medication",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "refill",
+        "label": "Prescription refill"
+      },
+      {
+        "packId": "ready4-medication",
+        "intent": "book_go",
+        "intentLabel": "Book & go",
+        "id": "pharmacy",
+        "label": "Pharmacy / appointment"
+      }
+    ],
+    "budgetName": null,
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-work",
+    "file": "work.ts",
+    "name": "Work",
+    "title": "Ready4 Work",
+    "slug": "work",
+    "summary": "Top 3 priorities, meeting prep, follow-ups and breaks — structured workdays without overwhelm.",
+    "features": [
+      "Daily planner",
+      "Top 3 focus",
+      "Meeting prep",
+      "Project tracker",
+      "Email follow-up",
+      "Breaks"
+    ],
+    "productId": "ready.pack.ready4_work",
+    "health": false,
+    "templates": [
+      {
+        "id": "daily-planner",
+        "title": "Workday start",
+        "type": "routine",
+        "notes": "Glance at the calendar, then pick your Top 3. Skip what does not fit.",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "top-3",
+        "title": "Today's Top 3",
+        "type": "list",
+        "notes": "Only three. If everything feels urgent, pick the kindest useful three.",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "meeting-prep",
+        "title": "Meeting prep checklist",
+        "type": "list",
+        "notes": "Agenda, links, follow-ups. Edit freely.",
+        "listItems": []
+      },
+      {
+        "id": "project-tracker",
+        "title": "Project milestones",
+        "type": "list",
+        "notes": "One project at a time is fine.",
+        "listItems": []
+      },
+      {
+        "id": "email-follow-up",
+        "title": "Follow-up actions",
+        "type": "list",
+        "notes": "Capture replies and actions before they fade.",
+        "listItems": []
+      },
+      {
+        "id": "break-nudge",
+        "title": "Break & stretch",
+        "type": "reminder",
+        "notes": "Stand, stretch, drink water. A break is part of the plan.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-work",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "top3",
+        "label": "Work Top 3"
+      },
+      {
+        "packId": "ready4-work",
+        "intent": "book_go",
+        "intentLabel": "Book & go",
+        "id": "meeting",
+        "label": "Meeting prep"
+      },
+      {
+        "packId": "ready4-work",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "follow-up",
+        "label": "Work follow-up"
+      },
+      {
+        "packId": "ready4-work",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "wins",
+        "label": "Work wins"
+      }
+    ],
+    "budgetName": null,
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-family",
+    "file": "family.ts",
+    "name": "Family",
+    "title": "Ready4 Family",
+    "slug": "family",
+    "summary": "School, meals, chores and shared plans — so the mental load is not only in one person's head.",
+    "features": [
+      "Family week glance",
+      "School hub",
+      "Meal planner",
+      "Chores",
+      "Family budget glance",
+      "Handover notes"
+    ],
+    "productId": "ready.pack.ready4_family",
+    "health": false,
+    "templates": [
+      {
+        "id": "family-week",
+        "title": "Family week glance",
+        "type": "list",
+        "notes": "One calm look at the week ahead.",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "school-hub",
+        "title": "School / nursery checklist",
+        "type": "list",
+        "notes": "Edit for your household. Skip days that do not apply.",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "meal-planner",
+        "title": "Meal ideas this week",
+        "type": "list",
+        "notes": "Simple ideas only — no perfect plate required.",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "chores",
+        "title": "Chore share",
+        "type": "list",
+        "notes": "Age-appropriate and optional. Rest still counts.",
+        "listItems": []
+      },
+      {
+        "id": "family-budget",
+        "title": "Family spend glance",
+        "type": "list",
+        "notes": "Organisational only — not financial advice.",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "handover",
+        "title": "Pickup / handover notes",
+        "type": "note",
+        "notes": "Who is collecting, where, and any change of plan.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-family",
+        "intent": "book_go",
+        "intentLabel": "Book & go",
+        "id": "school",
+        "label": "School / family calendar"
+      },
+      {
+        "packId": "ready4-family",
+        "intent": "life_people",
+        "intentLabel": "Life & people",
+        "id": "birthday",
+        "label": "Family birthday"
+      },
+      {
+        "packId": "ready4-family",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "forms",
+        "label": "Permission forms"
+      },
+      {
+        "packId": "ready4-family",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "tasks",
+        "label": "Family task"
+      }
+    ],
+    "budgetName": null,
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-travel",
+    "file": "travel.ts",
+    "name": "Travel",
+    "title": "Ready4 Travel",
+    "slug": "travel",
+    "summary": "Passports, packing, transport, airport extras, stays and a calm return-home checklist.",
+    "features": [
+      "Travel countdown",
+      "Packing lists",
+      "Documents",
+      "Airport checklist",
+      "Accommodation",
+      "Return home"
+    ],
+    "productId": "ready.pack.ready4_travel",
+    "health": false,
+    "templates": [
+      {
+        "id": "passport-expiry",
+        "title": "Check passport expiry",
+        "type": "reminder",
+        "notes": "Confirm your passport is valid for your trip and any destination rules.",
+        "listItems": []
+      },
+      {
+        "id": "travel-insurance",
+        "title": "Confirm travel insurance",
+        "type": "reminder",
+        "notes": "Check cover dates, policy number, and emergency contact details.",
+        "listItems": []
+      },
+      {
+        "id": "need-transport",
+        "title": "Need transport to the airport?",
+        "type": "list",
+        "notes": "Tick the option that fits. Put your airport name in the notes (e.g. Heathrow) for local taxi and parking links on this card.",
+        "listItems": []
+      },
+      {
+        "id": "airport-taxi",
+        "title": "Book taxi or private hire",
+        "type": "reminder",
+        "notes": "Add your airport or home area in the notes. Open taxi links below when ready.",
+        "listItems": []
+      },
+      {
+        "id": "airport-parking",
+        "title": "Pay or book airport parking",
+        "type": "reminder",
+        "notes": "Add your airport name. Use the parking links below. Confirm booking reference.",
+        "listItems": []
+      },
+      {
+        "id": "book-stay",
+        "title": "Book or confirm your stay",
+        "type": "reminder",
+        "notes": "Destination: (add place). Compare stays using the links on this card.",
+        "listItems": []
+      },
+      {
+        "id": "airport-extras",
+        "title": "Airport extras for this trip?",
+        "type": "list",
+        "notes": "Tick what would help. Put your airport name in the notes for official links.",
+        "listItems": []
+      },
+      {
+        "id": "special-assistance",
+        "title": "Arrange special assistance",
+        "type": "reminder",
+        "notes": "Add your airport name. Use official assistance links and request help through your airline. Organisational support only.",
+        "listItems": []
+      },
+      {
+        "id": "packing-checklist",
+        "title": "Packing checklist",
+        "type": "list",
+        "notes": "Tick as you pack. Edit freely for your trip.",
+        "listItems": []
+      },
+      {
+        "id": "check-in",
+        "title": "Online check-in",
+        "type": "reminder",
+        "notes": "Open when check-in becomes available and save boarding passes.",
+        "listItems": []
+      },
+      {
+        "id": "departure-time",
+        "title": "Leave for the airport",
+        "type": "reminder",
+        "notes": "Set your own departure time based on traffic and security queues.",
+        "listItems": []
+      },
+      {
+        "id": "return-home",
+        "title": "Return-home checklist",
+        "type": "list",
+        "notes": "A soft landing after travel.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-travel",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "trip",
+        "label": "Plan a trip"
+      },
+      {
+        "packId": "ready4-travel",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "packing",
+        "label": "Packing list"
+      },
+      {
+        "packId": "ready4-travel",
+        "intent": "book_go",
+        "intentLabel": "Book & go",
+        "id": "flights",
+        "label": "Flights / bookings"
+      },
+      {
+        "packId": "ready4-travel",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "documents",
+        "label": "Travel documents"
+      },
+      {
+        "packId": "ready4-travel",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "insurance",
+        "label": "Travel insurance"
+      }
+    ],
+    "budgetName": "Travel budget",
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-wellbeing",
+    "file": "wellbeing.ts",
+    "name": "Wellbeing",
+    "title": "Ready4 Wellbeing",
+    "slug": "wellbeing",
+    "summary": "Gentle structure for mornings, hydration, movement, sleep and gratitude — supportive, not pressured.",
+    "features": [
+      "Morning reset",
+      "Hydration",
+      "I ate something",
+      "Movement",
+      "Mindfulness pause",
+      "Sleep routine",
+      "Gratitude journal"
+    ],
+    "productId": null,
+    "health": false,
+    "templates": [
+      {
+        "id": "morning-reset",
+        "title": "Morning reset",
+        "type": "routine",
+        "notes": "Start gently. Skip steps that do not fit.",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "mindfulness",
+        "title": "Mindfulness pause",
+        "type": "reminder",
+        "notes": "A few slow breaths or a short sit. Seek professional support if you need it.",
+        "listItems": []
+      },
+      {
+        "id": "sleep-routine",
+        "title": "Sleep wind-down",
+        "type": "routine",
+        "notes": "Comfort only. Ongoing sleep problems may need clinical advice.",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "gratitude",
+        "title": "Gratitude / good thing note",
+        "type": "note",
+        "notes": "Optional. One good thing is enough. No pressure to be positive.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-wellbeing",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "tiny-win",
+        "label": "Tiny wellbeing win"
+      },
+      {
+        "packId": "ready4-wellbeing",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "routine",
+        "label": "Wellbeing routine"
+      },
+      {
+        "packId": "ready4-wellbeing",
+        "intent": "life_people",
+        "intentLabel": "Life & people",
+        "id": "check-in",
+        "label": "Mood check-in"
+      }
+    ],
+    "budgetName": null,
+    "access": "Free — included with the app"
+  },
+  {
+    "id": "ready4-shopping",
+    "file": "shopping.ts",
+    "name": "Shopping",
+    "title": "Ready4 Shopping",
+    "slug": "shopping",
+    "summary": "Reusable lists, household essentials and a calm shop plan — buy what you need without the mental load.",
+    "features": [
+      "Shopping lists",
+      "Meal ingredients",
+      "Household essentials",
+      "Budget basket glance",
+      "Seasonal / event shop"
+    ],
+    "productId": "ready.pack.ready4_shopping",
+    "health": false,
+    "templates": [
+      {
+        "id": "main-list",
+        "title": "Shopping list",
+        "type": "list",
+        "notes": "Edit freely. Tick as you go.",
+        "listItems": []
+      },
+      {
+        "id": "meal-ingredients",
+        "title": "Ingredients for planned meals",
+        "type": "list",
+        "notes": "Link to this week's meals if helpful.",
+        "listItems": []
+      },
+      {
+        "id": "household-essentials",
+        "title": "Household essentials restock",
+        "type": "list",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "budget-basket",
+        "title": "Budget basket glance",
+        "type": "note",
+        "notes": "Optional spend limit for this trip. Organisational only — not financial advice.",
+        "listItems": []
+      },
+      {
+        "id": "seasonal-shop",
+        "title": "Event / seasonal shop",
+        "type": "list",
+        "notes": "Birthdays, holidays, guests — edit as needed.",
+        "listItems": []
+      },
+      {
+        "id": "before-you-go",
+        "title": "Before you leave for the shop",
+        "type": "list",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-shopping",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "main-list",
+        "label": "Shopping list"
+      },
+      {
+        "packId": "ready4-shopping",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "household",
+        "label": "Household essentials"
+      },
+      {
+        "packId": "ready4-shopping",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "meal",
+        "label": "Meal ingredients"
+      }
+    ],
+    "budgetName": "Shopping focus",
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-independence",
+    "file": "independence.ts",
+    "name": "Independence",
+    "title": "Ready4 Independence",
+    "slug": "independence",
+    "summary": "Morning and evening routines, safety checks and essential tasks for confident independent living.",
+    "features": [
+      "Morning & evening routines",
+      "Home safety checks",
+      "Essential tasks",
+      "Appointments glance",
+      "Emergency contacts note"
+    ],
+    "productId": "ready.pack.ready4_independence",
+    "health": false,
+    "templates": [
+      {
+        "id": "morning-routine",
+        "title": "Morning independence routine",
+        "type": "routine",
+        "notes": "Edit to fit you. Skip steps that do not apply.",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "evening-routine",
+        "title": "Evening settle routine",
+        "type": "routine",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "safety-checks",
+        "title": "Home safety check",
+        "type": "list",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "essential-tasks",
+        "title": "Essential tasks this week",
+        "type": "list",
+        "notes": "One or two items only — rest still counts.",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "appointments-glance",
+        "title": "Upcoming appointments",
+        "type": "list",
+        "notes": "Medical, social or personal — edit freely.",
+        "listItems": []
+      },
+      {
+        "id": "emergency-info",
+        "title": "Important contacts note",
+        "type": "note",
+        "notes": "Trusted people and key numbers for your own use. Share with Crew only if you choose. Not a substitute for emergency services.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-independence",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "daily",
+        "label": "Daily living step"
+      },
+      {
+        "packId": "ready4-independence",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "meal",
+        "label": "Make a meal (guided)"
+      },
+      {
+        "packId": "ready4-independence",
+        "intent": "life_people",
+        "intentLabel": "Life & people",
+        "id": "crew",
+        "label": "Ask Crew for support"
+      }
+    ],
+    "budgetName": null,
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-appointments",
+    "file": "appointments.ts",
+    "name": "Appointments",
+    "title": "Ready4 Appointments",
+    "slug": "appointments",
+    "summary": "Countdown, prep, travel and follow-ups — arrive prepared without the last-minute scramble.",
+    "features": [
+      "Appointment timeline",
+      "Preparation checklist",
+      "Travel planner",
+      "Follow-up tracker",
+      "Notes & outcomes"
+    ],
+    "productId": "ready.pack.ready4_appointments",
+    "health": false,
+    "templates": [
+      {
+        "id": "appointment-card",
+        "title": "Next appointment",
+        "type": "appointment",
+        "notes": "Edit date, place and who it is with.",
+        "listItems": []
+      },
+      {
+        "id": "prep-checklist",
+        "title": "Appointment preparation",
+        "type": "list",
+        "notes": "Documents, forms and questions.",
+        "listItems": []
+      },
+      {
+        "id": "travel-planner",
+        "title": "Travel to appointment",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "leave-reminder",
+        "title": "Leave for appointment",
+        "type": "reminder",
+        "notes": "Set your own leave time based on travel.",
+        "listItems": []
+      },
+      {
+        "id": "follow-up",
+        "title": "Follow-up actions",
+        "type": "list",
+        "notes": "Capture next steps before they fade.",
+        "listItems": []
+      },
+      {
+        "id": "outcomes-note",
+        "title": "Appointment notes & outcomes",
+        "type": "note",
+        "notes": "Key points for your own records. Not a clinical record.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-appointments",
+        "intent": "book_go",
+        "intentLabel": "Book & go",
+        "id": "book",
+        "label": "Book an appointment"
+      },
+      {
+        "packId": "ready4-appointments",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "prepare",
+        "label": "Prepare for appointment"
+      },
+      {
+        "packId": "ready4-appointments",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "questions",
+        "label": "Questions to ask"
+      },
+      {
+        "packId": "ready4-appointments",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "follow-up",
+        "label": "Appointment follow-up"
+      }
+    ],
+    "budgetName": null,
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-pets",
+    "file": "pets.ts",
+    "name": "Pets",
+    "title": "Ready4 Pets",
+    "slug": "pets",
+    "summary": "Feeding, walks, vet plans, treatments and records — so pet care is not only in your head.",
+    "features": [
+      "Daily care",
+      "Medication / treatments",
+      "Vet planner",
+      "Vaccinations",
+      "Grooming",
+      "Pet records"
+    ],
+    "productId": "ready.pack.ready4_pets",
+    "health": false,
+    "templates": [
+      {
+        "id": "daily-care",
+        "title": "Daily pet care",
+        "type": "list",
+        "notes": "Edit for your pet. Medication notes are organisational only.",
+        "repeat": "daily",
+        "listItems": []
+      },
+      {
+        "id": "pet-medication",
+        "title": "Pet medication / treatments",
+        "type": "reminder",
+        "notes": "Organisational support only — not medical advice.",
+        "listItems": []
+      },
+      {
+        "id": "vet-planner",
+        "title": "Vet appointment prep",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "vaccinations",
+        "title": "Vaccinations & boosters",
+        "type": "list",
+        "notes": "Organisational tracker — follow your vet's schedule.",
+        "listItems": []
+      },
+      {
+        "id": "grooming",
+        "title": "Grooming checklist",
+        "type": "list",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "pet-records",
+        "title": "Pet records note",
+        "type": "note",
+        "notes": "Chip number, insurance, emergency contacts, diet notes — for your own use.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-pets",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "daily-care",
+        "label": "Daily pet care"
+      },
+      {
+        "packId": "ready4-pets",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "medication",
+        "label": "Pet medication"
+      },
+      {
+        "packId": "ready4-pets",
+        "intent": "book_go",
+        "intentLabel": "Book & go",
+        "id": "vet",
+        "label": "Vet appointment prep"
+      },
+      {
+        "packId": "ready4-pets",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "vaccinations",
+        "label": "Vaccinations & boosters"
+      },
+      {
+        "packId": "ready4-pets",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "grooming",
+        "label": "Grooming checklist"
+      }
+    ],
+    "budgetName": null,
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-digital-life",
+    "file": "digitalLife.ts",
+    "name": "Digital Life",
+    "title": "Ready4 Digital Life",
+    "slug": "digital-life",
+    "summary": "Passwords, updates, subscriptions, backups and device health — digital admin in small steps.",
+    "features": [
+      "Password review",
+      "Software updates",
+      "Subscription manager",
+      "Cloud backup",
+      "Device maintenance",
+      "Digital inventory"
+    ],
+    "productId": "ready.pack.ready4_digital_life",
+    "health": false,
+    "templates": [
+      {
+        "id": "what-helps",
+        "title": "What would help with digital life?",
+        "type": "list",
+        "notes": "Pick one area. Open that tool next.",
+        "listItems": []
+      },
+      {
+        "id": "password-review",
+        "title": "Password review",
+        "type": "list",
+        "notes": "Update critical passwords when you can. Use a password manager if you have one.",
+        "repeat": "monthly",
+        "listItems": []
+      },
+      {
+        "id": "software-updates",
+        "title": "Software & security updates",
+        "type": "reminder",
+        "notes": "Phone, laptop, tablet — update when convenient.",
+        "repeat": "weekly",
+        "listItems": []
+      },
+      {
+        "id": "subscriptions",
+        "title": "Digital subscriptions review",
+        "type": "list",
+        "notes": "Keep, pause or cancel — your choice.",
+        "repeat": "monthly",
+        "listItems": []
+      },
+      {
+        "id": "cloud-backup",
+        "title": "Backup check",
+        "type": "reminder",
+        "notes": "Confirm photos and important files are backing up.",
+        "repeat": "monthly",
+        "listItems": []
+      },
+      {
+        "id": "device-maintenance",
+        "title": "Device health checklist",
+        "type": "list",
+        "repeat": "monthly",
+        "listItems": []
+      },
+      {
+        "id": "digital-inventory",
+        "title": "Digital inventory note",
+        "type": "note",
+        "notes": "Devices, licences, important account emails — for your own records.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-digital-life",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "what-helps",
+        "label": "Digital life — what would help?"
+      },
+      {
+        "packId": "ready4-digital-life",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "passwords",
+        "label": "Password review"
+      },
+      {
+        "packId": "ready4-digital-life",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "updates",
+        "label": "Software updates"
+      },
+      {
+        "packId": "ready4-digital-life",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "subscriptions",
+        "label": "Digital subscriptions"
+      },
+      {
+        "packId": "ready4-digital-life",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "backup",
+        "label": "Backup check"
+      }
+    ],
+    "budgetName": null,
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-life-admin",
+    "file": "lifeAdmin.ts",
+    "name": "Life Admin",
+    "title": "Ready4 Life Admin",
+    "slug": "life-admin",
+    "summary": "Documents, renewals, vehicle and household admin — small important jobs that are easy to forget.",
+    "features": [
+      "Document vault",
+      "Renewal calendar",
+      "Household admin",
+      "Vehicle reminders",
+      "Paperwork glance"
+    ],
+    "productId": "ready.pack.ready4_life_admin",
+    "health": false,
+    "templates": [
+      {
+        "id": "document-vault",
+        "title": "Important documents checklist",
+        "type": "list",
+        "notes": "Note where things live — not a secure vault inside the app.",
+        "listItems": []
+      },
+      {
+        "id": "renewal-calendar",
+        "title": "Renewals this season",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "household-admin",
+        "title": "Household admin tasks",
+        "type": "list",
+        "repeat": "monthly",
+        "listItems": []
+      },
+      {
+        "id": "vehicle",
+        "title": "Vehicle reminders",
+        "type": "list",
+        "notes": "Skip if you do not drive.",
+        "listItems": []
+      },
+      {
+        "id": "paperwork",
+        "title": "Paperwork / statements glance",
+        "type": "reminder",
+        "notes": "Open post, file or recycle. Organisational only.",
+        "repeat": "monthly",
+        "listItems": []
+      },
+      {
+        "id": "admin-timeout",
+        "title": "Admin pause",
+        "type": "reminder",
+        "notes": "Permission to stop. Come back to one tiny next step later.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-life-admin",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "documents",
+        "label": "Important documents"
+      },
+      {
+        "packId": "ready4-life-admin",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "renewals",
+        "label": "Renewals this season"
+      },
+      {
+        "packId": "ready4-life-admin",
+        "intent": "do",
+        "intentLabel": "Do it",
+        "id": "household",
+        "label": "Household admin"
+      },
+      {
+        "packId": "ready4-life-admin",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "vehicle",
+        "label": "Vehicle reminders"
+      }
+    ],
+    "budgetName": null,
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-emergencies",
+    "file": "emergencies.ts",
+    "name": "Emergencies",
+    "title": "Ready4 Emergencies",
+    "slug": "emergencies",
+    "summary": "Contacts, grab bag, home plan and document locations — preparation for peace of mind, not panic.",
+    "features": [
+      "Emergency contacts",
+      "Medical information note",
+      "Grab bag checklist",
+      "Home emergency plan",
+      "Important documents",
+      "Annual review"
+    ],
+    "productId": "ready.pack.ready4_emergencies",
+    "health": true,
+    "templates": [
+      {
+        "id": "emergency-contacts",
+        "title": "Emergency contacts",
+        "type": "note",
+        "notes": "Trusted people and key numbers for your household. In an emergency dial local emergency services. This pack is organisational only.",
+        "listItems": []
+      },
+      {
+        "id": "medical-info",
+        "title": "Essential medical information note",
+        "type": "note",
+        "notes": "Organisational support only — not medical advice.",
+        "listItems": []
+      },
+      {
+        "id": "grab-bag",
+        "title": "Grab bag checklist",
+        "type": "list",
+        "notes": "Prepare when calm. Edit for your household.",
+        "listItems": []
+      },
+      {
+        "id": "home-plan",
+        "title": "Home emergency plan",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "important-docs",
+        "title": "Where vital documents live",
+        "type": "note",
+        "notes": "Passports, insurance, deeds — note locations only. Keep originals secure.",
+        "listItems": []
+      },
+      {
+        "id": "annual-review",
+        "title": "Annual emergency plan review",
+        "type": "reminder",
+        "notes": "Refresh contacts, kit and plans once a year.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-emergencies",
+        "intent": "life_people",
+        "intentLabel": "Life & people",
+        "id": "contacts",
+        "label": "Emergency contacts"
+      },
+      {
+        "packId": "ready4-emergencies",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "grab-bag",
+        "label": "Grab bag checklist"
+      },
+      {
+        "packId": "ready4-emergencies",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "home-plan",
+        "label": "Home emergency plan"
+      },
+      {
+        "packId": "ready4-emergencies",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "review",
+        "label": "Annual emergency plan review"
+      }
+    ],
+    "budgetName": null,
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-baby",
+    "file": "baby.ts",
+    "name": "Baby",
+    "title": "Ready4 Baby",
+    "slug": "baby",
+    "summary": "Feeds, bag checks, appointments and rest prompts for early days — organisational support only.",
+    "features": [
+      "What would help today",
+      "Feed / rest prompts",
+      "Bag checklist",
+      "Appointment prep",
+      "Visitor boundaries",
+      "Ask for help"
+    ],
+    "productId": "ready.pack.ready4_baby",
+    "health": true,
+    "templates": [
+      {
+        "id": "what-helps",
+        "title": "What would help today?",
+        "type": "list",
+        "notes": "Pick one. Rest counts.",
+        "listItems": []
+      },
+      {
+        "id": "feed-rest",
+        "title": "Feed / rest check-in",
+        "type": "reminder",
+        "notes": "Organisational only — follow your midwife or health visitor. Not feeding advice.",
+        "listItems": []
+      },
+      {
+        "id": "bag-checklist",
+        "title": "Going-out bag",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "appointment-prep",
+        "title": "Baby appointment prep",
+        "type": "list",
+        "notes": "Organisational support only — not medical advice.",
+        "listItems": []
+      },
+      {
+        "id": "visitor-boundaries",
+        "title": "Visitor boundaries",
+        "type": "list",
+        "notes": "Protect rest. Edit freely.",
+        "listItems": []
+      },
+      {
+        "id": "parent-reset",
+        "title": "Parent reset",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "ask-help",
+        "title": "Ask for help today",
+        "type": "reminder",
+        "notes": "Meals, laundry, holding baby, or a short rest — asking is allowed.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-baby",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "prepare",
+        "label": "Prepare for baby"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "hospital-bag",
+        "label": "Hospital bag"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "baby-shower",
+        "label": "Baby shower"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "sip-see",
+        "label": "Sip & See"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "christening",
+        "label": "Baptism / christening"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "equipment",
+        "label": "Baby equipment"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "pram",
+        "label": "Pram / travel system"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "furniture",
+        "label": "Nursery furniture"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "clothes",
+        "label": "Baby clothes"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "registry",
+        "label": "Gift registry"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "book_go",
+        "intentLabel": "Book & go",
+        "id": "classes",
+        "label": "Classes"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "book_go",
+        "intentLabel": "Book & go",
+        "id": "appointments",
+        "label": "Baby appointments"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "book_go",
+        "intentLabel": "Book & go",
+        "id": "activities",
+        "label": "Baby activities"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "life_people",
+        "intentLabel": "Life & people",
+        "id": "shower",
+        "label": "Baby shower plans"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "life_people",
+        "intentLabel": "Life & people",
+        "id": "crew",
+        "label": "Ask Crew for baby support"
+      },
+      {
+        "packId": "ready4-baby",
+        "intent": "life_people",
+        "intentLabel": "Life & people",
+        "id": "family",
+        "label": "Family events"
+      }
+    ],
+    "budgetName": "Baby budget",
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-moving",
+    "file": "moving.ts",
+    "name": "Moving",
+    "title": "Ready4 Moving",
+    "slug": "moving",
+    "summary": "Budget, search, packing, documents, move day and settling in — one stage at a time.",
+    "features": [
+      "What would help",
+      "Budget & mortgage",
+      "House search & viewings",
+      "Packing rooms",
+      "Move-day plan",
+      "Settle-in reset"
+    ],
+    "productId": "ready.pack.ready4_moving",
+    "health": false,
+    "templates": [
+      {
+        "id": "what-helps",
+        "title": "What would help with the move?",
+        "type": "list",
+        "notes": "Pick one focus, then open that tool. You do not have to do everything today.",
+        "listItems": []
+      },
+      {
+        "id": "set-move",
+        "title": "Set the move",
+        "type": "list",
+        "notes": "Buying, renting, selling, or a mix — note what you know so far.",
+        "listItems": []
+      },
+      {
+        "id": "move-budget",
+        "title": "Move budget glance",
+        "type": "list",
+        "notes": "A glance, not a lecture. Amounts optional.",
+        "listItems": []
+      },
+      {
+        "id": "mortgage-readiness",
+        "title": "Mortgage / deposit readiness",
+        "type": "list",
+        "notes": "Organisational checklist only — not financial advice.",
+        "listItems": []
+      },
+      {
+        "id": "house-search",
+        "title": "Property shortlist",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "viewing-prep",
+        "title": "Viewing prep",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "offer-progress",
+        "title": "Offer & progression",
+        "type": "list",
+        "notes": "Track milestones calmly. Edit freely.",
+        "listItems": []
+      },
+      {
+        "id": "packing",
+        "title": "Packing rooms",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "documents",
+        "title": "Moving documents hub",
+        "type": "list",
+        "notes": "Track where each item lives. Organisational only.",
+        "listItems": []
+      },
+      {
+        "id": "move-suppliers",
+        "title": "Movers & supplies",
+        "type": "list",
+        "notes": "Optional partner shop links may appear when useful.",
+        "listItems": []
+      },
+      {
+        "id": "move-day",
+        "title": "Move-day plan",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "address-change",
+        "title": "Address & services",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "settle-in",
+        "title": "Settle-in reset",
+        "type": "list",
+        "notes": "First night, first week — gentle follow-up.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-moving",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "plan-move",
+        "label": "Plan my move"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "packing",
+        "label": "Packing plan"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "budget",
+        "label": "Moving budget"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "viewing",
+        "label": "House viewing"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "checklist",
+        "label": "Moving checklist"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "solicitor",
+        "label": "Solicitor follow-up"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "mortgage",
+        "label": "Mortgage deadline"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "exchange",
+        "label": "Exchange / completion date"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "remember",
+        "intentLabel": "Remember it",
+        "id": "utilities",
+        "label": "Utility changes"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "removals",
+        "label": "Removal company"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "boxes",
+        "label": "Boxes & packing supplies"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "storage",
+        "label": "Storage"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "solicitor-costs",
+        "label": "Solicitor costs"
+      },
+      {
+        "packId": "ready4-moving",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "purchases",
+        "label": "Moving purchases"
+      }
+    ],
+    "budgetName": "Moving budget",
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  },
+  {
+    "id": "ready4-wedding",
+    "file": "wedding.ts",
+    "name": "Wedding",
+    "title": "Ready4 Wedding",
+    "slug": "wedding",
+    "summary": "Budget, guests, suppliers, ceremony and day-of — progress without panic.",
+    "features": [
+      "What needs a decision",
+      "Budget & legal",
+      "Venue & outfits",
+      "Guests & party",
+      "Ceremony & day-of",
+      "After-wedding reset"
+    ],
+    "productId": "ready.pack.ready4_wedding",
+    "health": false,
+    "templates": [
+      {
+        "id": "what-helps",
+        "title": "What needs a decision this week?",
+        "type": "list",
+        "notes": "One or two decisions only. Open that tool next. Rest is fine.",
+        "listItems": []
+      },
+      {
+        "id": "create-wedding",
+        "title": "Create wedding basics",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "budget",
+        "title": "Wedding budget glance",
+        "type": "list",
+        "notes": "A glance, not a lecture. Amounts optional.",
+        "listItems": []
+      },
+      {
+        "id": "legal-docs",
+        "title": "Legal & documents",
+        "type": "list",
+        "notes": "Organisational only — follow local rules for your ceremony type.",
+        "listItems": []
+      },
+      {
+        "id": "venue-shortlist",
+        "title": "Venue shortlist",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "guests",
+        "title": "Guest list & RSVP",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "outfits",
+        "title": "Outfits & fittings",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "wedding-party",
+        "title": "Wedding party roles",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "suppliers",
+        "title": "Suppliers tracker",
+        "type": "list",
+        "notes": "Save quotes calmly. Affiliate / partner links may appear when useful.",
+        "listItems": []
+      },
+      {
+        "id": "ceremony-reception",
+        "title": "Ceremony & reception run sheet",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "final-month",
+        "title": "Final month checklist",
+        "type": "list",
+        "listItems": []
+      },
+      {
+        "id": "wedding-day",
+        "title": "Wedding-day essentials",
+        "type": "list",
+        "notes": "Only the time-critical bits.",
+        "listItems": []
+      },
+      {
+        "id": "honeymoon",
+        "title": "Honeymoon / getaway notes",
+        "type": "list",
+        "notes": "Optional. Keep it light.",
+        "listItems": []
+      },
+      {
+        "id": "after-wedding",
+        "title": "After-wedding reset",
+        "type": "list",
+        "notes": "Thank-yous and admin when energy returns.",
+        "listItems": []
+      }
+    ],
+    "addActions": [
+      {
+        "packId": "ready4-wedding",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "dashboard",
+        "label": "Wedding planning"
+      },
+      {
+        "packId": "ready4-wedding",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "budget",
+        "label": "Wedding budget"
+      },
+      {
+        "packId": "ready4-wedding",
+        "intent": "plan",
+        "intentLabel": "Plan it",
+        "id": "guests",
+        "label": "Guest list"
+      },
+      {
+        "packId": "ready4-wedding",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "suppliers",
+        "label": "Wedding suppliers"
+      },
+      {
+        "packId": "ready4-wedding",
+        "intent": "buy_pay",
+        "intentLabel": "Buy & pay",
+        "id": "outfits",
+        "label": "Dress / outfits"
+      },
+      {
+        "packId": "ready4-wedding",
+        "intent": "book_go",
+        "intentLabel": "Book & go",
+        "id": "venue",
+        "label": "Venue / ceremony"
+      },
+      {
+        "packId": "ready4-wedding",
+        "intent": "life_people",
+        "intentLabel": "Life & people",
+        "id": "party",
+        "label": "Wedding party"
+      }
+    ],
+    "budgetName": "Wedding budget",
+    "access": "Paid catalogue (no charge on TestFlight while billing is off)"
+  }
+]

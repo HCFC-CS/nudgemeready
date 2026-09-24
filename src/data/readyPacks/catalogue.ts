@@ -2,7 +2,7 @@ import type { ReadyPack, ReadyPackKind } from "../../types/readyPacks";
 import { characterPacks, themePacks, voicePacks } from "./cosmetics";
 import { ready4ContentPacks } from "./ready4";
 
-/** Edition 1 Ready 4 content packs. */
+/** Edition 1 Ready4 content packs. */
 const contentPacks: ReadyPack[] = ready4ContentPacks;
 
 export const readyPackCatalogue: ReadyPack[] = [

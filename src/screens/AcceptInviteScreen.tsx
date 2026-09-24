@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { PermissionSummary } from "../components/CrewComponents";
 import { Field } from "../components/FormControls";
-import { PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../components/NudgeComponents";
+import { PageHeader, PrimaryButton, SecondaryButton, SectionHeading, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import {
@@ -70,9 +70,9 @@ export function AcceptInviteScreen() {
     setNotice(
       hasOwnNudgeWorld
         ? "Invite accepted. You can switch between your nudges and this crew."
-        : "Invite accepted. You have access to this nudgee only — set up the app for yourself if you want your own nudges."
+        : "Invite accepted. You can view this person's nudges. Set up the app for yourself if you want your own."
     );
-    navigation.navigate("CrewsISupport");
+    navigation.navigate("CrewHub");
   }
 
   if (!invitation) {
@@ -86,7 +86,7 @@ export function AcceptInviteScreen() {
           }
           showBack
         />
-        <PrimaryButton onPress={() => navigation.navigate("CrewsISupport")}>Back to Crews I Support</PrimaryButton>
+        <PrimaryButton onPress={() => navigation.navigate("CrewHub")}>Back to Crew</PrimaryButton>
       </Screen>
     );
   }
@@ -98,10 +98,10 @@ export function AcceptInviteScreen() {
         <PrimaryButton
           onPress={() => {
             switchProfile(invitation.targetProfileId);
-            navigation.navigate("CrewsISupport");
+            navigation.navigate("CrewHub");
           }}
         >
-          Open Crews I Support
+          Open Crew
         </PrimaryButton>
       </Screen>
     );
@@ -116,7 +116,7 @@ export function AcceptInviteScreen() {
       />
 
         <SoftCard>
-        <AppText variant="heading">Roles offered</AppText>
+        <SectionHeading title="Roles offered" />
         <AppText variant="muted">
           {invitation.proposedRoles.map((role) => crewRoleCopy[role].title).join(", ")}
         </AppText>
@@ -125,11 +125,10 @@ export function AcceptInviteScreen() {
       </SoftCard>
 
       <SoftCard>
-        <AppText variant="heading">Access for this invite</AppText>
-        <AppText variant="muted">
-          Joining gives you access to {invitation.targetProfileName} only — their nudges and crew role. You do not get
-          your own Nudge me Ready world unless you set the app up for yourself later.
-        </AppText>
+        <SectionHeading
+          title="Access for this invite"
+          info={`Joining gives you access to ${invitation.targetProfileName} only — their nudges and crew role. You do not get your own Nudge me Ready world unless you set the app up for yourself later.`}
+        />
       </SoftCard>
 
       <SoftCard>

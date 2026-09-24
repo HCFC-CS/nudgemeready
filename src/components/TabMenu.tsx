@@ -39,13 +39,13 @@ export function TabMenu() {
   const tabItems: TabItem[] = [
     { label: "Home", screen: "Home", icon: "home-outline" },
     {
-      label: isSupporterOnly ? activeProfile.name.split(" ")[0] || "Crew" : "My Nudges",
+      label: isSupporterOnly ? activeProfile.name.split(" ")[0] || "Crew" : "Nudges",
       screen: "Today",
       icon: "notifications-outline"
     },
-    { label: "+nudge", screen: "Capture", icon: "add", isFab: true },
-    { label: "Focus", screen: "Focus", icon: "disc-outline" },
-    { label: "More", screen: "More", icon: "ellipsis-horizontal" }
+    { label: "Add", screen: "Capture", icon: "add", isFab: true },
+    { label: "Menu", screen: "More", icon: "ellipsis-horizontal" },
+    { label: "Focus", screen: "Focus", icon: "disc-outline" }
   ];
 
   return (
@@ -58,13 +58,13 @@ export function TabMenu() {
             <Pressable
               key={item.screen}
               accessibilityRole="button"
-              accessibilityLabel="Add nudge"
+              accessibilityLabel="Add a nudge"
               onPress={() => navigation.navigate("Tabs", { screen: item.screen })}
               style={({ pressed }) => [styles.fabWrap, pressed && styles.pressed]}
             >
               <View style={[styles.fab, isActive && styles.fabActive]}>
-                <Ionicons name="add" size={26} color={colors.onFab} />
-                <AppText style={styles.fabLabel}>nudge</AppText>
+                <Ionicons name="add" size={28} color={colors.onFab} />
+                <AppText style={styles.fabLabel}>Add</AppText>
               </View>
             </Pressable>
           );
@@ -74,6 +74,7 @@ export function TabMenu() {
           <Pressable
             key={item.screen}
             accessibilityRole="button"
+            accessibilityLabel={item.label}
             accessibilityState={{ selected: isActive }}
             onPress={() => navigation.navigate("Tabs", { screen: item.screen })}
             style={({ pressed }) => [styles.item, pressed && styles.pressed]}
@@ -109,8 +110,10 @@ const styles = StyleSheet.create({
   item: {
     flex: 1,
     alignItems: "center",
-    gap: 3,
-    paddingVertical: spacing.xs
+    justifyContent: "center",
+    gap: 4,
+    minHeight: 52,
+    paddingVertical: spacing.sm
   },
   fabWrap: {
     flex: 1,
@@ -118,9 +121,9 @@ const styles = StyleSheet.create({
     marginTop: -26
   },
   fab: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: colors.fab,
     alignItems: "center",
     justifyContent: "center",
@@ -131,7 +134,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryPressed
   },
   fabLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "700",
     color: colors.onFab,
     marginTop: -2,
@@ -143,7 +146,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: "600",
-    color: colors.primaryDark
+    color: colors.primaryDark,
+    fontSize: 12
   },
   labelActive: {
     color: colors.accent

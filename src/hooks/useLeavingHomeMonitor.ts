@@ -7,6 +7,8 @@ import { useHomeSettings } from "./useHomeSettings";
 import {
   buildLeavingPlaceSpeechText,
   distanceMeters,
+  getPlaceChecklist,
+  getPlaceThresholdMeters,
   getReminderPlaces,
   hasReminderPlaces,
   PLACE_KINDS,
@@ -18,8 +20,8 @@ import { shouldPlayLeavingHomeReminder } from "../services/leavingHomeReminder";
 const WATCH_DISTANCE_METERS = 25;
 const WATCH_TIME_MS = 5000;
 
-function playLeavingReminder(text: string) {
-  if (!shouldPlayLeavingHomeReminder()) {
+function playLeavingReminder(kind: PlaceKind, text: string) {
+  if (!shouldPlayLeavingHomeReminder(kind)) {
     return;
   }
   Speech.stop();
@@ -35,6 +37,10 @@ function createAtPlaceMap(value: boolean): Record<PlaceKind, boolean> {
   };
 }
 
+/**
+ * Foreground backup: speak a place’s own checklist only when GPS leaves
+ * that place beyond its selected distance — never as a daily reminder.
+ */
 export function useLeavingHomeMonitor() {
   const { homeSettings, isReady } = useHomeSettings();
   const atPlaceRef = useRef<Record<PlaceKind, boolean>>(createAtPlaceMap(true));
@@ -75,10 +81,10 @@ export function useLeavingHomeMonitor() {
         },
         (position) => {
           const { latitude, longitude } = position.coords;
-          const threshold = homeSettings.thresholdMeters;
-          const enterThreshold = threshold * 0.75;
 
           for (const place of reminderPlaces) {
+            const threshold = getPlaceThresholdMeters(place);
+            const enterThreshold = threshold * 0.75;
             const distance = distanceMeters(latitude, longitude, place.latitude!, place.longitude!);
             const wasInside = atPlaceRef.current[place.kind];
 
@@ -88,7 +94,10 @@ export function useLeavingHomeMonitor() {
             }
 
             if (distance > threshold && wasInside) {
-              playLeavingReminder(buildLeavingPlaceSpeechText(place.kind, homeSettings.checklistItems));
+              playLeavingReminder(
+                place.kind,
+                buildLeavingPlaceSpeechText(place.kind, getPlaceChecklist(place))
+              );
             }
 
             if (distance > threshold) {
@@ -118,13 +127,13 @@ export function useLeavingHomeMonitor() {
 
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
         .then((position) => {
-          const threshold = homeSettings.thresholdMeters * 0.75;
           for (const kind of PLACE_KINDS) {
             const place = homeSettings.places[kind];
             if (!place.reminderEnabled || place.latitude == null || place.longitude == null) {
               atPlaceRef.current[kind] = true;
               continue;
             }
+            const threshold = getPlaceThresholdMeters(place) * 0.75;
             const distance = distanceMeters(
               position.coords.latitude,
               position.coords.longitude,
