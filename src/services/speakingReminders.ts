@@ -1,5 +1,3 @@
-import * as Speech from "expo-speech";
-
 import { loadExpoNotifications } from "./expoNotifications";
 import { getTimedNudgeAt, shouldScheduleTimedNudge } from "./timedNudge";
 import { resolveItemCreator } from "./itemPermissions";
@@ -31,8 +29,12 @@ export function playSpeakingReminder(item: NudgeItem) {
   if (!text) {
     return;
   }
-  Speech.stop();
-  Speech.speak(text);
+  void import("expo-speech")
+    .then((Speech) => {
+      Speech.stop();
+      Speech.speak(text);
+    })
+    .catch(() => undefined);
 }
 
 export { getTimedNudgeAt, shouldScheduleTimedNudge } from "./timedNudge";
@@ -178,8 +180,12 @@ export function handleSpeakingReminderNotification(
 
   const speakText = data.speakText ?? notification.request.content.body;
   if (speakText) {
-    Speech.stop();
-    Speech.speak(String(speakText));
+    void import("expo-speech")
+      .then((Speech) => {
+        Speech.stop();
+        Speech.speak(String(speakText));
+      })
+      .catch(() => undefined);
   }
   return undefined;
 }

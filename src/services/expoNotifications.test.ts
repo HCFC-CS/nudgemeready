@@ -65,13 +65,20 @@ describe("startup files do not statically import expo-notifications", () => {
 describe("splash JS does not pull calendar, location, or sign-in native modules", () => {
   const root = join(here, "..", "..");
 
-  it("App.tsx does not import geofences or calendar monitors at load", () => {
+  it("App.tsx is a plain RN shell until after splash delay", () => {
     const src = readFileSync(join(root, "App.tsx"), "utf8");
-    expect(src).not.toMatch(/from ["']\.\/src\/services\/leavingHomeGeofence["']/);
-    expect(src).not.toMatch(/from ["']\.\/src\/hooks\/useLeavingHomeMonitor["']/);
-    expect(src).not.toMatch(/from ["']\.\/src\/hooks\/usePhoneCalendarImport["']/);
-    expect(src).toContain("NativeMonitors");
+    expect(src).not.toContain("react-native-gesture-handler");
+    expect(src).not.toContain("expo-linking");
+    expect(src).not.toContain("NativeMonitors");
     expect(src).toContain("waitForSplashNative");
+    expect(src).toContain("./src/NudgeApp");
+  });
+
+  it("NudgeApp still delays calendar and location monitors", () => {
+    const src = readFileSync(join(here, "..", "NudgeApp.tsx"), "utf8");
+    expect(src).not.toMatch(/from ["']\.\/services\/leavingHomeGeofence["']/);
+    expect(src).not.toMatch(/from ["']\.\/hooks\/useLeavingHomeMonitor["']/);
+    expect(src).toContain("NativeMonitors");
   });
 
   it("RootNavigator only eagerly loads Splash", () => {
