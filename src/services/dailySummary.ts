@@ -1,13 +1,13 @@
-import * as Notifications from "expo-notifications";
-
 import type { NudgeItem } from "../types/nudge";
 import { loadAppPreferences } from "./appPreferencesStorage";
 import { buildDailySummaryBody } from "./dailySummaryCopy";
+import { loadExpoNotifications } from "./expoNotifications";
 import { loadNudgeItems } from "./nudgeItemsStorage";
 
 const DAILY_SUMMARY_ID = "nudge-daily-summary";
 
 export async function syncDailySummaryNotification(items?: NudgeItem[]) {
+  const Notifications = await loadExpoNotifications();
   try {
     await Notifications.cancelScheduledNotificationAsync(DAILY_SUMMARY_ID);
   } catch {

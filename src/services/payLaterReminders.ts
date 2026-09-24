@@ -1,6 +1,6 @@
-import * as Notifications from "expo-notifications";
 import { Alert, AppState } from "react-native";
 
+import { loadExpoNotifications } from "./expoNotifications";
 import { ensureNotificationPermission } from "./notifications";
 import { adjustDateForQuietHours, shouldAllowNotifications } from "./notificationPrefs";
 import {
@@ -44,23 +44,26 @@ let confirmCategoryReady: Promise<void> | null = null;
 
 export async function ensurePayLaterConfirmCategory() {
   if (!confirmCategoryReady) {
-    confirmCategoryReady = Notifications.setNotificationCategoryAsync(PAY_LATER_CONFIRM_CATEGORY, [
-      {
-        identifier: PAY_LATER_ACTION_YES,
-        buttonTitle: "Yes, remind me",
-        options: { opensAppToForeground: true }
-      },
-      {
-        identifier: PAY_LATER_ACTION_NO,
-        buttonTitle: "No thanks",
-        options: { opensAppToForeground: false }
-      }
-    ]).then(() => undefined);
+    confirmCategoryReady = loadExpoNotifications().then((Notifications) =>
+      Notifications.setNotificationCategoryAsync(PAY_LATER_CONFIRM_CATEGORY, [
+        {
+          identifier: PAY_LATER_ACTION_YES,
+          buttonTitle: "Yes, remind me",
+          options: { opensAppToForeground: true }
+        },
+        {
+          identifier: PAY_LATER_ACTION_NO,
+          buttonTitle: "No thanks",
+          options: { opensAppToForeground: false }
+        }
+      ]).then(() => undefined)
+    );
   }
   await confirmCategoryReady;
 }
 
 export async function cancelPayLaterRemindersForPlace(placeId: string) {
+  const Notifications = await loadExpoNotifications();
   await Promise.all([
     ...PAY_LATER_REMINDER_HOURS.map((hours) =>
       Notifications.cancelScheduledNotificationAsync(notificationIdFor(placeId, hours)).catch(
@@ -73,6 +76,7 @@ export async function cancelPayLaterRemindersForPlace(placeId: string) {
 
 export async function cancelAllPayLaterReminders() {
   try {
+    const Notifications = await loadExpoNotifications();
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     await Promise.all(
       scheduled
@@ -160,6 +164,7 @@ export async function promptPayLaterVisitConfirm(
     return { prompted: true as const, reason: "alert" as const };
   }
 
+  const Notifications = await loadExpoNotifications();
   await Notifications.scheduleNotificationAsync({
     identifier: confirmNotificationId(place.id),
     content: {
@@ -186,6 +191,7 @@ export async function confirmPayLaterVisit(placeId: string) {
   if (!place) {
     return { armed: false as const, reason: "unknown-place" as const };
   }
+  const Notifications = await loadExpoNotifications();
   await Notifications.cancelScheduledNotificationAsync(confirmNotificationId(placeId)).catch(
     () => undefined
   );
@@ -194,6 +200,7 @@ export async function confirmPayLaterVisit(placeId: string) {
 
 /** User said they did not use the place — no pay reminders. */
 export async function declinePayLaterVisit(placeId: string) {
+  const Notifications = await loadExpoNotifications();
   await Notifications.cancelScheduledNotificationAsync(confirmNotificationId(placeId)).catch(
     () => undefined
   );
@@ -233,6 +240,7 @@ export async function armPayLaterRemindersForPlace(
   await cancelPayLaterRemindersForPlace(place.id);
 
   const quiet = gate.prefs.quietHours;
+  const Notifications = await loadExpoNotifications();
 
   await Promise.all(
     PAY_LATER_REMINDER_HOURS.map(async (hours) => {

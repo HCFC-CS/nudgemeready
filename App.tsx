@@ -131,10 +131,7 @@ function AppContent() {
   usePhoneCalendarImport();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      installNotificationHandler();
-    }, 1500);
-    return () => clearTimeout(timer);
+    installNotificationHandler();
   }, []);
 
   return (

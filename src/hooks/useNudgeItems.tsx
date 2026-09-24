@@ -1,5 +1,6 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useState } from "react";
 
+import { waitForSplashNative } from "../services/expoNotifications";
 import { canEditItem } from "../services/itemPermissions";
 import {
   cancelSpeakingReminderNotifications,
@@ -85,7 +86,7 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
     }
     let cancelled = false;
     const snapshot = items;
-    const timer = setTimeout(() => {
+    void waitForSplashNative().then(() => {
       void (async () => {
         try {
           const idsByItem = await resyncTimedNudges(snapshot);
@@ -113,10 +114,9 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
           // Native notification APIs must not kill splash.
         }
       })();
-    }, 2500);
+    });
     return () => {
       cancelled = true;
-      clearTimeout(timer);
     };
     // Reschedule once after load — saveItem keeps each nudge in sync after that.
     // eslint-disable-next-line react-hooks/exhaustive-deps
