@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Share, StyleSheet, View } from "react-native";
+import { Alert, Platform, Share, StyleSheet, View } from "react-native";
 
 import { colors, radii, spacing } from "../theme/theme";
 import { Button } from "./Button";
@@ -24,6 +24,20 @@ export function RecoveryCodeSaveCard({
   const [shared, setShared] = useState(false);
 
   async function handleShare() {
+    // Web has no native share sheet; fall back to the clipboard so the code can
+    // still be saved and the flow can continue. Native keeps the share sheet.
+    if (Platform.OS === "web") {
+      try {
+        const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
+        if (clipboard?.writeText) {
+          await clipboard.writeText(code);
+        }
+      } catch {
+        // Clipboard can be blocked; the code is still visible on screen.
+      }
+      setShared(true);
+      return;
+    }
     try {
       const result = await Share.share({
         message:
@@ -41,6 +55,20 @@ export function RecoveryCodeSaveCard({
 
   function handleContinue() {
     if (!shared) {
+      // react-native-web's Alert has no button dialog, so use window.confirm on
+      // web to keep the "did you save it?" guard working. Native uses Alert.
+      if (Platform.OS === "web") {
+        const confirmed =
+          typeof window !== "undefined" && typeof window.confirm === "function"
+            ? window.confirm(
+                "Saved offline? Copy or write the code down before continuing. It will not be shown again."
+              )
+            : true;
+        if (confirmed) {
+          onSaved();
+        }
+        return;
+      }
       Alert.alert(
         "Saved offline?",
         "Write the code down or share it to a password manager / paper note before continuing. It will not be shown again.",
