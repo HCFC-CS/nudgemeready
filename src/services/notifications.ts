@@ -2,32 +2,46 @@ import * as Notifications from "expo-notifications";
 
 import { shouldAllowNotifications } from "./notificationPrefs";
 
-try {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => {
-      try {
-        const gate = await shouldAllowNotifications();
-        const allow = gate.allow;
-        return {
-          shouldShowAlert: allow,
-          shouldShowBanner: allow,
-          shouldShowList: allow,
-          shouldPlaySound: allow,
-          shouldSetBadge: false
-        };
-      } catch {
-        return {
-          shouldShowAlert: false,
-          shouldShowBanner: false,
-          shouldShowList: false,
-          shouldPlaySound: false,
-          shouldSetBadge: false
-        };
+let handlerInstalled = false;
+
+function quietBehavior() {
+  return {
+    shouldShowBanner: false,
+    shouldShowList: false,
+    shouldPlaySound: false,
+    shouldSetBadge: false
+  };
+}
+
+/**
+ * Install after splash has painted. Calling expo-notifications during JS
+ * startup can throw a native exception on iOS 26 and kill Hermes.
+ */
+export function installNotificationHandler() {
+  if (handlerInstalled) {
+    return;
+  }
+  handlerInstalled = true;
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => {
+        try {
+          const gate = await shouldAllowNotifications();
+          const allow = gate.allow;
+          return {
+            shouldShowBanner: allow,
+            shouldShowList: allow,
+            shouldPlaySound: allow,
+            shouldSetBadge: false
+          };
+        } catch {
+          return quietBehavior();
+        }
       }
-    }
-  });
-} catch {
-  // Native notifications may be unavailable; splash must still load.
+    });
+  } catch {
+    handlerInstalled = false;
+  }
 }
 
 export async function ensureNotificationPermission() {

@@ -4,7 +4,11 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 
-WebBrowser.maybeCompleteAuthSession();
+try {
+  WebBrowser.maybeCompleteAuthSession();
+} catch {
+  // Redirect completion is optional; splash must not die if this throws.
+}
 
 export type SocialAuthProvider = "apple" | "google";
 

@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Linking } from "react-native";
 
 import { navigateToItemDetails } from "../navigation/navigationRef";
@@ -11,6 +11,8 @@ import {
 import { handleSpeakingReminderNotification } from "../services/speakingReminders";
 import { useNudgeActor } from "./useNudgeActor";
 import { useNudgeItems } from "./useNudgeItems";
+
+const SPLASH_NATIVE_DELAY_MS = 2500;
 
 function openPayLaterLinkIfPresent(notification: Notifications.Notification) {
   const data = notification.request.content.data as
@@ -31,9 +33,18 @@ export function useSpeakingReminderNotifications() {
   const actor = useNudgeActor();
   const itemsRef = useRef(items);
   const handledResponseId = useRef<string | null>(null);
+  const [splashSettled, setSplashSettled] = useState(false);
   itemsRef.current = items;
 
   useEffect(() => {
+    const timer = setTimeout(() => setSplashSettled(true), SPLASH_NATIVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!splashSettled) {
+      return;
+    }
     let received: { remove: () => void } | undefined;
     let response: { remove: () => void } | undefined;
     try {
@@ -89,10 +100,10 @@ export function useSpeakingReminderNotifications() {
       received?.remove();
       response?.remove();
     };
-  }, [actor.id]);
+  }, [actor.id, splashSettled]);
 
   useEffect(() => {
-    if (!isReady) {
+    if (!isReady || !splashSettled) {
       return;
     }
 
@@ -125,5 +136,5 @@ export function useSpeakingReminderNotifications() {
     return () => {
       active = false;
     };
-  }, [isReady]);
+  }, [isReady, splashSettled]);
 }

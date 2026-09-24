@@ -85,31 +85,38 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
     }
     let cancelled = false;
     const snapshot = items;
-    void (async () => {
-      const idsByItem = await resyncTimedNudges(snapshot);
-      if (cancelled) {
-        return;
-      }
-      setItems((current) => {
-        let next = current;
-        let changed = false;
-        for (const item of current) {
-          const ids = idsByItem[item.id];
-          if (!ids) {
-            continue;
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const idsByItem = await resyncTimedNudges(snapshot);
+          if (cancelled) {
+            return;
           }
-          const prev = item.reminderNotificationIds ?? [];
-          if (ids.join() !== prev.join()) {
-            next = updateItem(next, item.id, { reminderNotificationIds: ids });
-            changed = true;
-          }
+          setItems((current) => {
+            let next = current;
+            let changed = false;
+            for (const item of current) {
+              const ids = idsByItem[item.id];
+              if (!ids) {
+                continue;
+              }
+              const prev = item.reminderNotificationIds ?? [];
+              if (ids.join() !== prev.join()) {
+                next = updateItem(next, item.id, { reminderNotificationIds: ids });
+                changed = true;
+              }
+            }
+            return changed ? next : current;
+          });
+          await syncDailySummaryNotification(snapshot);
+        } catch {
+          // Native notification APIs must not kill splash.
         }
-        return changed ? next : current;
-      });
-      await syncDailySummaryNotification(snapshot);
-    })();
+      })();
+    }, 2500);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
     // Reschedule once after load — saveItem keeps each nudge in sync after that.
     // eslint-disable-next-line react-hooks/exhaustive-deps

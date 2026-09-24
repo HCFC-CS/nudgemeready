@@ -5,6 +5,7 @@ import "./src/services/payLaterGeofence";
 import * as ExpoLinking from "expo-linking";
 import { NavigationContainer, getStateFromPath as defaultGetStateFromPath, type LinkingOptions } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -20,6 +21,7 @@ import { navigationRef } from "./src/navigation/navigationRef";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { getScreenshotInitialState, getScreenshotScreenId } from "./src/navigation/screenshotState";
 import { parseInviteFromUrl } from "./src/services/crewInvites";
+import { installNotificationHandler } from "./src/services/notifications";
 import {
   isDeepLinkLockActive,
   stashPendingInvite,
@@ -127,6 +129,13 @@ function AppContent() {
   useLeavingHomeMonitor();
   usePayLaterMonitor();
   usePhoneCalendarImport();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      installNotificationHandler();
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <>
