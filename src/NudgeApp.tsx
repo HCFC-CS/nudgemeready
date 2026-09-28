@@ -1,6 +1,5 @@
 import "react-native-gesture-handler";
 
-import * as ExpoLinking from "expo-linking";
 import { NavigationContainer, getStateFromPath as defaultGetStateFromPath, type LinkingOptions } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { lazy, Suspense, useEffect, useState } from "react";
@@ -65,7 +64,6 @@ function extractRecoverToken(url: string) {
 
 const appLinking: LinkingOptions<RootStackParamList> = {
   prefixes: [
-    ExpoLinking.createURL("/"),
     "nudge-me://",
     "nudge-me-v3://",
     "https://nudgemeready.app",

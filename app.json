@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "nudge-me",
+    "newArchEnabled": false,
     "icon": "./assets/icon.png",
     "backgroundColor": "#D9D2C9",
     "splash": {

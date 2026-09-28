@@ -81,6 +81,11 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).toContain("NativeMonitors");
   });
 
+  it("NudgeApp does not load expo-linking at import time", () => {
+    const src = readFileSync(join(here, "..", "NudgeApp.tsx"), "utf8");
+    expect(src).not.toContain("expo-linking");
+  });
+
   it("RootNavigator only eagerly loads Splash", () => {
     const src = readFileSync(join(here, "..", "navigation", "RootNavigator.tsx"), "utf8");
     expect(src).toContain('from "../screens/SplashScreen"');
