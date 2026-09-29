@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 
-import { waitForSplashNative } from "./expoNotifications";
+import { waitForNativeModules } from "./expoNotifications";
 
 export type SocialAuthProvider = "apple" | "google";
 
@@ -32,7 +32,7 @@ export function isGoogleSignInConfigured(): boolean {
 
 /** Native WebBrowser redirect completion — never call during splash JS startup. */
 export function completeAuthSessionAfterSplash() {
-  void waitForSplashNative()
+  void waitForNativeModules()
     .then(() => import("expo-web-browser"))
     .then((WebBrowser) => {
       try {

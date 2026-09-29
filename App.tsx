@@ -4,8 +4,8 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { waitForSplashNative } from "./src/services/expoNotifications";
 
 /**
- * Hold a plain RN shell until TurboModules are safe to touch.
- * iOS 26 aborts if a native void method throws in the first JS tick.
+ * Hold a plain RN shell until native modules are safe to touch.
+ * iOS 26 aborts if a native method throws in the first JS ticks.
  */
 export default function App() {
   const [Root, setRoot] = useState<ComponentType | null>(null);

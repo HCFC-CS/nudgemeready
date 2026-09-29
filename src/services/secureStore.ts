@@ -1,8 +1,18 @@
 import { Platform } from "react-native";
-import * as NativeSecureStore from "expo-secure-store";
 
 const WEB_PREFIX = "nmr-secure:";
 const memory = new Map<string, string>();
+
+/**
+ * Match expo-secure-store's iOS default service name (`app`) so existing v3 keys
+ * stay readable, but pass it explicitly — iOS 26 can throw if the service is unset.
+ */
+const KEYCHAIN_SERVICE = "app";
+
+type NativeSecureStore = typeof import("expo-secure-store");
+
+let nativeModule: Promise<NativeSecureStore> | null = null;
+let keychainQueue: Promise<unknown> = Promise.resolve();
 
 function webGet(key: string): string | null {
   try {
@@ -37,12 +47,45 @@ function webDelete(key: string) {
   }
 }
 
+function loadNative(): Promise<NativeSecureStore> {
+  if (!nativeModule) {
+    nativeModule = import("expo-secure-store");
+  }
+  return nativeModule;
+}
+
+function nativeOptions(Native: NativeSecureStore) {
+  return {
+    keychainService: KEYCHAIN_SERVICE,
+    ...(Native.AFTER_FIRST_UNLOCK != null
+      ? { keychainAccessible: Native.AFTER_FIRST_UNLOCK }
+      : {})
+  };
+}
+
+function enqueue<T>(work: () => Promise<T>): Promise<T> {
+  const run = keychainQueue.then(work, work);
+  keychainQueue = run.then(
+    () => undefined,
+    () => undefined
+  );
+  return run;
+}
+
 /** expo-secure-store has no web implementation; use localStorage there. */
 export async function getItemAsync(key: string): Promise<string | null> {
   if (Platform.OS === "web") {
     return webGet(key);
   }
-  return NativeSecureStore.getItemAsync(key);
+  return enqueue(async () => {
+    try {
+      const Native = await loadNative();
+      return await Native.getItemAsync(key, nativeOptions(Native));
+    } catch {
+      // iOS 26 Keychain exceptions must not abort launch.
+      return null;
+    }
+  });
 }
 
 export async function setItemAsync(key: string, value: string): Promise<void> {
@@ -50,7 +93,14 @@ export async function setItemAsync(key: string, value: string): Promise<void> {
     webSet(key, value);
     return;
   }
-  await NativeSecureStore.setItemAsync(key, value);
+  await enqueue(async () => {
+    try {
+      const Native = await loadNative();
+      await Native.setItemAsync(key, value, nativeOptions(Native));
+    } catch {
+      memory.set(key, value);
+    }
+  });
 }
 
 export async function deleteItemAsync(key: string): Promise<void> {
@@ -58,5 +108,12 @@ export async function deleteItemAsync(key: string): Promise<void> {
     webDelete(key);
     return;
   }
-  await NativeSecureStore.deleteItemAsync(key);
+  await enqueue(async () => {
+    try {
+      const Native = await loadNative();
+      await Native.deleteItemAsync(key, nativeOptions(Native));
+    } catch {
+      memory.delete(key);
+    }
+  });
 }

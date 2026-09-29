@@ -31,7 +31,7 @@ import {
   verifyRecoveryCode
 } from "../services/appSecurity";
 import { isDevAdminAvailable } from "../services/devAdmin";
-import { waitForSplashNative } from "../services/expoNotifications";
+import { waitForNativeModules } from "../services/expoNotifications";
 import { requestPasswordResetEmail } from "../services/passwordResetEmail";
 
 const MAX_FAILED_ATTEMPTS = 5;
@@ -118,7 +118,7 @@ export function AppSecurityProvider({
     const next = await loadAppSecuritySettings();
     setSettings(next);
     try {
-      await waitForSplashNative();
+      await waitForNativeModules();
       const capability = await getBiometricCapability();
       setBiometricLabel(capability.label);
       setBiometricsAvailable(capability.available);
@@ -130,12 +130,17 @@ export function AppSecurityProvider({
 
   useEffect(() => {
     (async () => {
-      const next = await loadAppSecuritySettings();
-      setSettings(next);
-      if (!bypassLock && next.lockEnabled && next.hasCredential) {
-        setIsLocked(true);
+      try {
+        const next = await loadAppSecuritySettings();
+        setSettings(next);
+        if (!bypassLock && next.lockEnabled && next.hasCredential) {
+          setIsLocked(true);
+        }
+      } catch {
+        // Keychain must not keep splash stuck or kill launch.
+      } finally {
+        setIsReady(true);
       }
-      setIsReady(true);
       void refresh();
     })();
   }, [bypassLock, refresh]);

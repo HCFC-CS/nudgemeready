@@ -20,15 +20,31 @@ export class StorageDecryptError extends Error {
   }
 }
 
+let dataKeyPromise: Promise<Uint8Array> | null = null;
+
 async function getOrCreateDataKey(): Promise<Uint8Array> {
-  const existing = await SecureStore.getItemAsync(DATA_KEY_STORE);
-  if (existing) {
-    return hexToBytes(existing);
+  if (!dataKeyPromise) {
+    dataKeyPromise = (async () => {
+      const existing = await SecureStore.getItemAsync(DATA_KEY_STORE);
+      if (existing) {
+        return hexToBytes(existing);
+      }
+      const bytes = await Crypto.getRandomBytesAsync(32);
+      const key = new Uint8Array(bytes);
+      try {
+        await SecureStore.setItemAsync(DATA_KEY_STORE, bytesToHex(key));
+      } catch {
+        // Keep the in-memory key for this session if Keychain is unavailable.
+      }
+      return key;
+    })();
   }
-  const bytes = await Crypto.getRandomBytesAsync(32);
-  const key = new Uint8Array(bytes);
-  await SecureStore.setItemAsync(DATA_KEY_STORE, bytesToHex(key));
-  return key;
+  try {
+    return await dataKeyPromise;
+  } catch (error) {
+    dataKeyPromise = null;
+    throw error;
+  }
 }
 
 function isEncryptedPayload(raw: string) {

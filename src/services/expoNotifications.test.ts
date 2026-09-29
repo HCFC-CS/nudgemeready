@@ -1,7 +1,7 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -44,6 +44,47 @@ describe("waitForSplashNative", () => {
   });
 });
 
+describe("waitForNativeModules", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("waits for splash plus a settle window before native modules run", async () => {
+    const { waitForNativeModules } = await import("./expoNotifications");
+    let done = false;
+    void waitForNativeModules().then(() => {
+      done = true;
+    });
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(done).toBe(false);
+    await vi.advanceTimersByTimeAsync(1999);
+    expect(done).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(done).toBe(true);
+  });
+
+  it("shares one settle timer", async () => {
+    const { waitForNativeModules } = await import("./expoNotifications");
+    let first = false;
+    let second = false;
+    void waitForNativeModules().then(() => {
+      first = true;
+    });
+    await vi.advanceTimersByTimeAsync(3000);
+    void waitForNativeModules().then(() => {
+      second = true;
+    });
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(first).toBe(true);
+    expect(second).toBe(true);
+  });
+});
+
 describe("startup files do not statically import expo-notifications", () => {
   const files = [
     "notifications.ts",
@@ -71,6 +112,7 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).not.toContain("expo-linking");
     expect(src).not.toContain("NativeMonitors");
     expect(src).toContain("waitForSplashNative");
+    expect(src).not.toContain("waitForNativeModules");
     expect(src).toContain("./src/NudgeApp");
   });
 
@@ -79,6 +121,8 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).not.toMatch(/from ["']\.\/services\/leavingHomeGeofence["']/);
     expect(src).not.toMatch(/from ["']\.\/hooks\/useLeavingHomeMonitor["']/);
     expect(src).toContain("NativeMonitors");
+    expect(src).toContain("waitForNativeModules");
+    expect(src).not.toContain("waitForSplashNative");
   });
 
   it("NudgeApp does not load expo-linking at import time", () => {
@@ -99,11 +143,19 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).not.toMatch(/from ["']expo-web-browser["']/);
     expect(src).not.toMatch(/from ["']expo-apple-authentication["']/);
     expect(src).toContain("completeAuthSessionAfterSplash");
+    expect(src).toContain("waitForNativeModules");
   });
 
   it("appSecurity does not import Face ID at module load", () => {
     const src = readFileSync(join(here, "appSecurity.ts"), "utf8");
     expect(src).not.toMatch(/from ["']expo-local-authentication["']/);
     expect(src).toContain('import("expo-local-authentication")');
+  });
+
+  it("secureStore does not statically import expo-secure-store", () => {
+    const src = readFileSync(join(here, "secureStore.ts"), "utf8");
+    expect(src).not.toMatch(/from ["']expo-secure-store["']/);
+    expect(src).toContain('import("expo-secure-store")');
+    expect(src).toContain("keychainService");
   });
 });

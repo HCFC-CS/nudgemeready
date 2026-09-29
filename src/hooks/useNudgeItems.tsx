@@ -1,6 +1,6 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useState } from "react";
 
-import { waitForSplashNative } from "../services/expoNotifications";
+import { waitForNativeModules } from "../services/expoNotifications";
 import { canEditItem } from "../services/itemPermissions";
 import {
   cancelSpeakingReminderNotifications,
@@ -86,7 +86,7 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
     }
     let cancelled = false;
     const snapshot = items;
-    void waitForSplashNative().then(() => {
+    void waitForNativeModules().then(() => {
       void (async () => {
         try {
           const idsByItem = await resyncTimedNudges(snapshot);

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Linking } from "react-native";
 
 import { navigateToItemDetails } from "../navigation/navigationRef";
-import { loadExpoNotifications, waitForSplashNative } from "../services/expoNotifications";
+import { loadExpoNotifications, waitForNativeModules } from "../services/expoNotifications";
 import {
   handlePayLaterConfirmResponse,
   PAY_LATER_CONFIRM_ROLE,
@@ -46,7 +46,7 @@ export function useSpeakingReminderNotifications() {
 
   useEffect(() => {
     let cancelled = false;
-    void waitForSplashNative().then(() => {
+    void waitForNativeModules().then(() => {
       if (!cancelled) {
         setSplashSettled(true);
       }

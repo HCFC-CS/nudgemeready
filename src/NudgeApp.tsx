@@ -14,7 +14,7 @@ import { navigationRef } from "./navigation/navigationRef";
 import { RootNavigator } from "./navigation/RootNavigator";
 import { getScreenshotInitialState, getScreenshotScreenId } from "./navigation/screenshotState";
 import { parseInviteFromUrl } from "./services/crewInvites";
-import { waitForSplashNative } from "./services/expoNotifications";
+import { waitForNativeModules } from "./services/expoNotifications";
 import { installNotificationHandler } from "./services/notifications";
 import {
   isDeepLinkLockActive,
@@ -126,13 +126,14 @@ function AppContent() {
   const [nativeReady, setNativeReady] = useState(false);
 
   useEffect(() => {
-    completeAuthSessionAfterSplash();
-    installNotificationHandler();
     let cancelled = false;
-    void waitForSplashNative().then(() => {
-      if (!cancelled) {
-        setNativeReady(true);
+    void waitForNativeModules().then(() => {
+      if (cancelled) {
+        return;
       }
+      completeAuthSessionAfterSplash();
+      installNotificationHandler();
+      setNativeReady(true);
     });
     return () => {
       cancelled = true;
@@ -162,7 +163,7 @@ export default function NudgeApp() {
       return;
     }
     let cancelled = false;
-    void waitForSplashNative().then(() => {
+    void waitForNativeModules().then(() => {
       if (!cancelled) {
         setLinkingReady(true);
       }

@@ -25,7 +25,7 @@ import { type AuthProvider, type ProfileIcon, useProfile } from "../hooks/usePro
 import { createEmailResetLink, credentialLabel, SUPPORT_EMAIL, type CredentialType } from "../services/appSecurity";
 import { pollCrewUnlockApproval, requestCrewUnlock } from "../services/crewUnlock";
 import { isDevAdminAvailable } from "../services/devAdmin";
-import { waitForSplashNative } from "../services/expoNotifications";
+import { waitForNativeModules } from "../services/expoNotifications";
 import { peekPendingInvite } from "../services/pendingDeepLinks";
 import { resetSecurityLockPrompt } from "../services/securityLockPrompt";
 import {
@@ -246,7 +246,7 @@ export function SplashScreen({ navigation, route }: Props) {
       return;
     }
     let cancelled = false;
-    void waitForSplashNative().then(() => {
+    void waitForNativeModules().then(() => {
       if (cancelled) {
         return;
       }
