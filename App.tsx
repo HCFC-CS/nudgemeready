@@ -1,18 +1,18 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 
-import { waitForSplashNative } from "./src/services/expoNotifications";
+import { waitForNativeModules } from "./src/services/expoNotifications";
 
 /**
  * Hold a plain RN shell until native modules are safe to touch.
- * iOS 26 aborts if a native method throws in the first JS ticks.
+ * iOS 26 aborts if a native method throws during NudgeApp's first ticks.
  */
 export default function App() {
   const [Root, setRoot] = useState<ComponentType | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const ready = Platform.OS === "web" ? Promise.resolve() : waitForSplashNative();
+    const ready = Platform.OS === "web" ? Promise.resolve() : waitForNativeModules();
     void ready
       .then(() => import("./src/NudgeApp"))
       .then((mod) => {

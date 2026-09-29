@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const DATA_KEY_STORE = "nudge.security.dataKey.v1";
+const DATA_KEY_STORE = "nmr-secure:nudge.security.dataKey.v1";
 
 describe("encryptedStorage data key", () => {
   beforeEach(() => {
@@ -8,7 +8,7 @@ describe("encryptedStorage data key", () => {
   });
 
   it("creates the encryption key once when many stores load together", async () => {
-    const stub = await import("../test/expoSecureStoreStub.cjs");
+    const stub = await import("../test/asyncStorageStub.cjs");
     stub.state.setItemKeys.length = 0;
     const { getEncryptedItem, setEncryptedItem } = await import("./encryptedStorage");
     await Promise.all([

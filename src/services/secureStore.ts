@@ -1,11 +1,13 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
 const WEB_PREFIX = "nmr-secure:";
+const ASYNC_PREFIX = "nmr-secure:";
 const memory = new Map<string, string>();
 
 /**
- * Match expo-secure-store's iOS default service name (`app`) so existing v3 keys
- * stay readable, but pass it explicitly — iOS 26 can throw if the service is unset.
+ * Match expo-secure-store's iOS default service name (`app`) so existing keys
+ * stay readable if Keychain is used (Android). Pass it explicitly.
  */
 const KEYCHAIN_SERVICE = "app";
 
@@ -72,18 +74,57 @@ function enqueue<T>(work: () => Promise<T>): Promise<T> {
   return run;
 }
 
-/** expo-secure-store has no web implementation; use localStorage there. */
+async function fallbackGet(key: string): Promise<string | null> {
+  if (memory.has(key)) {
+    return memory.get(key) ?? null;
+  }
+  try {
+    return await AsyncStorage.getItem(ASYNC_PREFIX + key);
+  } catch {
+    return null;
+  }
+}
+
+async function fallbackSet(key: string, value: string): Promise<void> {
+  memory.set(key, value);
+  try {
+    await AsyncStorage.setItem(ASYNC_PREFIX + key, value);
+  } catch {
+    // Keep the in-memory copy.
+  }
+}
+
+async function fallbackDelete(key: string): Promise<void> {
+  memory.delete(key);
+  try {
+    await AsyncStorage.removeItem(ASYNC_PREFIX + key);
+  } catch {
+    // Ignore.
+  }
+}
+
+/**
+ * iOS 26 aborts in release if expo-secure-store throws an NSException.
+ * Keep secrets in the app sandbox via AsyncStorage on iPhone until that
+ * native path is safe. Android still uses Keychain.
+ */
+function useNativeKeychain() {
+  return Platform.OS === "android";
+}
+
 export async function getItemAsync(key: string): Promise<string | null> {
   if (Platform.OS === "web") {
     return webGet(key);
+  }
+  if (!useNativeKeychain()) {
+    return fallbackGet(key);
   }
   return enqueue(async () => {
     try {
       const Native = await loadNative();
       return await Native.getItemAsync(key, nativeOptions(Native));
     } catch {
-      // iOS 26 Keychain exceptions must not abort launch.
-      return null;
+      return fallbackGet(key);
     }
   });
 }
@@ -93,12 +134,16 @@ export async function setItemAsync(key: string, value: string): Promise<void> {
     webSet(key, value);
     return;
   }
+  if (!useNativeKeychain()) {
+    await fallbackSet(key, value);
+    return;
+  }
   await enqueue(async () => {
     try {
       const Native = await loadNative();
       await Native.setItemAsync(key, value, nativeOptions(Native));
     } catch {
-      memory.set(key, value);
+      await fallbackSet(key, value);
     }
   });
 }
@@ -108,12 +153,16 @@ export async function deleteItemAsync(key: string): Promise<void> {
     webDelete(key);
     return;
   }
+  if (!useNativeKeychain()) {
+    await fallbackDelete(key);
+    return;
+  }
   await enqueue(async () => {
     try {
       const Native = await loadNative();
       await Native.deleteItemAsync(key, nativeOptions(Native));
     } catch {
-      memory.delete(key);
+      await fallbackDelete(key);
     }
   });
 }

@@ -5,7 +5,7 @@ describe("secureStore", () => {
     vi.resetModules();
   });
 
-  it("round-trips a value on native", async () => {
+  it("round-trips a value on iOS without Keychain", async () => {
     const { deleteItemAsync, getItemAsync, setItemAsync } = await import("./secureStore");
     await setItemAsync("guide-test-key", "kept-local");
     expect(await getItemAsync("guide-test-key")).toBe("kept-local");
@@ -13,18 +13,16 @@ describe("secureStore", () => {
     expect(await getItemAsync("guide-test-key")).toBeNull();
   });
 
-  it("passes an explicit keychain service so iOS 26 does not throw", async () => {
-    const { setItemAsync } = await import("./secureStore");
+  it("does not call expo-secure-store on iOS", async () => {
     const stub = await import("../test/expoSecureStoreStub.cjs");
-    await setItemAsync("keychain-options-key", "value");
-    expect(stub.state.lastOptions).toMatchObject({
-      keychainService: "app",
-      keychainAccessible: 1
-    });
+    stub.state.setItemKeys.length = 0;
+    const { setItemAsync } = await import("./secureStore");
+    await setItemAsync("no-keychain-key", "value");
+    expect(stub.state.setItemKeys).toEqual([]);
   });
 
-  it("returns null when native get throws", async () => {
-    const stub = await import("../test/expoSecureStoreStub.cjs");
+  it("returns null when sandbox storage get throws", async () => {
+    const stub = await import("../test/asyncStorageStub.cjs");
     stub.state.throwOnGet = true;
     const { getItemAsync } = await import("./secureStore");
     await expect(getItemAsync("broken")).resolves.toBeNull();

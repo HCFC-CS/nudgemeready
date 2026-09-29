@@ -106,13 +106,13 @@ describe("startup files do not statically import expo-notifications", () => {
 describe("splash JS does not pull calendar, location, or sign-in native modules", () => {
   const root = join(here, "..", "..");
 
-  it("App.tsx is a plain RN shell until after splash delay", () => {
+  it("App.tsx is a plain RN shell until native modules have settled", () => {
     const src = readFileSync(join(root, "App.tsx"), "utf8");
     expect(src).not.toContain("react-native-gesture-handler");
     expect(src).not.toContain("expo-linking");
     expect(src).not.toContain("NativeMonitors");
-    expect(src).toContain("waitForSplashNative");
-    expect(src).not.toContain("waitForNativeModules");
+    expect(src).toContain("waitForNativeModules");
+    expect(src).not.toContain("waitForSplashNative");
     expect(src).toContain("./src/NudgeApp");
   });
 
@@ -152,10 +152,18 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).toContain('import("expo-local-authentication")');
   });
 
-  it("secureStore does not statically import expo-secure-store", () => {
+  it("secureStore does not import expo-secure-store on the iOS launch path", () => {
     const src = readFileSync(join(here, "secureStore.ts"), "utf8");
     expect(src).not.toMatch(/from ["']expo-secure-store["']/);
-    expect(src).toContain('import("expo-secure-store")');
-    expect(src).toContain("keychainService");
+    expect(src).toContain("useNativeKeychain");
+    expect(src).toContain('Platform.OS === "android"');
+  });
+
+  it("iOS exception guard plugin swallows native fatals instead of aborting", () => {
+    const src = readFileSync(join(root, "plugins", "withIosNativeExceptionGuard.cjs"), "utf8");
+    expect(src).toContain("RCTSetFatalExceptionHandler");
+    expect(src).toContain("RCTSetFatalHandler");
+    const appJson = readFileSync(join(root, "app.json"), "utf8");
+    expect(appJson).toContain("./plugins/withIosNativeExceptionGuard.cjs");
   });
 });
