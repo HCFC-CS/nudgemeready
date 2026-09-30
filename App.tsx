@@ -1,10 +1,12 @@
 import { useEffect, useState, type ComponentType } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform } from "react-native";
 
+import { LaunchErrorBoundary } from "./src/components/LaunchErrorBoundary";
+import { LaunchShell } from "./src/components/LaunchShell";
 import { waitForNativeModules } from "./src/services/expoNotifications";
 
 /**
- * Hold a plain RN shell until native modules are safe to touch.
+ * Hold a branded shell until native modules are safe to touch.
  * iOS 26 aborts if a native method throws during NudgeApp's first ticks.
  */
 export default function App() {
@@ -27,28 +29,12 @@ export default function App() {
   }, []);
 
   if (!Root) {
-    return (
-      <View style={styles.shell} accessibilityRole="header" accessibilityLabel="Nudge me Ready">
-        <Text style={styles.title}>Nudge me Ready</Text>
-      </View>
-    );
+    return <LaunchShell />;
   }
 
-  return <Root />;
+  return (
+    <LaunchErrorBoundary>
+      <Root />
+    </LaunchErrorBoundary>
+  );
 }
-
-const styles = StyleSheet.create({
-  shell: {
-    flex: 1,
-    backgroundColor: "#D9D2C9",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "600",
-    color: "#3A3F45",
-    textAlign: "center"
-  }
-});

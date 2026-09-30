@@ -16,6 +16,7 @@ export function RootNavigator() {
     <Stack.Navigator
       initialRouteName="Splash"
       screenOptions={{
+        contentStyle: { backgroundColor: colors.background },
         headerShown: false,
         headerStyle: { backgroundColor: colors.background },
         headerShadowVisible: false,

@@ -1,6 +1,6 @@
 import "react-native-gesture-handler";
 
-import { NavigationContainer, getStateFromPath as defaultGetStateFromPath, type LinkingOptions } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme, getStateFromPath as defaultGetStateFromPath, type LinkingOptions } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Platform } from "react-native";
@@ -14,7 +14,7 @@ import { navigationRef } from "./navigation/navigationRef";
 import { RootNavigator } from "./navigation/RootNavigator";
 import { getScreenshotInitialState, getScreenshotScreenId } from "./navigation/screenshotState";
 import { parseInviteFromUrl } from "./services/crewInvites";
-import { waitForNativeModules } from "./services/expoNotifications";
+import { waitAfterPaint, waitForNativeModules } from "./services/expoNotifications";
 import { installNotificationHandler } from "./services/notifications";
 import {
   isDeepLinkLockActive,
@@ -122,19 +122,34 @@ const appLinking: LinkingOptions<RootStackParamList> = {
   }
 };
 
+const navigationTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: colors.background,
+    card: colors.background,
+    primary: colors.primary,
+    text: colors.text,
+    border: colors.border,
+    notification: colors.primary
+  }
+};
+
 function AppContent() {
   const [nativeReady, setNativeReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    void waitForNativeModules().then(() => {
-      if (cancelled) {
-        return;
-      }
-      completeAuthSessionAfterSplash();
-      installNotificationHandler();
-      setNativeReady(true);
-    });
+    void waitForNativeModules()
+      .then(() => waitAfterPaint(1500))
+      .then(() => {
+        if (cancelled) {
+          return;
+        }
+        completeAuthSessionAfterSplash();
+        installNotificationHandler();
+        setNativeReady(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -163,7 +178,7 @@ export default function NudgeApp() {
       return;
     }
     let cancelled = false;
-    void waitForNativeModules().then(() => {
+    void waitAfterPaint(1500).then(() => {
       if (!cancelled) {
         setLinkingReady(true);
       }
@@ -174,13 +189,14 @@ export default function NudgeApp() {
   }, [screenshotScreenId]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+      <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.background }}>
         <AppSecurityProvider bypassLock={Boolean(screenshotScreenId)}>
           <AppProviders>
             <AppLockGate>
               <NavigationContainer
                 ref={navigationRef}
+                theme={navigationTheme}
                 initialState={initialState}
                 linking={screenshotScreenId || !linkingReady ? undefined : appLinking}
               >

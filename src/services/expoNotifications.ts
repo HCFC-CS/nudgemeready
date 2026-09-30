@@ -37,6 +37,13 @@ export function waitForNativeModules(): Promise<void> {
   return nativeReady;
 }
 
+/** Extra delay from *this call*, not the shared splash timer that App.tsx already consumed. */
+export function waitAfterPaint(ms = 1500): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 export async function loadExpoNotifications(): Promise<ExpoNotifications> {
   await waitForNativeModules();
   if (!loaded) {
@@ -44,3 +51,4 @@ export async function loadExpoNotifications(): Promise<ExpoNotifications> {
   }
   return loaded;
 }
+

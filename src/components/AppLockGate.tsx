@@ -10,6 +10,7 @@ import {
   setDeepLinkLockActive,
   takePendingInvite
 } from "../services/pendingDeepLinks";
+import { LaunchShell } from "./LaunchShell";
 import { colors } from "../theme/theme";
 
 /**
@@ -81,7 +82,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   }, [shouldLock]);
 
   if (!isReady || !isProfileReady) {
-    return <View style={styles.boot} accessibilityLabel="Starting Nudge me Ready" />;
+    return <LaunchShell />;
   }
 
   return <View style={styles.root}>{children}</View>;
@@ -89,10 +90,6 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
-    backgroundColor: colors.background
-  },
-  boot: {
     flex: 1,
     backgroundColor: colors.background
   }

@@ -85,6 +85,29 @@ describe("waitForNativeModules", () => {
   });
 });
 
+describe("waitAfterPaint", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("waits from the call site so later mounts are not instant", async () => {
+    const { waitAfterPaint } = await import("./expoNotifications");
+    let done = false;
+    void waitAfterPaint(1500).then(() => {
+      done = true;
+    });
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(done).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(done).toBe(true);
+  });
+});
+
 describe("startup files do not statically import expo-notifications", () => {
   const files = [
     "notifications.ts",
@@ -114,6 +137,8 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).toContain("waitForNativeModules");
     expect(src).not.toContain("waitForSplashNative");
     expect(src).toContain("./src/NudgeApp");
+    expect(src).toContain("LaunchErrorBoundary");
+    expect(src).toContain("LaunchShell");
   });
 
   it("NudgeApp still delays calendar and location monitors", () => {
@@ -122,7 +147,10 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).not.toMatch(/from ["']\.\/hooks\/useLeavingHomeMonitor["']/);
     expect(src).toContain("NativeMonitors");
     expect(src).toContain("waitForNativeModules");
+    expect(src).toContain("waitAfterPaint");
     expect(src).not.toContain("waitForSplashNative");
+    expect(src).toContain("theme={navigationTheme}");
+    expect(src).toContain("backgroundColor: colors.background");
   });
 
   it("NudgeApp does not load expo-linking at import time", () => {
@@ -135,6 +163,7 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).toContain('from "../screens/SplashScreen"');
     expect(src).not.toContain('from "../screens/HomeScreen"');
     expect(src).not.toContain("calendarSync");
+    expect(src).toContain("contentStyle");
     expect(src).toContain("getComponent");
   });
 
@@ -165,5 +194,10 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).toContain("RCTSetFatalHandler");
     const appJson = readFileSync(join(root, "app.json"), "utf8");
     expect(appJson).toContain("./plugins/withIosNativeExceptionGuard.cjs");
+  });
+
+  it("boot gate keeps the branded title instead of a blank view", () => {
+    const src = readFileSync(join(here, "..", "components", "AppLockGate.tsx"), "utf8");
+    expect(src).toContain("LaunchShell");
   });
 });
