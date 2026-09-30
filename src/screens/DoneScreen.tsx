@@ -1,13 +1,14 @@
-import { View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
-import { BadgeShelf, RewardsSummaryCard } from "../components/GamificationComponents";
-import { EmptyState, PageHeader, SoftCard } from "../components/NudgeComponents";
+import { PageHeader, PrimaryButton, SoftCard } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useNudgeItems } from "../hooks/useNudgeItems";
-import { getNudgeRewards } from "../services/gamification";
+import { useRewardBank } from "../hooks/useRewardBank";
 import { formatDisplayDate } from "../services/reminderDates";
+import { spacing } from "../theme/theme";
 import type { NudgeItem, NudgeItemType } from "../types/nudge";
+import { StyleSheet, View } from "react-native";
 
 const doneSections: Array<{ title: string; types: NudgeItemType[] }> = [
   { title: "Completed tasks", types: ["task"] },
@@ -23,18 +24,33 @@ const doneSections: Array<{ title: string; types: NudgeItemType[] }> = [
 ];
 
 export function DoneScreen() {
+  const navigation = useNavigation<any>();
   const { items } = useNudgeItems();
+  const { wallet, nextReward, pointsToNext } = useRewardBank();
   const completedItems = items.filter((item) => item.status === "done");
   const groupedItems = groupByDate(completedItems);
-  const rewards = getNudgeRewards(items);
 
   return (
     <Screen>
       <PageHeader title="Completed" subtitle="A record of what you've finished." />
-      <RewardsSummaryCard rewards={rewards} />
-      <BadgeShelf rewards={rewards} />
+      <SoftCard style={styles.card}>
+        <AppText variant="heading">{wallet.availablePoints} points ready</AppText>
+        <AppText variant="muted">
+          {completedItems.length} completed · points live in Reward Bank and are never taken away.
+        </AppText>
+        {nextReward ? (
+          <AppText variant="small" style={styles.next}>
+            {pointsToNext > 0
+              ? `${pointsToNext} to go for “${nextReward.title}”`
+              : `You can claim “${nextReward.title}” when you like`}
+          </AppText>
+        ) : null}
+        <PrimaryButton size="compact" onPress={() => navigation.navigate("RewardBank")}>
+          Open Reward Bank
+        </PrimaryButton>
+      </SoftCard>
       {groupedItems.map((group) => (
-        <SoftCard key={group.date}>
+        <SoftCard key={group.date} style={styles.card}>
           <AppText variant="heading">{group.date}</AppText>
           {doneSections.map((section) => (
             <DoneTypeSection
@@ -46,12 +62,11 @@ export function DoneScreen() {
         </SoftCard>
       ))}
       {!completedItems.length ? (
-        <EmptyState title="Nothing here yet." message="Completed items will rest here when they happen." />
+        <SoftCard style={styles.card}>
+          <AppText variant="heading">Nothing here yet</AppText>
+          <AppText variant="muted">Completed items will rest here when they happen.</AppText>
+        </SoftCard>
       ) : null}
-      <SoftCard>
-        <AppText variant="heading">Progress recorded.</AppText>
-        <AppText variant="muted">Each completed item stays here for reference.</AppText>
-      </SoftCard>
     </Screen>
   );
 }
@@ -61,7 +76,7 @@ function DoneTypeSection({ title, items }: { title: string; items: NudgeItem[] }
     return null;
   }
   return (
-    <View>
+    <View style={styles.section}>
       <AppText variant="small">{title}</AppText>
       {items.map((item) => (
         <AppText key={item.id}>{item.title}</AppText>
@@ -80,9 +95,19 @@ function groupByDate(items: NudgeItem[]) {
     }
     return [...current, { date, items: [item] }];
   }, []);
-  return groups.sort((first, second) => {
-    const firstTime = new Date(first.items[0]?.updatedAt ?? 0).getTime();
-    const secondTime = new Date(second.items[0]?.updatedAt ?? 0).getTime();
-    return secondTime - firstTime;
-  });
+  return groups;
 }
+
+const styles = StyleSheet.create({
+  card: {
+    gap: spacing.sm,
+    marginBottom: spacing.sm
+  },
+  next: {
+    fontWeight: "600"
+  },
+  section: {
+    gap: spacing.xs,
+    marginTop: spacing.xs
+  }
+});

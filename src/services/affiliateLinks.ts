@@ -258,7 +258,7 @@ export const AFFILIATE_DISCLOSURE_SHORT_PENDING =
   "Some buttons open partner shops or booking sites. Affiliate programmes are not fully active yet, so we may not earn commission today. Using these links does not cost you extra.";
 
 export const AFFILIATE_DISCLOSURE_LONG_PENDING =
-  "Nudge Me Ready may open partner shops and booking sites (for example Amazon, travel parking, lounges or stays). Affiliate tracking and commission are only active when our partner programme IDs are configured. Until then, links still work as normal shopping/booking pages and do not cost you extra. Official airport assistance pages, maps and search results are never affiliate links. ReadyPack health content is organisational support only — it does not diagnose, prescribe, or change medication.";
+  "Nudge Me Ready may open partner shops and booking sites (for example Amazon, travel parking, lounges or stays). Affiliate tracking and commission are only active when our partner programme IDs are configured. Until then, links still work as normal shopping/booking pages and do not cost you extra. Official airport assistance pages, maps and search results are never affiliate links. Ready4 pack health content is organisational support only — it does not diagnose, prescribe, or change medication.";
 
 const LIVE_PROGRAMME_PARAM_KEYS = new Set([
   "tag",

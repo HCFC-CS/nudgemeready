@@ -1,5 +1,4 @@
-import * as Notifications from "expo-notifications";
-
+import { loadExpoNotifications } from "./expoNotifications";
 import { ensureNotificationPermission } from "./notifications";
 import type { CrewMember } from "../types/crew";
 
@@ -14,6 +13,7 @@ export async function notifyCaptainOfNudgeDeleted(input: {
     return;
   }
 
+  const Notifications = await loadExpoNotifications();
   const whose = input.profileName ? `${input.profileName}'s` : "a";
   await Notifications.scheduleNotificationAsync({
     content: {

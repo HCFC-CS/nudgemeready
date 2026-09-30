@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import {
   defaultEventPrepSteps,
@@ -10,6 +10,7 @@ import {
   getPrepStepTimeMap,
   parseEventDateTime
 } from "../services/eventPrepTimeline";
+import { estimateDrivingTravel } from "../services/travelEstimate";
 import { brand, colors, radii, spacing } from "../theme/theme";
 import type { EventPrepStep, NudgeLocation } from "../types/nudge";
 import { LocationFinderField } from "./LocationFinderField";
@@ -17,13 +18,14 @@ import { AppText } from "./Text";
 import { VoiceFieldActions } from "./VoiceFieldActions";
 
 const durationOptions = [15, 30, 45, 60];
-const travelOptions = [30, 45, 60, 90];
+const baseTravelOptions = [30, 45, 60, 90];
 const readyOptions = [10, 15, 20, 30];
 
 type EventPrepPlannerProps = {
   eventDate: string;
   eventTime: string;
   venue: string;
+  venueLocation?: NudgeLocation;
   homeLocation?: NudgeLocation;
   travelMinutes: number;
   readyMinutes: number;
@@ -39,6 +41,7 @@ export function EventPrepPlanner({
   eventDate,
   eventTime,
   venue,
+  venueLocation,
   homeLocation,
   travelMinutes,
   readyMinutes,
@@ -50,7 +53,17 @@ export function EventPrepPlanner({
   editable = true
 }: EventPrepPlannerProps) {
   const [newStepTitle, setNewStepTitle] = useState("");
+  const [estimatedTravelMinutes, setEstimatedTravelMinutes] = useState<number | undefined>();
+  const [isEstimatingTravel, setIsEstimatingTravel] = useState(false);
+  const [travelEstimateError, setTravelEstimateError] = useState("");
+  const manualTravelOverrideRef = useRef(false);
   const eventAt = useMemo(() => parseEventDateTime(eventDate, eventTime), [eventDate, eventTime]);
+  const travelOptions = useMemo(() => {
+    if (estimatedTravelMinutes == null || baseTravelOptions.includes(estimatedTravelMinutes)) {
+      return baseTravelOptions;
+    }
+    return [...baseTravelOptions, estimatedTravelMinutes].sort((a, b) => a - b);
+  }, [estimatedTravelMinutes]);
   const milestones = useMemo(
     () => getMilestoneTimeline(eventAt, travelMinutes, readyMinutes, prepSteps, venue.trim() || undefined),
     [eventAt, travelMinutes, readyMinutes, prepSteps, venue]
@@ -61,6 +74,75 @@ export function EventPrepPlanner({
   );
   const prepStart = getPrepStartTime(eventAt, travelMinutes, readyMinutes, prepSteps);
   const hasPlan = prepStart && !Number.isNaN(prepStart.getTime());
+  const leaveMilestone = milestones.find((entry) => entry.kind === "leave");
+
+  useEffect(() => {
+    let cancelled = false;
+    const fromLat = homeLocation?.latitude;
+    const fromLon = homeLocation?.longitude;
+    const toLat = venueLocation?.latitude;
+    const toLon = venueLocation?.longitude;
+
+    if (fromLat == null || fromLon == null || toLat == null || toLon == null) {
+      setEstimatedTravelMinutes(undefined);
+      setTravelEstimateError("");
+      setIsEstimatingTravel(false);
+      return;
+    }
+
+    setIsEstimatingTravel(true);
+    setTravelEstimateError("");
+
+    void estimateDrivingTravel(homeLocation, venueLocation)
+      .then((estimate) => {
+        if (cancelled) {
+          return;
+        }
+        if (!estimate) {
+          setEstimatedTravelMinutes(undefined);
+          setTravelEstimateError("Couldn’t estimate travel just now — pick a time below.");
+          return;
+        }
+        setEstimatedTravelMinutes(estimate.minutes);
+        if (!manualTravelOverrideRef.current) {
+          onTravelMinutesChange(estimate.minutes);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEstimatedTravelMinutes(undefined);
+          setTravelEstimateError("Couldn’t estimate travel just now — pick a time below.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsEstimatingTravel(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    homeLocation?.latitude,
+    homeLocation?.longitude,
+    venueLocation?.latitude,
+    venueLocation?.longitude,
+    onTravelMinutesChange
+  ]);
+
+  function setTravelMinutes(value: number) {
+    manualTravelOverrideRef.current = true;
+    onTravelMinutesChange(value);
+  }
+
+  function applyEstimatedTravel() {
+    if (estimatedTravelMinutes == null) {
+      return;
+    }
+    manualTravelOverrideRef.current = false;
+    onTravelMinutesChange(estimatedTravelMinutes);
+  }
 
   function updateStep(stepId: string, updates: Partial<EventPrepStep>) {
     onPrepStepsChange(prepSteps.map((step) => (step.id === stepId ? { ...step, ...updates } : step)));
@@ -81,18 +163,24 @@ export function EventPrepPlanner({
 
   function loadDefaultSteps() {
     onPrepStepsChange(defaultEventPrepSteps.map((step) => ({ ...step, id: `${step.id}-${Date.now()}` })));
-    onTravelMinutesChange(60);
+    if (estimatedTravelMinutes != null) {
+      manualTravelOverrideRef.current = false;
+      onTravelMinutesChange(estimatedTravelMinutes);
+    } else {
+      onTravelMinutesChange(60);
+    }
     onReadyMinutesChange(15);
   }
 
   return (
     <View style={styles.wrap}>
       <View style={styles.headerRow}>
-        <View>
+        <View style={styles.headerText}>
           <AppText variant="heading">Prep plan</AppText>
           {hasPlan ? (
             <AppText variant="caption" style={styles.subtitle}>
-              Start at {formatTimelineTime(prepStart)}
+              Start at {formatTimelineTime(prepStart)} · leave{" "}
+              {leaveMilestone ? formatTimelineTime(leaveMilestone.startAt) : "—"} ({travelMinutes} min travel)
             </AppText>
           ) : (
             <AppText variant="caption" style={styles.dim}>
@@ -116,16 +204,52 @@ export function EventPrepPlanner({
         <LocationFinderField
           label="Leaving from"
           value={homeLocation}
-          onChange={onHomeLocationChange}
+          onChange={(location) => {
+            manualTravelOverrideRef.current = false;
+            onHomeLocationChange(location);
+          }}
           placeholder="Skelmersdale"
           editable={editable}
         />
+        {isEstimatingTravel ? (
+          <View style={styles.estimateRow}>
+            <ActivityIndicator size="small" color={colors.accent} />
+            <AppText variant="caption" style={styles.dim}>
+              Estimating drive time…
+            </AppText>
+          </View>
+        ) : null}
+        {estimatedTravelMinutes != null && !isEstimatingTravel ? (
+          <View style={styles.estimateRow}>
+            <AppText variant="caption" style={styles.estimateText}>
+              Estimated drive ~{estimatedTravelMinutes} min
+            </AppText>
+            {editable && travelMinutes !== estimatedTravelMinutes ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Use estimated travel time of ${estimatedTravelMinutes} minutes`}
+                onPress={applyEstimatedTravel}
+                style={styles.estimateBtn}
+              >
+                <AppText variant="caption" style={styles.estimateBtnLabel}>
+                  Use for leave time
+                </AppText>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+        {travelEstimateError ? (
+          <AppText variant="caption" style={styles.estimateError}>
+            {travelEstimateError}
+          </AppText>
+        ) : null}
         <SettingRow
-          label="Travel time"
+          label="Travel time (sets leave time)"
           options={travelOptions}
           value={travelMinutes}
-          onChange={onTravelMinutesChange}
+          onChange={setTravelMinutes}
           editable={editable}
+          highlightValue={estimatedTravelMinutes}
         />
         <SettingRow
           label="Ready before leaving"
@@ -134,6 +258,9 @@ export function EventPrepPlanner({
           onChange={onReadyMinutesChange}
           editable={editable}
         />
+        <AppText variant="caption" style={styles.dim}>
+          Leave time and every prep step work backwards from the event, using this travel time first.
+        </AppText>
       </View>
 
       <View style={styles.panel}>
@@ -270,13 +397,15 @@ function SettingRow({
   options,
   value,
   onChange,
-  editable
+  editable,
+  highlightValue
 }: {
   label: string;
   options: number[];
   value: number;
   onChange: (value: number) => void;
   editable: boolean;
+  highlightValue?: number;
 }) {
   return (
     <View style={styles.settingRow}>
@@ -293,10 +422,18 @@ function SettingRow({
             style={({ pressed }) => [
               styles.segment,
               value === option && styles.segmentOn,
+              highlightValue === option && value !== option && styles.segmentEstimate,
               pressed && editable && styles.pressed
             ]}
           >
-            <AppText variant="caption" style={[styles.segmentLabel, value === option && styles.segmentLabelOn]}>
+            <AppText
+              variant="caption"
+              style={[
+                styles.segmentLabel,
+                value === option && styles.segmentLabelOn,
+                highlightValue === option && value !== option && styles.segmentLabelEstimate
+              ]}
+            >
               {option}m
             </AppText>
           </Pressable>
@@ -351,6 +488,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: spacing.md
   },
+  headerText: {
+    flex: 1
+  },
   subtitle: {
     color: colors.accent,
     fontWeight: "700",
@@ -388,6 +528,29 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5
+  },
+  estimateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  estimateText: {
+    color: colors.accent,
+    fontWeight: "700"
+  },
+  estimateBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
+    backgroundColor: colors.secondary
+  },
+  estimateBtnLabel: {
+    color: colors.accent,
+    fontWeight: "700"
+  },
+  estimateError: {
+    color: colors.softWarning
   },
   columnHeadings: {
     flexDirection: "row",
@@ -432,12 +595,19 @@ const styles = StyleSheet.create({
   segmentOn: {
     backgroundColor: colors.accent
   },
+  segmentEstimate: {
+    borderWidth: 1,
+    borderColor: colors.accent
+  },
   segmentLabel: {
     color: colors.text,
     fontWeight: "600"
   },
   segmentLabelOn: {
     color: colors.onPrimary
+  },
+  segmentLabelEstimate: {
+    color: colors.accent
   },
   stepsBody: {
     backgroundColor: colors.card,

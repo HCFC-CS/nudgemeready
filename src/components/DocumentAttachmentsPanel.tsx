@@ -1,9 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, View } from "react-native";
 
-import type { IoniconName } from "./iconTypes";
-import { SoftCard } from "./NudgeComponents";
+import { PrimaryButton, SecondaryButton, SoftCard } from "./NudgeComponents";
 import { AppText } from "./Text";
 import {
   DOCUMENT_CATEGORIES,
@@ -25,8 +24,8 @@ type Props = {
 };
 
 export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editable = true }: Props) {
-  const [category, setCategory] = useState<DocumentCategory>("other");
   const [busy, setBusy] = useState(false);
+  const [category, setCategory] = useState<DocumentCategory>("other");
 
   async function addFromPicker(kind: "file" | "photo" | "camera") {
     if (!editable || busy) {
@@ -79,16 +78,12 @@ export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editab
 
   return (
     <SoftCard>
-      <AppText variant="heading">Important documents</AppText>
-      <AppText variant="small" style={styles.intro}>
-        Keep identity, driving, mobility, access cards, tax certificates, and anything else this nudge needs in one place.
-      </AppText>
+      <AppText variant="heading">Documents</AppText>
+      <AppText variant="muted">Keep letters, tickets, or photos with this nudge.</AppText>
 
       {editable ? (
-        <>
-          <AppText variant="caption" style={styles.sectionLabel}>
-            Document type
-          </AppText>
+        <View style={styles.uploadBlock}>
+          <AppText variant="small">What kind of document?</AppText>
           <View style={styles.chips}>
             {DOCUMENT_CATEGORIES.map((entry) => {
               const selected = category === entry.id;
@@ -96,52 +91,48 @@ export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editab
                 <Pressable
                   key={entry.id}
                   accessibilityRole="button"
-                  accessibilityLabel={entry.label}
+                  accessibilityState={{ selected }}
                   onPress={() => setCategory(entry.id)}
-                  style={({ pressed }) => [
-                    styles.chip,
-                    selected && styles.chipSelected,
-                    pressed && styles.pressed
-                  ]}
+                  style={[styles.chip, selected && styles.chipSelected]}
                 >
-                  <AppText variant="small" style={selected ? styles.chipLabelSelected : undefined}>
-                    {entry.label}
-                  </AppText>
+                  <AppText style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{entry.label}</AppText>
                 </Pressable>
               );
             })}
           </View>
-          <AppText variant="small" style={styles.hint}>
-            {DOCUMENT_CATEGORIES.find((entry) => entry.id === category)?.hint}
-          </AppText>
-
           <View style={styles.actions}>
-            <ActionButton
-              icon="document-attach-outline"
-              label="Upload file"
+            <PrimaryButton
+              accessibilityLabel="Upload document"
               disabled={busy}
               onPress={() => void addFromPicker("file")}
-            />
-            <ActionButton
-              icon="images-outline"
-              label="Photo"
+            >
+              Upload document
+            </PrimaryButton>
+            <SecondaryButton
+              accessibilityLabel="Choose photo"
               disabled={busy}
               onPress={() => void addFromPicker("photo")}
-            />
-            <ActionButton
-              icon="camera-outline"
-              label="Scan"
-              disabled={busy}
-              onPress={() => void addFromPicker("camera")}
-            />
+            >
+              Choose photo
+            </SecondaryButton>
+            {Platform.OS !== "web" ? (
+              <SecondaryButton
+                accessibilityLabel="Take photo"
+                disabled={busy}
+                onPress={() => void addFromPicker("camera")}
+              >
+                Take photo
+              </SecondaryButton>
+            ) : null}
           </View>
-          {busy ? <ActivityIndicator color={colors.primaryDark} style={styles.spinner} /> : null}
-        </>
+        </View>
       ) : null}
+
+      {busy ? <ActivityIndicator color={colors.primaryDark} style={styles.spinner} /> : null}
 
       {attachments.length === 0 ? (
         <AppText variant="small" style={styles.empty}>
-          No documents attached yet.
+          None yet.
         </AppText>
       ) : (
         <View style={styles.list}>
@@ -180,82 +171,39 @@ export function DocumentAttachmentsPanel({ itemId, attachments, onChange, editab
   );
 }
 
-function ActionButton({
-  icon,
-  label,
-  onPress,
-  disabled
-}: {
-  icon: IoniconName;
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [styles.actionBtn, (pressed || disabled) && styles.pressed]}
-    >
-      <Ionicons name={icon} size={18} color={colors.primaryDark} />
-      <AppText variant="small">{label}</AppText>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  intro: {
-    color: colors.mutedText,
-    marginTop: spacing.xs,
+  uploadBlock: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
     marginBottom: spacing.sm
-  },
-  sectionLabel: {
-    color: colors.mutedText,
-    marginBottom: spacing.xs
   },
   chips: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8
+    gap: spacing.xs
   },
   chip: {
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radii.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 6
+    backgroundColor: colors.ivoryElevated,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm
   },
   chipSelected: {
-    backgroundColor: colors.primarySoft,
-    borderColor: colors.primary
+    borderColor: colors.primaryDark,
+    backgroundColor: colors.ivoryElevated
+  },
+  chipLabel: {
+    color: colors.text,
+    fontWeight: "600",
+    fontSize: 13
   },
   chipLabelSelected: {
     color: colors.primaryDark
   },
-  hint: {
-    color: colors.mutedText,
-    marginTop: spacing.xs,
-    marginBottom: spacing.sm
-  },
   actions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: spacing.sm
-  },
-  actionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 10
+    gap: spacing.sm
   },
   spinner: {
     marginBottom: spacing.sm
