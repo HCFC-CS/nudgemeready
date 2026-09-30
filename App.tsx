@@ -14,10 +14,10 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
+    const load = import("./src/NudgeApp");
     const ready = Platform.OS === "web" ? Promise.resolve() : waitForNativeModules();
-    void ready
-      .then(() => import("./src/NudgeApp"))
-      .then((mod) => {
+    void Promise.all([ready, load])
+      .then(([, mod]) => {
         if (!cancelled) {
           setRoot(() => mod.default);
         }
@@ -29,7 +29,7 @@ export default function App() {
   }, []);
 
   if (!Root) {
-    return <LaunchShell />;
+    return <LaunchShell message="Just a moment" />;
   }
 
   return (

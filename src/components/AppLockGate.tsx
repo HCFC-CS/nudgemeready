@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
 
 import { useAppSecurity } from "../hooks/useAppSecurity";
@@ -20,12 +20,18 @@ import { colors } from "../theme/theme";
 export function AppLockGate({ children }: { children: React.ReactNode }) {
   const { isReady, isLocked, settings } = useAppSecurity();
   const { isProfileReady, needsRegistration } = useProfile();
+  const [bootTimedOut, setBootTimedOut] = useState(false);
   const shouldLock = isReady && isLocked && settings.lockEnabled && settings.hasCredential;
   const shouldRegister = isProfileReady && needsRegistration;
   const shouldSetupSecurity =
     isReady && isProfileReady && !needsRegistration && !settings.hasCredential;
   const shouldGate =
     isScreenshotMode() ? false : shouldLock || shouldRegister || shouldSetupSecurity;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setBootTimedOut(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     // Only stash deep links while locked — registration can still accept invites after profile is set.
@@ -81,8 +87,8 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
     });
   }, [shouldLock]);
 
-  if (!isReady || !isProfileReady) {
-    return <LaunchShell />;
+  if ((!isReady || !isProfileReady) && !bootTimedOut) {
+    return <LaunchShell message="Just a moment" />;
   }
 
   return <View style={styles.root}>{children}</View>;

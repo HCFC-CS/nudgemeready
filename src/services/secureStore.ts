@@ -1,6 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
+import { withTimeout } from "./withTimeout";
+
 const WEB_PREFIX = "nmr-secure:";
 const ASYNC_PREFIX = "nmr-secure:";
 const memory = new Map<string, string>();
@@ -79,7 +81,7 @@ async function fallbackGet(key: string): Promise<string | null> {
     return memory.get(key) ?? null;
   }
   try {
-    return await AsyncStorage.getItem(ASYNC_PREFIX + key);
+    return await withTimeout(AsyncStorage.getItem(ASYNC_PREFIX + key), null);
   } catch {
     return null;
   }
@@ -88,7 +90,7 @@ async function fallbackGet(key: string): Promise<string | null> {
 async function fallbackSet(key: string, value: string): Promise<void> {
   memory.set(key, value);
   try {
-    await AsyncStorage.setItem(ASYNC_PREFIX + key, value);
+    await withTimeout(AsyncStorage.setItem(ASYNC_PREFIX + key, value), undefined);
   } catch {
     // Keep the in-memory copy.
   }
@@ -97,7 +99,7 @@ async function fallbackSet(key: string, value: string): Promise<void> {
 async function fallbackDelete(key: string): Promise<void> {
   memory.delete(key);
   try {
-    await AsyncStorage.removeItem(ASYNC_PREFIX + key);
+    await withTimeout(AsyncStorage.removeItem(ASYNC_PREFIX + key), undefined);
   } catch {
     // Ignore.
   }

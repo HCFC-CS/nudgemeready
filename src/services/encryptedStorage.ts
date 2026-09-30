@@ -4,6 +4,8 @@ import { gcm } from "@noble/ciphers/aes.js";
 import { bytesToHex, hexToBytes, utf8ToBytes, bytesToUtf8 } from "@noble/ciphers/utils.js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { withTimeout } from "./withTimeout";
+
 const DATA_KEY_STORE = "nudge.security.dataKey.v1";
 const ENCRYPTED_PREFIX = "nmr1:";
 
@@ -110,7 +112,7 @@ export async function getEncryptedItem(key: string): Promise<string | null> {
 
 /** Like getEncryptedItem, but surfaces decrypt failures instead of treating them as empty. */
 export async function getEncryptedItemStrict(key: string): Promise<string | null> {
-  const raw = await AsyncStorage.getItem(key);
+  const raw = await withTimeout(AsyncStorage.getItem(key), null);
   if (raw == null) {
     return null;
   }

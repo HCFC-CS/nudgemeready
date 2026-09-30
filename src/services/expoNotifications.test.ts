@@ -137,8 +137,8 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).toContain("waitForNativeModules");
     expect(src).not.toContain("waitForSplashNative");
     expect(src).toContain("./src/NudgeApp");
-    expect(src).toContain("LaunchErrorBoundary");
     expect(src).toContain("LaunchShell");
+    expect(src).toContain("Just a moment");
   });
 
   it("NudgeApp still delays calendar and location monitors", () => {
@@ -199,5 +199,7 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
   it("boot gate keeps the branded title instead of a blank view", () => {
     const src = readFileSync(join(here, "..", "components", "AppLockGate.tsx"), "utf8");
     expect(src).toContain("LaunchShell");
+    expect(src).toContain("Just a moment");
+    expect(src).toContain("bootTimedOut");
   });
 });
