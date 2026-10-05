@@ -34,7 +34,8 @@
         "APP_VARIANT": "v3"
       },
       "ios": {
-        "distribution": "store"
+        "distribution": "store",
+        "image": "sdk-54"
       }
     }
   },

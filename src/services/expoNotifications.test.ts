@@ -202,4 +202,12 @@ describe("splash JS does not pull calendar, location, or sign-in native modules"
     expect(src).toContain("Just a moment");
     expect(src).toContain("bootTimedOut");
   });
+
+  it("v3 iOS builds pin the SDK 54 image and search node_modules for autolinking", () => {
+    const eas = JSON.parse(readFileSync(join(root, "eas.json"), "utf8"));
+    expect(eas.build.v3.ios.image).toBe("sdk-54");
+    const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+    expect(pkg.expo.autolinking.ios.searchPaths).toEqual(["node_modules"]);
+    expect(pkg.dependencies["expo-updates"]).toBeUndefined();
+  });
 });

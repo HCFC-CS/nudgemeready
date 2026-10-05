@@ -65,5 +65,14 @@
     "playwright": "^1.55.0",
     "typescript": "~5.9.2",
     "vitest": "^3.2.7"
+  },
+  "expo": {
+    "autolinking": {
+      "ios": {
+        "searchPaths": [
+          "node_modules"
+        ]
+      }
+    }
   }
 }
