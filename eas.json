@@ -32,6 +32,9 @@
       "autoIncrement": true,
       "distribution": "store",
       "channel": "v3",
+      "cache": {
+        "key": "v3-updates-sdk54"
+      },
       "env": {
         "APP_VARIANT": "v3"
       },
