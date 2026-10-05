@@ -85,30 +85,6 @@ Leave the **v2** app (`6777057778`) and its 0.2.0 builds untouched.
 
 ---
 
-## JavaScript updates (no extra EAS build credit)
-
-After **one** TestFlight binary that includes `expo-updates`, later **JavaScript-only** fixes can go out with:
-
-```powershell
-npx eas-cli update --channel v3 --platform ios --message "Short note of what changed"
-```
-
-Or:
-
-```bash
-npm run update:ios:v3 -- --message "Short note of what changed"
-```
-
-That uses the EAS **Update** quota, not a new iOS **build** credit. Apple still needs a new `eas build` if native code, permissions, or plugins change.
-
-The v3 binary listens on channel `v3` with runtime version `0.3.1` (the app version). v2, if rebuilt from this repo, uses channel `production` and `0.2.0`, so the two apps do not share JS bundles.
-
-The phone downloads a published update in the background after the taupe screen has painted. It applies on the **next full close and reopen** (swipe the app away, then open it again). It does not reload while you are creating a profile or setting a PIN.
-
-Build 14 and earlier cannot receive these updates — they were compiled without `expo-updates`.
-
----
-
 ## Local / Expo
 
 - Default local config is **v3** (`APP_VARIANT` defaults to v3 in `app.config.js`).

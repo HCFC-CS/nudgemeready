@@ -13,14 +13,12 @@
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview",
       "env": {
         "APP_VARIANT": "v3"
       }
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production",
       "env": {
         "APP_VARIANT": "v2"
       },
@@ -32,9 +30,6 @@
       "autoIncrement": true,
       "distribution": "store",
       "channel": "v3",
-      "cache": {
-        "key": "v3-updates-sdk54"
-      },
       "env": {
         "APP_VARIANT": "v3"
       },

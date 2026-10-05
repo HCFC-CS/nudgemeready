@@ -15,7 +15,6 @@ import { RootNavigator } from "./navigation/RootNavigator";
 import { getScreenshotInitialState, getScreenshotScreenId } from "./navigation/screenshotState";
 import { parseInviteFromUrl } from "./services/crewInvites";
 import { waitAfterPaint, waitForNativeModules } from "./services/expoNotifications";
-import { installOtaUpdateSync } from "./services/expoUpdates";
 import { installNotificationHandler } from "./services/notifications";
 import {
   isDeepLinkLockActive,
@@ -149,7 +148,6 @@ function AppContent() {
         }
         completeAuthSessionAfterSplash();
         installNotificationHandler();
-        installOtaUpdateSync();
         setNativeReady(true);
       });
     return () => {
