@@ -89,6 +89,14 @@ describe("OTA stays off the splash path", () => {
     expect(appJson.expo.runtimeVersion).toEqual({ policy: "appVersion" });
   });
 
+  it("app.config.js declares EAS Update so eas build does not rewrite it", () => {
+    const src = readFileSync(join(root, "app.config.js"), "utf8");
+    expect(src).toContain("runtimeVersion");
+    expect(src).toContain('policy: "appVersion"');
+    expect(src).toContain("https://u.expo.dev/6ca4ec88-2487-43ae-a858-5c3d96abf41e");
+    expect(src).toContain('checkAutomatically: "NEVER"');
+  });
+
   it("v3 EAS profile publishes to its own update channel", () => {
     const eas = JSON.parse(readFileSync(join(root, "eas.json"), "utf8"));
     expect(eas.build.v3.channel).toBe("v3");
