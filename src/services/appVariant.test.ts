@@ -22,6 +22,7 @@ describe("v4 is a separate install from v2 and v3", () => {
     expect(eas.build.v3.env.APP_VARIANT).toBe("v3");
     expect(eas.build.production.env.APP_VARIANT).toBe("v2");
     expect(eas.submit.v3.ios.ascAppId).toBe("6805037796");
+    expect(eas.submit.v4.ios.ascAppId).toBe("6820066881");
   });
 
   it("accepts v4 deep links without dropping v2 or v3 prefixes", () => {

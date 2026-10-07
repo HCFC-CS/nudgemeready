@@ -32,7 +32,7 @@ Do this **before** the first v4 Expo build.
 
 3. Copy the new app’s **Apple ID** (numeric) from App Information.
 
-4. Put that number in `eas.json` → `submit.v4.ios.ascAppId`.
+4. Put that number in `eas.json` → `submit.v4.ios.ascAppId` (currently `6820066881`).
 
 5. Privacy / support (same as v2 is fine):
    - `https://nudgemeready.app/privacy/`
