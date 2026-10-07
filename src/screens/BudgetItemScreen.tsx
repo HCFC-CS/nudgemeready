@@ -100,13 +100,13 @@ export function BudgetItemScreen() {
           label="Budget amount (£)"
           value={expected}
           onChangeText={setExpected}
-          keyboardType="number-pad"
+          keyboardType="decimal-pad"
         />
         <Field
           label="Actual amount (£) — optional"
           value={actual}
           onChangeText={setActual}
-          keyboardType="number-pad"
+          keyboardType="decimal-pad"
         />
         <Field label="Due date (YYYY-MM-DD)" value={dueDate} onChangeText={setDueDate} placeholder="2026-11-15" />
 

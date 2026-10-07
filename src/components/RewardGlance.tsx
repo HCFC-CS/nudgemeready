@@ -26,18 +26,28 @@ export function RewardGlance() {
       style={({ pressed }) => [styles.wrap, pressed && styles.pressed]}
     >
       <View style={styles.row}>
-        {nextReward ? (
-          <AppText variant="small" style={styles.line}>
-            {pointsToNext > 0
-              ? `${wallet.availablePoints} / ${nextReward.points} · ${pointsToNext} to “${nextReward.title}”`
-              : `${wallet.availablePoints} pts · “${nextReward.title}” is ready to claim`}
-          </AppText>
-        ) : (
-          <AppText variant="small" style={styles.line}>
-            {wallet.availablePoints} points ready
-          </AppText>
-        )}
-      </View>
+          {nextReward ? (
+            <AppText variant="small" style={styles.line}>
+              {pointsToNext > 0
+                ? `${wallet.availablePoints} points · ${pointsToNext} until “${nextReward.title}”`
+                : `${wallet.availablePoints} pts · “${nextReward.title}” is ready to claim`}
+            </AppText>
+          ) : (
+            <AppText variant="small" style={styles.line}>
+              {wallet.availablePoints} points ready
+            </AppText>
+          )}
+        </View>
+        {nextReward && pointsToNext > 0 ? (
+          <View style={styles.track} accessibilityLabel={`${wallet.availablePoints} of ${nextReward.points} points`}>
+            <View
+              style={[
+                styles.fill,
+                { width: `${Math.min(100, Math.round((wallet.availablePoints / Math.max(nextReward.points, 1)) * 100))}%` }
+              ]}
+            />
+          </View>
+        ) : null}
       {showBig && bigGoal ? (
         <AppText variant="caption" style={styles.big}>
           {pointsToBigGoal > 0
@@ -53,7 +63,7 @@ const styles = StyleSheet.create({
   wrap: {
     marginBottom: spacing.sm,
     paddingVertical: spacing.xs,
-    gap: 2
+    gap: spacing.xs
   },
   row: {
     flexDirection: "row",
@@ -62,6 +72,17 @@ const styles = StyleSheet.create({
   line: {
     color: colors.primaryDark,
     fontWeight: "600"
+  },
+  track: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.ivoryElevated,
+    overflow: "hidden"
+  },
+  fill: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.softGold
   },
   big: {
     color: colors.mutedText

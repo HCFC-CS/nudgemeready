@@ -23,6 +23,8 @@ export type AppPreferences = {
   weeklyReviewDismissedWeek?: string;
   /** Once true, we do not ask again to turn on lock-screen nudges. */
   notificationAskOffered?: boolean;
+  /** Optional first-run “what would help most” choice. */
+  firstRunFocus?: string;
 };
 
 export const defaultAppPreferences: AppPreferences = {
@@ -42,7 +44,8 @@ export const defaultAppPreferences: AppPreferences = {
   importFromPhoneCalendar: false,
   shopSuggestions: true,
   weeklyReviewDismissedWeek: undefined,
-  notificationAskOffered: false
+  notificationAskOffered: false,
+  firstRunFocus: undefined
 };
 
 export async function loadAppPreferences(): Promise<AppPreferences> {

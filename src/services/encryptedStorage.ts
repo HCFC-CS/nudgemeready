@@ -1,5 +1,5 @@
 import * as Crypto from "expo-crypto";
-import * as SecureStore from "expo-secure-store";
+import * as SecureStore from "./secureStore";
 import { gcm } from "@noble/ciphers/aes.js";
 import { bytesToHex, hexToBytes, utf8ToBytes, bytesToUtf8 } from "@noble/ciphers/utils.js";
 import AsyncStorage from "@react-native-async-storage/async-storage";

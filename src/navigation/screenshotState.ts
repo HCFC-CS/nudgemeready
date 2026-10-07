@@ -40,6 +40,24 @@ const tabScreens = new Set<keyof RootStackParamList | string>([
 
 const TAB_ORDER = ["Home", "Today", "Capture", "More", "Focus"] as const;
 
+const EXTRA_STACK_SCREENS = new Set([
+  "Budget",
+  "BudgetProject",
+  "CalendarHub",
+  "DocumentsHub",
+  "SavedThings",
+  "ReadyPacks",
+  "ComingUp",
+  "FirstRun",
+  "DidSomething",
+  "CrewHub",
+  "Circle",
+  "MyCrew",
+  "NudgyCrew",
+  "CrewsISupport",
+  "AddTask"
+]);
+
 function createRoute(name: string, params?: object) {
   return params ? { name, params, key: `${name}-screenshot` } : { name, key: `${name}-screenshot` };
 }
@@ -62,14 +80,32 @@ export function getScreenshotInitialState(screenId: string): PartialState<Naviga
   }
 
   if (screenId === "ItemDetails") {
-    const draft = mockNudgeItems.find((item) => item.id === "subtask-paint") ?? mockNudgeItems[0];
+    const itemId = getScreenshotItemId();
+    const draft =
+      mockNudgeItems.find((item) => item.id === itemId) ??
+      mockNudgeItems.find((item) => item.id === "subtask-paint") ??
+      mockNudgeItems[0];
     return {
       index: 0,
       routes: [createRoute("ItemDetails", { draft })]
     };
   }
 
-  if (screenshotTargets.some((target) => target.id === screenId)) {
+  if (screenId === "ReadyPackPreview") {
+    return {
+      index: 0,
+      routes: [createRoute("ReadyPackPreview", { packId: getScreenshotPackId() ?? "ready4-home" })]
+    };
+  }
+
+  if (screenId === "PackPlanner") {
+    return {
+      index: 0,
+      routes: [createRoute("PackPlanner", { packId: getScreenshotPackId() ?? "ready4-home" })]
+    };
+  }
+
+  if (screenshotTargets.some((target) => target.id === screenId) || EXTRA_STACK_SCREENS.has(screenId)) {
     return {
       index: 0,
       routes: [createRoute(screenId)]
@@ -84,5 +120,29 @@ export function getScreenshotScreenId() {
     return undefined;
   }
   const params = new URLSearchParams(window.location.search);
-  return params.get("screenshot") ?? undefined;
+  return params.get("screenshot") ?? params.get("screen") ?? undefined;
+}
+
+export function getScreenshotPackId() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+  return new URLSearchParams(window.location.search).get("pack") ?? undefined;
+}
+
+export function getScreenshotItemId() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+  return new URLSearchParams(window.location.search).get("item") ?? undefined;
+}
+
+export function isScreenshotMode() {
+  return Boolean(getScreenshotScreenId());
+}
+
+/** Splash stays on first-open registration. Other shots use a completed demo profile. */
+export function shouldUseScreenshotDemoProfile() {
+  const screenId = getScreenshotScreenId();
+  return Boolean(screenId && screenId !== "Splash");
 }

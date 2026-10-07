@@ -4,6 +4,7 @@ import { View, StyleSheet } from "react-native";
 import { useAppSecurity } from "../hooks/useAppSecurity";
 import { useProfile } from "../hooks/useProfile";
 import { navigationRef } from "../navigation/navigationRef";
+import { isScreenshotMode } from "../navigation/screenshotState";
 import {
   onDeepLinkUnlock,
   setDeepLinkLockActive,
@@ -22,7 +23,8 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   const shouldRegister = isProfileReady && needsRegistration;
   const shouldSetupSecurity =
     isReady && isProfileReady && !needsRegistration && !settings.hasCredential;
-  const shouldGate = shouldLock || shouldRegister || shouldSetupSecurity;
+  const shouldGate =
+    isScreenshotMode() ? false : shouldLock || shouldRegister || shouldSetupSecurity;
 
   useEffect(() => {
     // Only stash deep links while locked — registration can still accept invites after profile is set.
@@ -45,7 +47,8 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
         route?.name === "TermsOfUse" ||
         route?.name === "CrewTerms" ||
         route?.name === "LegalInfo" ||
-        route?.name === "AcceptInvite"
+        route?.name === "AcceptInvite" ||
+        route?.name === "FirstRun"
       ) {
         return;
       }

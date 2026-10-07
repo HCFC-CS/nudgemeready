@@ -6,10 +6,16 @@ import {
   resyncTimedNudges,
   syncSpeakingReminderNotifications
 } from "../services/speakingReminders";
-import { completeItem, deleteItem, updateItem } from "../services/nudgeItems";
+import { completeItem, deleteItem, updateItem, upsertNudgeItem } from "../services/nudgeItems";
 import { markPackItemEdited } from "../services/readyPackInstall";
 import { cleanupAttachmentsForItem } from "../services/documentAttachments";
-import { clearNudgeItemsStorage, loadNudgeItems, saveNudgeItems } from "../services/nudgeItemsStorage";
+import { isScreenshotMode } from "../navigation/screenshotState";
+import {
+  clearNudgeItemsStorage,
+  getDemoNudgeItems,
+  loadNudgeItems,
+  saveNudgeItems
+} from "../services/nudgeItemsStorage";
 import { syncDailySummaryNotification } from "../services/dailySummary";
 import { useCrew } from "./useCrew";
 import { useNudgeActor } from "./useNudgeActor";
@@ -41,6 +47,14 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let active = true;
+    if (isScreenshotMode()) {
+      setItems(getDemoNudgeItems());
+      setLoadError(null);
+      setIsReady(true);
+      return () => {
+        active = false;
+      };
+    }
     loadNudgeItems()
       .then((loaded) => {
         if (active) {
@@ -59,14 +73,14 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    if (!isReady) {
+    if (!isReady || isScreenshotMode()) {
       return;
     }
     void saveNudgeItems(items);
   }, [isReady, items]);
 
   useEffect(() => {
-    if (!isReady) {
+    if (!isReady || isScreenshotMode()) {
       return;
     }
     let cancelled = false;
@@ -120,9 +134,9 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
                 existing
               )
             : item;
-        return updateItem(current, item.id, nextItem);
+        return upsertNudgeItem(current, nextItem);
       }
-      return [item, ...current];
+      return upsertNudgeItem(current, item);
     });
 
     void (async () => {
