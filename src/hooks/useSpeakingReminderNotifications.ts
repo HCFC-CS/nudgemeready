@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import * as Notifications from "expo-notifications";
+import { useEffect, useRef } from "react";
 import { Linking } from "react-native";
 
 import { navigateToItemDetails } from "../navigation/navigationRef";
-import { loadExpoNotifications, waitForNativeModules } from "../services/expoNotifications";
 import {
   handlePayLaterConfirmResponse,
   PAY_LATER_CONFIRM_ROLE,
@@ -12,17 +12,7 @@ import { handleSpeakingReminderNotification } from "../services/speakingReminder
 import { useNudgeActor } from "./useNudgeActor";
 import { useNudgeItems } from "./useNudgeItems";
 
-type ReceivedNotification = {
-  request: {
-    identifier: string;
-    content: {
-      body?: string | null;
-      data?: unknown;
-    };
-  };
-};
-
-function openPayLaterLinkIfPresent(notification: ReceivedNotification) {
+function openPayLaterLinkIfPresent(notification: Notifications.Notification) {
   const data = notification.request.content.data as
     | { role?: string; payUrl?: string }
     | undefined;
@@ -41,126 +31,91 @@ export function useSpeakingReminderNotifications() {
   const actor = useNudgeActor();
   const itemsRef = useRef(items);
   const handledResponseId = useRef<string | null>(null);
-  const [splashSettled, setSplashSettled] = useState(false);
   itemsRef.current = items;
 
   useEffect(() => {
-    let cancelled = false;
-    void waitForNativeModules().then(() => {
-      if (!cancelled) {
-        setSplashSettled(true);
+    const received = Notifications.addNotificationReceivedListener((notification) => {
+      handleSpeakingReminderNotification(notification, itemsRef.current, actor.id);
+    });
+
+    const response = Notifications.addNotificationResponseReceivedListener((responseNotification) => {
+      handledResponseId.current = responseNotification.notification.request.identifier;
+      const data = responseNotification.notification.request.content.data as
+        | { role?: string; placeId?: string; payUrl?: string }
+        | undefined;
+
+      if (data?.role === PAY_LATER_CONFIRM_ROLE) {
+        void handlePayLaterConfirmResponse(
+          responseNotification.actionIdentifier,
+          data.placeId
+        ).then((handled) => {
+          if (!handled && data.payUrl) {
+            void Linking.openURL(data.payUrl).catch(() => undefined);
+          }
+        });
+        handleSpeakingReminderNotification(
+          responseNotification.notification,
+          itemsRef.current,
+          actor.id
+        );
+        return;
+      }
+
+      if (openPayLaterLinkIfPresent(responseNotification.notification)) {
+        handleSpeakingReminderNotification(
+          responseNotification.notification,
+          itemsRef.current,
+          actor.id
+        );
+        return;
+      }
+      const item = handleSpeakingReminderNotification(
+        responseNotification.notification,
+        itemsRef.current,
+        actor.id
+      );
+      if (item) {
+        navigateToItemDetails(item);
       }
     });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!splashSettled) {
-      return;
-    }
-    const subs: { received?: { remove: () => void }; response?: { remove: () => void } } = {};
-    let cancelled = false;
-
-    void loadExpoNotifications()
-      .then((Notifications) => {
-        if (cancelled) {
-          return;
-        }
-        try {
-          subs.received = Notifications.addNotificationReceivedListener((notification) => {
-            handleSpeakingReminderNotification(notification, itemsRef.current, actor.id);
-          });
-
-          subs.response = Notifications.addNotificationResponseReceivedListener((responseNotification) => {
-            handledResponseId.current = responseNotification.notification.request.identifier;
-            const data = responseNotification.notification.request.content.data as
-              | { role?: string; placeId?: string; payUrl?: string }
-              | undefined;
-
-            if (data?.role === PAY_LATER_CONFIRM_ROLE) {
-              void handlePayLaterConfirmResponse(
-                responseNotification.actionIdentifier,
-                data.placeId
-              ).then((handled) => {
-                if (!handled && data.payUrl) {
-                  void Linking.openURL(data.payUrl).catch(() => undefined);
-                }
-              });
-              handleSpeakingReminderNotification(
-                responseNotification.notification,
-                itemsRef.current,
-                actor.id
-              );
-              return;
-            }
-
-            if (openPayLaterLinkIfPresent(responseNotification.notification)) {
-              handleSpeakingReminderNotification(
-                responseNotification.notification,
-                itemsRef.current,
-                actor.id
-              );
-              return;
-            }
-            const item = handleSpeakingReminderNotification(
-              responseNotification.notification,
-              itemsRef.current,
-              actor.id
-            );
-            if (item) {
-              navigateToItemDetails(item);
-            }
-          });
-        } catch {
-          // Native listener setup must not kill the splash screen.
-        }
-      })
-      .catch(() => undefined);
 
     return () => {
-      cancelled = true;
-      subs.received?.remove();
-      subs.response?.remove();
+      received.remove();
+      response.remove();
     };
-  }, [actor.id, splashSettled]);
+  }, [actor.id]);
 
   useEffect(() => {
-    if (!isReady || !splashSettled) {
+    if (!isReady) {
       return;
     }
 
     let active = true;
-    void loadExpoNotifications()
-      .then((Notifications) =>
-        Notifications.getLastNotificationResponseAsync().then(async (last) => {
-          if (!active || !last) {
-            return;
-          }
-          const responseId = last.notification.request.identifier;
-          if (handledResponseId.current === responseId) {
-            return;
-          }
-          handledResponseId.current = responseId;
-          if (openPayLaterLinkIfPresent(last.notification)) {
-            await Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
-            return;
-          }
-          const data = last.notification.request.content.data as { itemId?: string } | undefined;
-          const item = data?.itemId
-            ? itemsRef.current.find((candidate) => candidate.id === data.itemId)
-            : undefined;
-          if (item && item.status !== "done" && item.status !== "cancelled") {
-            navigateToItemDetails(item);
-          }
-          await Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
-        })
-      )
-      .catch(() => undefined);
+    void Notifications.getLastNotificationResponseAsync().then(async (last) => {
+      if (!active || !last) {
+        return;
+      }
+      const responseId = last.notification.request.identifier;
+      if (handledResponseId.current === responseId) {
+        return;
+      }
+      handledResponseId.current = responseId;
+      if (openPayLaterLinkIfPresent(last.notification)) {
+        await Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+        return;
+      }
+      const data = last.notification.request.content.data as { itemId?: string } | undefined;
+      const item = data?.itemId
+        ? itemsRef.current.find((candidate) => candidate.id === data.itemId)
+        : undefined;
+      if (item && item.status !== "done" && item.status !== "cancelled") {
+        navigateToItemDetails(item);
+      }
+      await Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+    });
 
     return () => {
       active = false;
     };
-  }, [isReady, splashSettled]);
+  }, [isReady]);
 }

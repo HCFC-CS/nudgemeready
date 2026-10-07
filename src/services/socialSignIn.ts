@@ -1,7 +1,10 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
 
-import { waitForNativeModules } from "./expoNotifications";
+WebBrowser.maybeCompleteAuthSession();
 
 export type SocialAuthProvider = "apple" | "google";
 
@@ -30,20 +33,6 @@ export function isGoogleSignInConfigured(): boolean {
   return Boolean(extra.googleIosClientId || extra.googleAndroidClientId || extra.googleWebClientId);
 }
 
-/** Native WebBrowser redirect completion — never call during splash JS startup. */
-export function completeAuthSessionAfterSplash() {
-  void waitForNativeModules()
-    .then(() => import("expo-web-browser"))
-    .then((WebBrowser) => {
-      try {
-        WebBrowser.maybeCompleteAuthSession();
-      } catch {
-        // Redirect completion is optional.
-      }
-    })
-    .catch(() => undefined);
-}
-
 /**
  * Sign in with Apple — prefills name/email for local profile.
  * Does not create a cloud account; credentials stay on-device.
@@ -53,7 +42,6 @@ export async function signInWithApple(): Promise<SocialSignInResult> {
     throw new Error("Sign in with Apple is available on iPhone and iPad.");
   }
 
-  const AppleAuthentication = await import("expo-apple-authentication");
   const available = await AppleAuthentication.isAvailableAsync();
   if (!available) {
     throw new Error("Sign in with Apple isn’t available on this device.");
@@ -96,7 +84,6 @@ export async function signInWithGoogle(): Promise<SocialSignInResult> {
     );
   }
 
-  const AuthSession = await import("expo-auth-session");
   const extra = getExtra();
   const redirectUri = AuthSession.makeRedirectUri({ scheme: "nudge-me" });
   const clientId =

@@ -34,11 +34,10 @@ function waitForServer(url, timeoutMs = 180000) {
   });
 }
 
-const server = spawn(expoCmd, ["start", "--web", "--port", String(port)], {
+const server = spawn(expoCmd, ["start", "--web", "--port", String(port), "--non-interactive"], {
   cwd: projectRoot,
   stdio: "inherit",
-  shell: isWindows,
-  env: { ...process.env, CI: "1", APP_VARIANT: process.env.APP_VARIANT || "v3" }
+  shell: isWindows
 });
 
 let captureError;

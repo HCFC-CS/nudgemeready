@@ -1,16 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 
 import { useAppSecurity } from "../hooks/useAppSecurity";
 import { useProfile } from "../hooks/useProfile";
 import { navigationRef } from "../navigation/navigationRef";
-import { isScreenshotMode } from "../navigation/screenshotState";
 import {
   onDeepLinkUnlock,
   setDeepLinkLockActive,
   takePendingInvite
 } from "../services/pendingDeepLinks";
-import { LaunchShell } from "./LaunchShell";
 import { colors } from "../theme/theme";
 
 /**
@@ -20,18 +18,11 @@ import { colors } from "../theme/theme";
 export function AppLockGate({ children }: { children: React.ReactNode }) {
   const { isReady, isLocked, settings } = useAppSecurity();
   const { isProfileReady, needsRegistration } = useProfile();
-  const [bootTimedOut, setBootTimedOut] = useState(false);
   const shouldLock = isReady && isLocked && settings.lockEnabled && settings.hasCredential;
   const shouldRegister = isProfileReady && needsRegistration;
   const shouldSetupSecurity =
     isReady && isProfileReady && !needsRegistration && !settings.hasCredential;
-  const shouldGate =
-    isScreenshotMode() ? false : shouldLock || shouldRegister || shouldSetupSecurity;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setBootTimedOut(true), 3000);
-    return () => clearTimeout(timer);
-  }, []);
+  const shouldGate = shouldLock || shouldRegister || shouldSetupSecurity;
 
   useEffect(() => {
     // Only stash deep links while locked — registration can still accept invites after profile is set.
@@ -54,8 +45,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
         route?.name === "TermsOfUse" ||
         route?.name === "CrewTerms" ||
         route?.name === "LegalInfo" ||
-        route?.name === "AcceptInvite" ||
-        route?.name === "FirstRun"
+        route?.name === "AcceptInvite"
       ) {
         return;
       }
@@ -87,8 +77,8 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
     });
   }, [shouldLock]);
 
-  if ((!isReady || !isProfileReady) && !bootTimedOut) {
-    return <LaunchShell message="Just a moment" />;
+  if (!isReady || !isProfileReady) {
+    return <View style={styles.boot} accessibilityLabel="Starting Nudge me Ready" />;
   }
 
   return <View style={styles.root}>{children}</View>;
@@ -96,6 +86,10 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1,
+    backgroundColor: colors.background
+  },
+  boot: {
     flex: 1,
     backgroundColor: colors.background
   }

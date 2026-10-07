@@ -1,4 +1,4 @@
-import * as SecureStore from "./secureStore";
+import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { loadAppSecuritySettings } from "./appSecurity";

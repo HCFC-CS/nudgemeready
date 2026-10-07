@@ -21,8 +21,6 @@ module.exports = {
   slug: base.slug,
   version: isV3 ? "0.3.1" : "0.2.0",
   scheme: isV3 ? "nudge-me-v3" : base.scheme,
-  // iOS 26 aborts on New Architecture TurboModule void exceptions during launch.
-  newArchEnabled: false,
   ios: {
     ...base.ios,
     bundleIdentifier: isV3 ? "com.helencunliffe.nudgeme.v3" : base.ios.bundleIdentifier,

@@ -52,7 +52,6 @@ export function MenuTile({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={title}
       onPress={onPress}
       style={({ pressed }) => [styles.menuTile, pressed && styles.menuTilePressed]}
     >

@@ -1,10 +1,8 @@
 import * as Crypto from "expo-crypto";
-import * as SecureStore from "./secureStore";
+import * as SecureStore from "expo-secure-store";
 import { gcm } from "@noble/ciphers/aes.js";
 import { bytesToHex, hexToBytes, utf8ToBytes, bytesToUtf8 } from "@noble/ciphers/utils.js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-import { withTimeout } from "./withTimeout";
 
 const DATA_KEY_STORE = "nudge.security.dataKey.v1";
 const ENCRYPTED_PREFIX = "nmr1:";
@@ -22,31 +20,15 @@ export class StorageDecryptError extends Error {
   }
 }
 
-let dataKeyPromise: Promise<Uint8Array> | null = null;
-
 async function getOrCreateDataKey(): Promise<Uint8Array> {
-  if (!dataKeyPromise) {
-    dataKeyPromise = (async () => {
-      const existing = await SecureStore.getItemAsync(DATA_KEY_STORE);
-      if (existing) {
-        return hexToBytes(existing);
-      }
-      const bytes = await Crypto.getRandomBytesAsync(32);
-      const key = new Uint8Array(bytes);
-      try {
-        await SecureStore.setItemAsync(DATA_KEY_STORE, bytesToHex(key));
-      } catch {
-        // Keep the in-memory key for this session if Keychain is unavailable.
-      }
-      return key;
-    })();
+  const existing = await SecureStore.getItemAsync(DATA_KEY_STORE);
+  if (existing) {
+    return hexToBytes(existing);
   }
-  try {
-    return await dataKeyPromise;
-  } catch (error) {
-    dataKeyPromise = null;
-    throw error;
-  }
+  const bytes = await Crypto.getRandomBytesAsync(32);
+  const key = new Uint8Array(bytes);
+  await SecureStore.setItemAsync(DATA_KEY_STORE, bytesToHex(key));
+  return key;
 }
 
 function isEncryptedPayload(raw: string) {
@@ -112,7 +94,7 @@ export async function getEncryptedItem(key: string): Promise<string | null> {
 
 /** Like getEncryptedItem, but surfaces decrypt failures instead of treating them as empty. */
 export async function getEncryptedItemStrict(key: string): Promise<string | null> {
-  const raw = await withTimeout(AsyncStorage.getItem(key), null);
+  const raw = await AsyncStorage.getItem(key);
   if (raw == null) {
     return null;
   }

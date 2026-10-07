@@ -8,7 +8,6 @@ import {
   useState
 } from "react";
 
-import type { NudgeItem } from "../types/nudge";
 import type { PlannerItem, PlannerItemStatus, PlannerState } from "../types/ready4Planner";
 import { useReadyPacks } from "./useReadyPacks";
 import {
@@ -21,6 +20,7 @@ import {
 } from "../services/ready4PlannerEngine";
 import {
   draftToPlannerItem,
+  nudgeIntentForPlannerType,
   parsePlannerQuickAdd,
   type ParsedPlannerDraft
 } from "../services/ready4PlannerParse";
@@ -29,15 +29,10 @@ import {
   plannerConfigsForInstalledPacks
 } from "../services/ready4PlannerConfigs";
 import { loadPlannerState, savePlannerState } from "../services/ready4PlannerStorage";
+import { createItem } from "../services/nudgeItems";
 import { useNudgeActor } from "./useNudgeActor";
 import { useNudgeItems } from "./useNudgeItems";
-import { useRewardBank } from "./useRewardBank";
-import {
-  buildLinkedNudgeFromPlanner,
-  findLinkedNudge,
-  plannerNeedsNudgeCompletionSync,
-  plannerPatchFromNudge
-} from "../services/plannerNudgeLink";
+import type { NudgeItemType } from "../types/nudge";
 
 type PlannerContextValue = {
   state: PlannerState;
@@ -52,18 +47,30 @@ type PlannerContextValue = {
   archiveItem: (id: string) => void;
   resetWeek: () => void;
   addAssignmentBreakdown: (parentTitle: string, dueAt: string | null, packId?: string) => PlannerItem[];
-  linkNudge: (itemId: string, itemOverride?: PlannerItem) => { nudgeDraftId: string; draft?: NudgeItem };
+  linkNudge: (itemId: string, itemOverride?: PlannerItem) => { nudgeDraftId: string };
 };
 
 const PlannerContext = createContext<PlannerContextValue | undefined>(undefined);
+
+function mapTypeToNudge(type: PlannerItem["type"]): NudgeItemType {
+  if (type === "appointment" || type === "class" || type === "event") {
+    return "appointment";
+  }
+  if (type === "reminder" || type === "deadline") {
+    return "reminder";
+  }
+  if (type === "assignment") {
+    return "project";
+  }
+  return "task";
+}
 
 export function Ready4PlannerProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState<PlannerState>(createDefaultPlannerState);
   const [isReady, setIsReady] = useState(false);
   const { packs, isInstalled } = useReadyPacks();
   const actor = useNudgeActor();
-  const { saveItem, items: nudgeItems, completeNudgeItem, setItemStatus } = useNudgeItems();
-  const { earn } = useRewardBank();
+  const { saveItem } = useNudgeItems();
 
   useEffect(() => {
     loadPlannerState()
@@ -148,62 +155,28 @@ export function Ready4PlannerProvider({ children }: PropsWithChildren) {
 
   const updateItem = useCallback(
     (id: string, patch: Partial<PlannerItem>) => {
-      let updated: PlannerItem | undefined;
       persist((current) => ({
         ...current,
-        items: current.items.map((item) => {
-          if (item.id !== id) {
-            return item;
-          }
-          updated = { ...item, ...patch, updatedAt: new Date().toISOString() };
-          return updated;
-        })
+        items: current.items.map((item) =>
+          item.id === id ? { ...item, ...patch, updatedAt: new Date().toISOString() } : item
+        )
       }));
-      if (updated?.nudgeItemId) {
-        const existing = findLinkedNudge(nudgeItems, updated);
-        if (existing) {
-          saveItem(buildLinkedNudgeFromPlanner(updated, actor, existing));
-        }
-      }
     },
-    [actor, nudgeItems, persist, saveItem]
+    [persist]
   );
 
   const setStatus = useCallback(
     (id: string, status: PlannerItemStatus) => {
       updateItem(id, { status });
-      const item = state.items.find((entry) => entry.id === id);
-      const linkedId = item?.nudgeItemId;
-      if (!linkedId) {
-        return;
-      }
-      if (status === "done") {
-        completeNudgeItem(linkedId);
-        earn({
-          difficulty: "normal",
-          title: item.title,
-          kind: "task",
-          packId: item.ready4PackId,
-          sourceItemId: linkedId
-        });
-        return;
-      }
-      if (status === "not_needed") {
-        setItemStatus(linkedId, "cancelled");
-      }
     },
-    [completeNudgeItem, earn, setItemStatus, state.items, updateItem]
+    [updateItem]
   );
 
   const archiveItem = useCallback(
     (id: string) => {
-      const item = state.items.find((entry) => entry.id === id);
       updateItem(id, { archived: true });
-      if (item?.nudgeItemId) {
-        setItemStatus(item.nudgeItemId, "cancelled");
-      }
     },
-    [setItemStatus, state.items, updateItem]
+    [updateItem]
   );
 
   const resetWeek = useCallback(() => {
@@ -271,52 +244,38 @@ export function Ready4PlannerProvider({ children }: PropsWithChildren) {
       if (!item) {
         return { nudgeDraftId: "" };
       }
-      const existing = findLinkedNudge(nudgeItems, item);
-      const draft = buildLinkedNudgeFromPlanner(item, actor, existing);
+      const draft = createItem({
+        title: item.title,
+        type: mapTypeToNudge(item.type),
+        createdBy: actor,
+        dueDate: item.dueAt ?? item.startAt ?? undefined,
+        startDate: item.startAt ?? undefined,
+        endDate: item.endAt ?? undefined,
+        sourcePackId: item.ready4PackId,
+        nudgeIntent: nudgeIntentForPlannerType(item.type),
+        notes: item.notes ?? undefined,
+        syncToCalendar: true
+      });
       saveItem(draft);
       persist((current) => {
         const exists = current.items.some((entry) => entry.id === itemId);
-        const at = new Date().toISOString();
+        const patched = {
+          ...item,
+          ...(!exists ? {} : current.items.find((entry) => entry.id === itemId)),
+          nudgeItemId: draft.id,
+          updatedAt: new Date().toISOString()
+        };
         return {
           ...current,
           items: exists
-            ? current.items.map((entry) =>
-                entry.id === itemId ? { ...entry, nudgeItemId: draft.id, updatedAt: at } : entry
-              )
-            : [...current.items, { ...item, nudgeItemId: draft.id, updatedAt: at }]
+            ? current.items.map((entry) => (entry.id === itemId ? { ...entry, nudgeItemId: draft.id, updatedAt: patched.updatedAt } : entry))
+            : [...current.items, { ...item, nudgeItemId: draft.id, updatedAt: patched.updatedAt }]
         };
       });
-      return { nudgeDraftId: draft.id, draft };
+      return { nudgeDraftId: draft.id };
     },
-    [actor, nudgeItems, persist, saveItem, state.items]
+    [actor, persist, saveItem, state.items]
   );
-
-  useEffect(() => {
-    if (!isReady) {
-      return;
-    }
-    setState((current) => {
-      let changed = false;
-      const nextItems = current.items.map((item) => {
-        const linked = findLinkedNudge(nudgeItems, item);
-        if (!linked || !plannerNeedsNudgeCompletionSync(item, linked)) {
-          return item;
-        }
-        const patch = plannerPatchFromNudge(linked);
-        changed = true;
-        return {
-          ...item,
-          ...patch,
-          nudgeItemId: item.nudgeItemId ?? linked.id,
-          updatedAt: new Date().toISOString()
-        };
-      });
-      if (!changed) {
-        return current;
-      }
-      return { ...current, items: nextItems, updatedAt: new Date().toISOString() };
-    });
-  }, [isReady, nudgeItems]);
 
   const value: PlannerContextValue = {
     state,

@@ -1,20 +1,8 @@
 const memory = new Map();
 
-const state = {
-  setItemKeys: [],
-  throwOnGet: false
-};
-
 const api = {
-  state,
-  getItem: async (key) => {
-    if (state.throwOnGet) {
-      throw new Error("AsyncStorageException");
-    }
-    return memory.has(key) ? memory.get(key) : null;
-  },
+  getItem: async (key) => (memory.has(key) ? memory.get(key) : null),
   setItem: async (key, value) => {
-    state.setItemKeys.push(key);
     memory.set(key, value);
   },
   removeItem: async (key) => {

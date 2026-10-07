@@ -1,18 +1,10 @@
-import { loadExpoNotifications } from "./expoNotifications";
+import * as Notifications from "expo-notifications";
+import * as Speech from "expo-speech";
+
 import { getTimedNudgeAt, shouldScheduleTimedNudge } from "./timedNudge";
 import { resolveItemCreator } from "./itemPermissions";
 import { adjustDateForQuietHours, shouldAllowNotifications } from "./notificationPrefs";
 import type { NudgeItem } from "../types/nudge";
-
-type ReceivedNotification = {
-  request: {
-    identifier: string;
-    content: {
-      body?: string | null;
-      data?: unknown;
-    };
-  };
-};
 
 const TEN_MINUTES_SECONDS = 10 * 60;
 
@@ -29,19 +21,14 @@ export function playSpeakingReminder(item: NudgeItem) {
   if (!text) {
     return;
   }
-  void import("expo-speech")
-    .then((Speech) => {
-      Speech.stop();
-      Speech.speak(text);
-    })
-    .catch(() => undefined);
+  Speech.stop();
+  Speech.speak(text);
 }
 
 export { getTimedNudgeAt, shouldScheduleTimedNudge } from "./timedNudge";
 
 export async function cancelSpeakingReminderNotifications(item: NudgeItem) {
   const ids = new Set(item.reminderNotificationIds ?? []);
-  const Notifications = await loadExpoNotifications();
 
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -80,7 +67,6 @@ export async function syncSpeakingReminderNotifications(item: NudgeItem): Promis
   const speakingText = getSpeakingReminderText(item);
   const creator = resolveItemCreator(item);
   const ids: string[] = [];
-  const Notifications = await loadExpoNotifications();
 
   const reminderDateRaw = getTimedNudgeAt(item);
   const reminderDate =
@@ -145,7 +131,7 @@ export async function resyncTimedNudges(items: NudgeItem[]): Promise<Record<stri
 }
 
 export function handleSpeakingReminderNotification(
-  notification: ReceivedNotification,
+  notification: Notifications.Notification,
   items: NudgeItem[],
   actorId: string
 ): NudgeItem | undefined {
@@ -180,12 +166,8 @@ export function handleSpeakingReminderNotification(
 
   const speakText = data.speakText ?? notification.request.content.body;
   if (speakText) {
-    void import("expo-speech")
-      .then((Speech) => {
-        Speech.stop();
-        Speech.speak(String(speakText));
-      })
-      .catch(() => undefined);
+    Speech.stop();
+    Speech.speak(String(speakText));
   }
   return undefined;
 }
@@ -216,7 +198,6 @@ function buildNudgeeNotificationContent(
 }
 
 async function ensureNotificationPermission() {
-  const Notifications = await loadExpoNotifications();
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) {
     return true;

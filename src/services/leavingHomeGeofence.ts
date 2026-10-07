@@ -1,4 +1,5 @@
 import * as Location from "expo-location";
+import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
 
 import {
@@ -13,7 +14,6 @@ import {
   type HomeSettings,
   type PlaceKind
 } from "./homeSettingsStorage";
-import { loadExpoNotifications } from "./expoNotifications";
 import { shouldPlayLeavingHomeReminder } from "./leavingHomeReminder";
 
 export const LEAVING_HOME_GEOFENCE_TASK = "leaving-home-geofence";
@@ -62,7 +62,6 @@ TaskManager.defineTask(LEAVING_HOME_GEOFENCE_TASK, async ({ data, error }) => {
 
   const checklist = getPlaceChecklist(place);
   const speakText = buildLeavingPlaceSpeechText(kind, checklist);
-  const Notifications = await loadExpoNotifications();
   await Notifications.scheduleNotificationAsync({
     content: {
       title: `Leaving ${PLACE_LABELS[kind]}`,

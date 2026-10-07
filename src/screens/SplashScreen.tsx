@@ -25,7 +25,6 @@ import { type AuthProvider, type ProfileIcon, useProfile } from "../hooks/usePro
 import { createEmailResetLink, credentialLabel, SUPPORT_EMAIL, type CredentialType } from "../services/appSecurity";
 import { pollCrewUnlockApproval, requestCrewUnlock } from "../services/crewUnlock";
 import { isDevAdminAvailable } from "../services/devAdmin";
-import { waitForNativeModules } from "../services/expoNotifications";
 import { peekPendingInvite } from "../services/pendingDeepLinks";
 import { resetSecurityLockPrompt } from "../services/securityLockPrompt";
 import {
@@ -58,7 +57,7 @@ type SignInStep =
   | "recoveryShown";
 
 export function SplashScreen({ navigation, route }: Props) {
-  const { profile, completeRegistration, needsRegistration, needsFirstRun, isProfileReady } = useProfile();
+  const { profile, completeRegistration, needsRegistration, isProfileReady } = useProfile();
   const { renameSelfProfile, setHasOwnNudgeWorld, myCrewMembers } = useCrew();
   const {
     isReady,
@@ -242,19 +241,9 @@ export function SplashScreen({ navigation, route }: Props) {
   ]);
 
   useEffect(() => {
-    if (step !== "unlock" || !settings.biometricsEnabled || !biometricsAvailable || !needsUnlock) {
-      return;
+    if (step === "unlock" && settings.biometricsEnabled && biometricsAvailable && needsUnlock) {
+      void unlockWithBiometrics();
     }
-    let cancelled = false;
-    void waitForNativeModules().then(() => {
-      if (cancelled) {
-        return;
-      }
-      void unlockWithBiometrics().catch(() => undefined);
-    });
-    return () => {
-      cancelled = true;
-    };
   }, [step, settings.biometricsEnabled, biometricsAvailable, needsUnlock, unlockWithBiometrics]);
 
   useEffect(() => {
@@ -283,13 +272,6 @@ export function SplashScreen({ navigation, route }: Props) {
       setStep("setup");
       setRecoveryEmail(profile.email || recoveryEmail);
       setEnableFaceId(biometricsAvailable);
-      return;
-    }
-    if (needsFirstRun) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "FirstRun" }]
-      });
       return;
     }
     navigation.reset({
@@ -727,7 +709,7 @@ export function SplashScreen({ navigation, route }: Props) {
     finishPasswordReset();
     cancelPasswordRecovery();
     setFreshRecoveryCode("");
-    enterApp("Home");
+    setStep("welcome");
   }
 
   return (

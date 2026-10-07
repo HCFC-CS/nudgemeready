@@ -149,39 +149,27 @@ export function categoryMonthlyTotal(
   );
 }
 
-function safeMinor(value: number | null | undefined): number {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-/** Project budget rollup: envelope or item total, spent (actual), committed, remaining = budget − actual. */
+/** Project budget rollup: total expected, spent (actual), committed (expected remaining). */
 export function summariseProjectBudget(state: BudgetState, budgetId: string) {
-  const budget = state.budgets.find((entry) => entry.id === budgetId);
   const items = itemsForBudget(state, budgetId);
-  let itemBudgetMinor = 0;
+  let totalBudgetMinor = 0;
   let spentMinor = 0;
   let committedMinor = 0;
 
   for (const item of items) {
-    const expected = safeMinor(item.expectedAmountMinor);
-    const actual = safeMinor(item.actualAmountMinor);
-    itemBudgetMinor += expected;
+    const expected = item.expectedAmountMinor ?? 0;
+    const actual = item.actualAmountMinor ?? 0;
+    totalBudgetMinor += expected;
     spentMinor += actual;
     if (actual < expected) {
       committedMinor += expected - actual;
     }
   }
 
-  const envelope = budget?.envelopeMinor;
-  const totalBudgetMinor =
-    envelope != null && Number.isFinite(envelope) ? envelope : itemBudgetMinor;
-  const leftMinor = totalBudgetMinor - spentMinor;
-
   return {
     totalBudgetMinor,
     spentMinor,
     committedMinor,
-    leftMinor,
-    overspent: leftMinor < 0
+    leftMinor: totalBudgetMinor - spentMinor - committedMinor
   };
 }

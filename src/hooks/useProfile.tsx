@@ -8,7 +8,6 @@ import {
 } from "react";
 
 import { getEncryptedItem, setEncryptedItem } from "../services/encryptedStorage";
-import { shouldUseScreenshotDemoProfile } from "../navigation/screenshotState";
 import type { SocialAuthProvider } from "../services/socialSignIn";
 
 const PROFILE_KEY = "do-enough-done:profile";
@@ -48,9 +47,6 @@ type Profile = {
   authProvider?: AuthProvider;
   /** ISO timestamp set when first-install registration is completed. */
   registeredAt?: string;
-  /** True only after a new registration, until the short first-run is finished. */
-  pendingFirstRun?: boolean;
-  firstRunCompletedAt?: string;
   /** When the user accepted Terms of Use */
   termsOfUseAcceptedAt?: string;
   termsOfUseVersion?: string;
@@ -71,8 +67,6 @@ type ProfileContextValue = {
   updateDateOfBirth: (dateOfBirth: string) => void;
   saveProfile: (next: ProfileDraft) => void;
   completeRegistration: (next: ProfileDraft) => void;
-  completeFirstRun: () => void;
-  needsFirstRun: boolean;
 };
 
 const defaultProfile: Profile = {
@@ -89,43 +83,22 @@ export function ProfileProvider({ children }: PropsWithChildren) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (shouldUseScreenshotDemoProfile()) {
-      setProfile({
-        name: "Helen",
-        icon: "sun",
-        email: "hello@nudgemeready.app",
-        phone: "",
-        dateOfBirth: "1980-01-15",
-        authProvider: "email",
-        registeredAt: "2026-01-01T09:00:00.000Z",
-        termsOfUseAcceptedAt: "2026-01-01T09:00:00.000Z",
-        termsOfUseVersion: "1.1"
-      });
-      setIsReady(true);
-      return;
-    }
     getEncryptedItem(PROFILE_KEY)
       .then((raw) => {
-        if (!raw) {
-          return;
-        }
-        try {
+        if (raw) {
           const parsed = { ...defaultProfile, ...JSON.parse(raw) } as Profile;
           // Existing installs that already chose a name shouldn't be forced through registration again.
           if (parsed.name.trim() && !parsed.registeredAt) {
             parsed.registeredAt = "migrated";
           }
           setProfile(parsed);
-        } catch {
-          // Keep the empty default profile rather than crash splash.
         }
       })
-      .catch(() => undefined)
       .finally(() => setIsReady(true));
   }, []);
 
   useEffect(() => {
-    if (isReady && !shouldUseScreenshotDemoProfile()) {
+    if (isReady) {
       void setEncryptedItem(PROFILE_KEY, JSON.stringify(profile));
     }
   }, [isReady, profile]);
@@ -169,8 +142,6 @@ export function ProfileProvider({ children }: PropsWithChildren) {
         dateOfBirth: next.dateOfBirth?.trim() || profile.dateOfBirth,
         authProvider: next.authProvider ?? profile.authProvider,
         registeredAt: next.registeredAt ?? profile.registeredAt,
-        pendingFirstRun: next.pendingFirstRun ?? profile.pendingFirstRun,
-        firstRunCompletedAt: next.firstRunCompletedAt ?? profile.firstRunCompletedAt,
         termsOfUseAcceptedAt: next.termsOfUseAcceptedAt ?? profile.termsOfUseAcceptedAt,
         termsOfUseVersion: next.termsOfUseVersion ?? profile.termsOfUseVersion
       });
@@ -179,8 +150,6 @@ export function ProfileProvider({ children }: PropsWithChildren) {
       profile.authProvider,
       profile.dateOfBirth,
       profile.registeredAt,
-      profile.pendingFirstRun,
-      profile.firstRunCompletedAt,
       profile.termsOfUseAcceptedAt,
       profile.termsOfUseVersion
     ]
@@ -196,19 +165,9 @@ export function ProfileProvider({ children }: PropsWithChildren) {
       dateOfBirth: next.dateOfBirth?.trim(),
       authProvider: next.authProvider ?? "email",
       registeredAt: new Date().toISOString(),
-      pendingFirstRun: true,
-      firstRunCompletedAt: undefined,
       termsOfUseAcceptedAt: next.termsOfUseAcceptedAt ?? new Date().toISOString(),
       termsOfUseVersion: next.termsOfUseVersion
     });
-  }, []);
-
-  const completeFirstRun = useCallback(() => {
-    setProfile((current) => ({
-      ...current,
-      pendingFirstRun: false,
-      firstRunCompletedAt: current.firstRunCompletedAt ?? new Date().toISOString()
-    }));
   }, []);
 
   // First install, or complete missing mandatory fields (email / date of birth).
@@ -219,15 +178,12 @@ export function ProfileProvider({ children }: PropsWithChildren) {
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim()) ||
       !profile.dateOfBirth);
 
-  const needsFirstRun = isReady && !needsRegistration && profile.pendingFirstRun === true;
-
   return (
     <ProfileContext.Provider
       value={{
         profile,
         isProfileReady: isReady,
         needsRegistration,
-        needsFirstRun,
         updateName,
         updateIcon,
         updateAvatarUri,
@@ -236,8 +192,7 @@ export function ProfileProvider({ children }: PropsWithChildren) {
         updatePhone,
         updateDateOfBirth,
         saveProfile,
-        completeRegistration,
-        completeFirstRun
+        completeRegistration
       }}
     >
       {children}

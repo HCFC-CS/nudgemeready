@@ -31,7 +31,6 @@ import {
   verifyRecoveryCode
 } from "../services/appSecurity";
 import { isDevAdminAvailable } from "../services/devAdmin";
-import { waitForNativeModules } from "../services/expoNotifications";
 import { requestPasswordResetEmail } from "../services/passwordResetEmail";
 
 const MAX_FAILED_ATTEMPTS = 5;
@@ -116,32 +115,21 @@ export function AppSecurityProvider({
 
   const refresh = useCallback(async () => {
     const next = await loadAppSecuritySettings();
+    const capability = await getBiometricCapability();
     setSettings(next);
-    try {
-      await waitForNativeModules();
-      const capability = await getBiometricCapability();
-      setBiometricLabel(capability.label);
-      setBiometricsAvailable(capability.available);
-      setHasFaceId(capability.hasFace);
-    } catch {
-      // Face ID probe must not kill splash.
-    }
+    setBiometricLabel(capability.label);
+    setBiometricsAvailable(capability.available);
+    setHasFaceId(capability.hasFace);
   }, []);
 
   useEffect(() => {
     (async () => {
-      try {
-        const next = await loadAppSecuritySettings();
-        setSettings(next);
-        if (!bypassLock && next.lockEnabled && next.hasCredential) {
-          setIsLocked(true);
-        }
-      } catch {
-        // Keychain must not keep splash stuck or kill launch.
-      } finally {
-        setIsReady(true);
+      await refresh();
+      const next = await loadAppSecuritySettings();
+      if (!bypassLock && next.lockEnabled && next.hasCredential) {
+        setIsLocked(true);
       }
-      void refresh();
+      setIsReady(true);
     })();
   }, [bypassLock, refresh]);
 
@@ -224,19 +212,15 @@ export function AppSecurityProvider({
       return false;
     }
     const fallback = `Use ${credentialLabel(settings.credentialType)}`;
-    try {
-      const ok = await authenticateWithBiometrics("Unlock Nudge me Ready", fallback);
-      if (ok) {
-        setIsLocked(false);
-        setRecoveryAuthorized(false);
-        clearLockout();
-      } else {
-        registerFailedUnlock();
-      }
-      return ok;
-    } catch {
-      return false;
+    const ok = await authenticateWithBiometrics("Unlock Nudge me Ready", fallback);
+    if (ok) {
+      setIsLocked(false);
+      setRecoveryAuthorized(false);
+      clearLockout();
+    } else {
+      registerFailedUnlock();
     }
+    return ok;
   }, [
     biometricsAvailable,
     clearLockout,

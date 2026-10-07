@@ -1,22 +1,15 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useState } from "react";
 
-import { waitForNativeModules } from "../services/expoNotifications";
 import { canEditItem } from "../services/itemPermissions";
 import {
   cancelSpeakingReminderNotifications,
   resyncTimedNudges,
   syncSpeakingReminderNotifications
 } from "../services/speakingReminders";
-import { completeItem, deleteItem, updateItem, upsertNudgeItem } from "../services/nudgeItems";
+import { completeItem, deleteItem, updateItem } from "../services/nudgeItems";
 import { markPackItemEdited } from "../services/readyPackInstall";
 import { cleanupAttachmentsForItem } from "../services/documentAttachments";
-import { isScreenshotMode } from "../navigation/screenshotState";
-import {
-  clearNudgeItemsStorage,
-  getDemoNudgeItems,
-  loadNudgeItems,
-  saveNudgeItems
-} from "../services/nudgeItemsStorage";
+import { clearNudgeItemsStorage, loadNudgeItems, saveNudgeItems } from "../services/nudgeItemsStorage";
 import { syncDailySummaryNotification } from "../services/dailySummary";
 import { useCrew } from "./useCrew";
 import { useNudgeActor } from "./useNudgeActor";
@@ -48,14 +41,6 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let active = true;
-    if (isScreenshotMode()) {
-      setItems(getDemoNudgeItems());
-      setLoadError(null);
-      setIsReady(true);
-      return () => {
-        active = false;
-      };
-    }
     loadNudgeItems()
       .then((loaded) => {
         if (active) {
@@ -74,47 +59,41 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    if (!isReady || isScreenshotMode()) {
+    if (!isReady) {
       return;
     }
     void saveNudgeItems(items);
   }, [isReady, items]);
 
   useEffect(() => {
-    if (!isReady || isScreenshotMode()) {
+    if (!isReady) {
       return;
     }
     let cancelled = false;
     const snapshot = items;
-    void waitForNativeModules().then(() => {
-      void (async () => {
-        try {
-          const idsByItem = await resyncTimedNudges(snapshot);
-          if (cancelled) {
-            return;
+    void (async () => {
+      const idsByItem = await resyncTimedNudges(snapshot);
+      if (cancelled) {
+        return;
+      }
+      setItems((current) => {
+        let next = current;
+        let changed = false;
+        for (const item of current) {
+          const ids = idsByItem[item.id];
+          if (!ids) {
+            continue;
           }
-          setItems((current) => {
-            let next = current;
-            let changed = false;
-            for (const item of current) {
-              const ids = idsByItem[item.id];
-              if (!ids) {
-                continue;
-              }
-              const prev = item.reminderNotificationIds ?? [];
-              if (ids.join() !== prev.join()) {
-                next = updateItem(next, item.id, { reminderNotificationIds: ids });
-                changed = true;
-              }
-            }
-            return changed ? next : current;
-          });
-          await syncDailySummaryNotification(snapshot);
-        } catch {
-          // Native notification APIs must not kill splash.
+          const prev = item.reminderNotificationIds ?? [];
+          if (ids.join() !== prev.join()) {
+            next = updateItem(next, item.id, { reminderNotificationIds: ids });
+            changed = true;
+          }
         }
-      })();
-    });
+        return changed ? next : current;
+      });
+      await syncDailySummaryNotification(snapshot);
+    })();
     return () => {
       cancelled = true;
     };
@@ -141,9 +120,9 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
                 existing
               )
             : item;
-        return upsertNudgeItem(current, nextItem);
+        return updateItem(current, item.id, nextItem);
       }
-      return upsertNudgeItem(current, item);
+      return [item, ...current];
     });
 
     void (async () => {

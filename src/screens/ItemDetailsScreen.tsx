@@ -81,8 +81,8 @@ import {
 } from "../services/appointmentReminders";
 import { getPlannerConfig } from "../services/ready4PlannerConfigs";
 import { removeItemFromPhoneCalendar, syncItemToPhoneCalendar } from "../services/calendarSync";
-import { formatNudgeTypeLabel, getTypeChipColors } from "../services/typeAccent";
-import { colors, radii, shadows, spacing } from "../theme/theme";
+import { formatNudgeTypeLabel } from "../services/typeAccent";
+import { colors, radii, shadows, spacing, taskTypeAccentColors } from "../theme/theme";
 import type {
   AppointmentGuest,
   ListShare,
@@ -219,7 +219,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
   function buildSavedItem(status: NudgeItemStatus = draft.status): NudgeItem {
     return {
       ...draft,
-      title: title.trim() || draft.title.trim() || (draft.type === "project" ? "Project" : draft.title),
+      title: title.trim() || draft.title,
       status,
       createdBy: resolveItemCreator(draft),
       isLocked,
@@ -328,7 +328,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     return <PackProvenanceBanner sourcePackId={draft.sourcePackId} userEdited={draft.userEdited} />;
   }
 
-  async function saveAndOpenWorld(status = draft.status, leaveProject = false) {
+  async function saveAndOpenWorld(status = draft.status) {
     if (!editable) {
       return;
     }
@@ -385,14 +385,6 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
 
     saveItem(saved);
     syncAppointmentRemindersFor(saved);
-    if (saved.parentId) {
-      navigation.goBack();
-      return;
-    }
-    if (saved.type === "project" && !leaveProject) {
-      setNotice("Saved. Add a task or anything else whenever you like.");
-      return;
-    }
     navigation.navigate("Tabs", { screen: "Today" });
   }
 
@@ -434,10 +426,6 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
       });
     }
     saveItem(buildSavedItem("done"));
-    if (draft.parentId) {
-      navigation.goBack();
-      return;
-    }
     if (goToDoneScreen) {
       navigation.navigate("Done");
       return;
@@ -927,33 +915,28 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
       "note"
     ];
 
-    function openProjectChild(type: NudgeItemType) {
-      if (!editable) {
-        return;
-      }
-      const parent = {
-        ...buildSavedItem(),
-        title: title.trim() || draft.title.trim() || "Project"
-      };
-      saveItem(parent);
-      if (parent.title !== title) {
-        setTitle(parent.title);
-      }
-      const child = createItem({
+    function buildProjectChildDraft(type: NudgeItemType): NudgeItem {
+      const now = new Date().toISOString();
+      return {
+        id: `draft-${type}-${Date.now()}`,
         title: "",
         type,
-        parentId: parent.id,
-        createdBy: parent.createdBy,
-        notes: `For project: ${parent.title}`
-      });
-      navigation.push("ItemDetails", { draft: child });
+        status: "open",
+        parentId: draft.id,
+        children: [],
+        createdAt: now,
+        updatedAt: now,
+        attachments: [],
+        listItems: [],
+        progress: 0,
+        notes: `For project: ${title || draft.title}`
+      };
     }
 
     return (
       <Screen>
         <PageHeaderWithEdit title="Project" subtitle="Big things, broken down." />
         {renderPackProvenance()}
-        {notice ? <AppText variant="small">{notice}</AppText> : null}
         <SoftCard>
           <Field label="Project title" value={title} onChangeText={setTitle} placeholder="Kitchen Refresh" />
           <Field label="Goal" value={projectGoal} onChangeText={setProjectGoal} multiline placeholder="What would feel good to move forward?" />
@@ -979,35 +962,32 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
           <AppText variant="heading">Add to this project</AppText>
           <AppText variant="muted">Any nudge type can be a step under this project.</AppText>
           <View style={styles.projectAddRow}>
-            {projectChildTypes.map((type) => {
-              const chip = getTypeChipColors(type);
-              return (
-                <Pressable
-                  key={type}
-                  accessibilityRole="button"
-                  disabled={!editable}
-                  onPress={() => openProjectChild(type)}
-                  style={({ pressed }) => [
-                    styles.projectTypeChip,
-                    {
-                      borderColor: chip.borderColor,
-                      backgroundColor: chip.backgroundColor
-                    },
-                    pressed && styles.pressed
-                  ]}
+            {projectChildTypes.map((type) => (
+              <Pressable
+                key={type}
+                accessibilityRole="button"
+                disabled={!editable}
+                onPress={() => navigation.navigate("ItemDetails", { draft: buildProjectChildDraft(type) })}
+                style={({ pressed }) => [
+                  styles.projectTypeChip,
+                  {
+                    borderColor: `${taskTypeAccentColors[type] ?? colors.accent}55`,
+                    backgroundColor: `${taskTypeAccentColors[type] ?? colors.accent}14`
+                  },
+                  pressed && styles.pressed
+                ]}
+              >
+                <AppText
+                  style={{
+                    color: taskTypeAccentColors[type] ?? colors.accent,
+                    fontWeight: "700",
+                    fontSize: 13
+                  }}
                 >
-                  <AppText
-                    style={{
-                      color: chip.color,
-                      fontWeight: "700",
-                      fontSize: 13
-                    }}
-                  >
-                    {formatNudgeTypeLabel(type)}
-                  </AppText>
-                </Pressable>
-              );
-            })}
+                  {formatNudgeTypeLabel(type)}
+                </AppText>
+              </Pressable>
+            ))}
           </View>
           {projectChildren.length ? (
             <View style={styles.section}>
@@ -1015,7 +995,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
               {projectChildren.map((child) => (
                 <Pressable
                   key={child.id}
-                  onPress={() => navigation.push("ItemDetails", { draft: child })}
+                  onPress={() => navigation.navigate("ItemDetails", { draft: child })}
                   style={styles.projectChildRow}
                 >
                   <AppText style={{ flex: 1 }}>{child.title || "Untitled"}</AppText>
@@ -1030,7 +1010,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
         {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
-        <SecondaryButton onPress={() => void saveAndOpenWorld(draft.status, true)}>Just keep it simple</SecondaryButton>
+        <SecondaryButton onPress={() => saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
       </Screen>
     );
   }
