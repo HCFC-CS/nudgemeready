@@ -15,7 +15,6 @@ import {
   resolveSomethingElse,
   type UnifiedNudgeAction
 } from "../services/nudgeIntentCatalog";
-import { buildCapturePreview, resolveCaptureSave } from "../services/capturePreview";
 import { createItem } from "../services/nudgeItems";
 import {
   applyDefaultWhen,
@@ -32,7 +31,7 @@ import { colors, radii, spacing } from "../theme/theme";
 import type { NudgeIntent } from "../types/nudgeIntents";
 import type { NudgeItem } from "../types/nudge";
 
-type Step = "home" | "intent" | "compose" | "confirm";
+type Step = "home" | "intent" | "somethingElse";
 
 export function CaptureScreen() {
   const navigation = useNavigation<any>();
@@ -41,9 +40,7 @@ export function CaptureScreen() {
   const { packs, isInstalled } = useReadyPacks();
   const [step, setStep] = useState<Step>("home");
   const [activeIntent, setActiveIntent] = useState<NudgeIntent | null>(null);
-  const [composeText, setComposeText] = useState("");
-  const [voiceNoteUrl, setVoiceNoteUrl] = useState<string | undefined>();
-  const [previewTitle, setPreviewTitle] = useState("");
+  const [somethingElseText, setSomethingElseText] = useState("");
 
   const installedPackIds = useMemo(
     () => packs.filter((pack) => pack.kind === "content" && isInstalled(pack.id)).map((pack) => pack.id),
@@ -67,13 +64,11 @@ export function CaptureScreen() {
   function goHome() {
     setStep("home");
     setActiveIntent(null);
-    setComposeText("");
-    setVoiceNoteUrl(undefined);
-    setPreviewTitle("");
+    setSomethingElseText("");
   }
 
   function goToNudges() {
-    navigation.navigate("Tabs", { screen: "Today", params: { horizon: "today" } });
+    navigation.navigate("Tabs", { screen: "Today" });
   }
 
   async function offerAfterSave(item: NudgeItem) {
@@ -115,8 +110,8 @@ export function CaptureScreen() {
     );
   }
 
-  function finishDraft(draft: NudgeItem, promptTitle?: string) {
-    if (!canQuickSave(draft.title, promptTitle)) {
+  function finishDraft(draft: NudgeItem) {
+    if (!canQuickSave(draft.title)) {
       navigation.navigate("ItemDetails", { draft });
       return;
     }
@@ -161,10 +156,10 @@ export function CaptureScreen() {
         status: "open" as const
       }))
     });
-    finishDraft(draft, action.defaultTitle);
+    finishDraft(draft);
   }
 
-  function createFromSomethingElse(rawText: string, capturedVoiceUrl?: string) {
+  function createFromSomethingElse(rawText: string, voiceNoteUrl?: string) {
     const text = rawText.trim();
     if (!text) {
       return;
@@ -183,144 +178,44 @@ export function CaptureScreen() {
       contactName: resolved.suggestedFields.contactName,
       speakingReminderText: resolved.title,
       notes: resolved.suggestedFields.notes || text,
-      voiceNoteUrl: capturedVoiceUrl || voiceNoteUrl || undefined,
+      voiceNoteUrl: voiceNoteUrl || undefined,
       listItems: resolved.suggestedFields.listItems?.map((title, index) => ({
         id: `list-${index}`,
         title,
         status: "open" as const
       }))
     });
+    setSomethingElseText("");
     finishDraft(draft);
   }
 
-  function openConfirm(rawText: string, capturedVoiceUrl?: string) {
-    const text = rawText.trim();
-    if (!text) {
-      return;
-    }
-    const preview = buildCapturePreview(text, installedPackIds);
-    setComposeText(text);
-    setPreviewTitle(preview.title);
-    setVoiceNoteUrl(capturedVoiceUrl);
-    setStep("confirm");
-  }
-
-  function saveConfirmed() {
-    const resolved = resolveCaptureSave(composeText, previewTitle, installedPackIds);
-    const draft = createItem({
-      title: resolved.title,
-      type: resolved.itemType,
-      createdBy: actor,
-      nudgeIntent: resolved.intent,
-      sourcePackId: resolved.packId,
-      dueDate: resolved.suggestedFields.dueDate,
-      startDate: resolved.suggestedFields.startDate,
-      reminderDate: resolved.suggestedFields.reminderDate,
-      repeatRule: resolved.suggestedFields.repeatRule,
-      contactName: resolved.suggestedFields.contactName,
-      speakingReminderText: resolved.title,
-      notes: resolved.suggestedFields.notes || composeText,
-      voiceNoteUrl,
-      listItems: resolved.suggestedFields.listItems?.map((title, index) => ({
-        id: `list-${index}`,
-        title,
-        status: "open" as const
-      }))
-    });
-    finishDraft(draft);
-  }
-
-  if (step === "compose") {
+  if (step === "somethingElse") {
     return (
       <Screen>
         <BackButton onPress={goHome} />
-        <PageHeader title="Type it" subtitle="What's on your mind?" showBack={false} />
+        <PageHeader title="Something else" subtitle="Tell me what you need…" showBack={false} />
         <SoftCard style={styles.card}>
           <TextInput
             style={styles.input}
-            value={composeText}
-            onChangeText={setComposeText}
-            placeholder="e.g. Call the dentist tomorrow morning"
+            value={somethingElseText}
+            onChangeText={setSomethingElseText}
+            placeholder="e.g. Remember to call the solicitor about moving"
             placeholderTextColor={colors.mutedText}
             multiline
-            autoFocus
           />
-          <PrimaryButton disabled={!composeText.trim()} onPress={() => openConfirm(composeText)}>
-            Continue
+          <VoiceCaptureButton
+            idleLabel="Say it"
+            onCaptured={(text, voiceNoteUrl) => createFromSomethingElse(text, voiceNoteUrl)}
+          />
+          <PrimaryButton
+            disabled={!somethingElseText.trim()}
+            onPress={() => createFromSomethingElse(somethingElseText)}
+          >
+            Save nudge
           </PrimaryButton>
           <AppText variant="caption" style={styles.hint}>
-            If you say when, we’ll show it before saving. You can add details after.
+            If you say when, it is saved straight away. You can change it anytime.
           </AppText>
-        </SoftCard>
-      </Screen>
-    );
-  }
-
-  if (step === "confirm") {
-    const preview = buildCapturePreview(composeText.trim() || previewTitle, installedPackIds);
-    return (
-      <Screen>
-        <BackButton onPress={() => setStep("compose")} />
-        <PageHeader title="Save this?" subtitle="Check it, then save or add details." showBack={false} />
-        <SoftCard style={styles.card}>
-          <TextInput
-            style={styles.input}
-            value={previewTitle}
-            onChangeText={setPreviewTitle}
-            placeholder="Title"
-            placeholderTextColor={colors.mutedText}
-            multiline
-          />
-          <AppText variant="heading">{preview.whenLabel}</AppText>
-          <AppText variant="muted">
-            {preview.inferredWhen
-              ? "We’ll use this time unless you add details. Nothing else was guessed."
-              : preview.classified.extractedTime
-                ? "Time taken from what you said."
-                : "Date taken from what you said."}
-          </AppText>
-          {preview.packId ? (
-            <AppText variant="caption" style={styles.hint}>
-              Tagged with your Ready4 pack
-            </AppText>
-          ) : null}
-          <PrimaryButton disabled={!previewTitle.trim()} onPress={saveConfirmed}>
-            Save
-          </PrimaryButton>
-          <SecondaryButton
-            onPress={() => {
-              const resolved = resolveCaptureSave(composeText, previewTitle, installedPackIds);
-              const fields = resolved.suggestedFields;
-              const draft = createItem({
-                title: resolved.title,
-                type: resolved.itemType,
-                createdBy: actor,
-                nudgeIntent: resolved.intent,
-                sourcePackId: resolved.packId,
-                dueDate: fields.dueDate,
-                startDate: fields.startDate,
-                reminderDate: fields.reminderDate,
-                repeatRule: fields.repeatRule,
-                contactName: fields.contactName,
-                speakingReminderText: resolved.title,
-                notes: fields.notes || composeText,
-                voiceNoteUrl
-              });
-              navigation.navigate("ItemDetails", { draft });
-            }}
-          >
-            Add details
-          </SecondaryButton>
-          <SecondaryButton
-            onPress={() => {
-              setComposeText("");
-              setPreviewTitle("");
-              setVoiceNoteUrl(undefined);
-              setStep("compose");
-            }}
-          >
-            Try again
-          </SecondaryButton>
         </SoftCard>
       </Screen>
     );
@@ -365,22 +260,17 @@ export function CaptureScreen() {
       <PageHeader
         title="Add"
         showBack={false}
-        helpText="Get it out of your head. Everyday options are ready straight away. Ready4 packs add extra choices only when you install them."
+        helpText="Everyday support is ready straight away. Ready4 packs add extra options only when you install them."
       />
       <AppText variant="heading" style={styles.prompt}>
-        What’s on your mind?
+        What do you want to do?
       </AppText>
       <VoiceCaptureButton
-        idleLabel="Tell me"
+        idleLabel="Say it"
         idleTone="primary"
         layout="heroMic"
-        placeholder="Remind me Friday afternoon to order the prescription"
-        onCaptured={(text, capturedVoiceUrl) => openConfirm(text, capturedVoiceUrl)}
+        onCaptured={(text, voiceNoteUrl) => createFromSomethingElse(text, voiceNoteUrl)}
       />
-      <PrimaryButton onPress={() => setStep("compose")}>Type it</PrimaryButton>
-      <AppText variant="caption" style={styles.sectionLabel}>
-        Or pick a path
-      </AppText>
       <View style={styles.categoryList}>
         {NUDGE_INTENT_CATEGORIES.map((entry) => (
           <Pressable
@@ -403,6 +293,7 @@ export function CaptureScreen() {
           </Pressable>
         ))}
       </View>
+      <SecondaryButton onPress={() => setStep("somethingElse")}>+ Something else</SecondaryButton>
     </Screen>
   );
 }

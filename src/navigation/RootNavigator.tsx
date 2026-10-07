@@ -37,7 +37,6 @@ import { SavedThingsScreen } from "../screens/SavedThingsScreen";
 import { CalendarHubScreen } from "../screens/CalendarHubScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { SplashScreen } from "../screens/SplashScreen";
-import { FirstRunScreen } from "../screens/FirstRunScreen";
 import { TodayScreen } from "../screens/TodayScreen";
 import { LegacyCaptureRedirectScreen } from "../screens/LegacyCaptureRedirectScreen";
 import { colors } from "../theme/theme";
@@ -75,7 +74,6 @@ export function RootNavigator() {
       }}
     >
       <Stack.Screen name="Splash" component={SplashScreen} />
-      <Stack.Screen name="FirstRun" component={FirstRunScreen} />
       <Stack.Screen name="Tabs" component={TabNavigator} />
       <Stack.Screen name="ItemDetails" component={ItemDetailsScreen} />
       {/* Legacy TaskItem create flow — redirects to Capture */}

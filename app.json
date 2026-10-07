@@ -93,7 +93,6 @@
           "cameraPermission": "Allow Nudge me Ready to use the camera for a profile picture or to photograph documents."
         }
       ],
-      "expo-document-picker",
       [
         "expo-location",
         {

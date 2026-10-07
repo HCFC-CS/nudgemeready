@@ -26,7 +26,6 @@ export function Button({
   return (
     <Pressable
       {...props}
-      accessibilityRole="button"
       style={({ pressed }) => [
         styles.base,
         styles[tone],

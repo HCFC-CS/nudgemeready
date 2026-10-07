@@ -41,8 +41,6 @@ export type Budget = {
   currency: "GBP";
   /** Optional Ready4 pack link — null for core monthly budget. */
   readyPackId?: string | null;
-  /** Optional overall envelope for a project budget, in pence. */
-  envelopeMinor?: number | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -6,16 +6,10 @@ import {
   resyncTimedNudges,
   syncSpeakingReminderNotifications
 } from "../services/speakingReminders";
-import { completeItem, deleteItem, updateItem, upsertNudgeItem } from "../services/nudgeItems";
+import { completeItem, deleteItem, updateItem } from "../services/nudgeItems";
 import { markPackItemEdited } from "../services/readyPackInstall";
 import { cleanupAttachmentsForItem } from "../services/documentAttachments";
-import { isScreenshotMode } from "../navigation/screenshotState";
-import {
-  clearNudgeItemsStorage,
-  getDemoNudgeItems,
-  loadNudgeItems,
-  saveNudgeItems
-} from "../services/nudgeItemsStorage";
+import { clearNudgeItemsStorage, loadNudgeItems, saveNudgeItems } from "../services/nudgeItemsStorage";
 import { syncDailySummaryNotification } from "../services/dailySummary";
 import { useCrew } from "./useCrew";
 import { useNudgeActor } from "./useNudgeActor";
@@ -47,14 +41,6 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let active = true;
-    if (isScreenshotMode()) {
-      setItems(getDemoNudgeItems());
-      setLoadError(null);
-      setIsReady(true);
-      return () => {
-        active = false;
-      };
-    }
     loadNudgeItems()
       .then((loaded) => {
         if (active) {
@@ -73,14 +59,14 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    if (!isReady || isScreenshotMode()) {
+    if (!isReady) {
       return;
     }
     void saveNudgeItems(items);
   }, [isReady, items]);
 
   useEffect(() => {
-    if (!isReady || isScreenshotMode()) {
+    if (!isReady) {
       return;
     }
     let cancelled = false;
@@ -134,9 +120,9 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
                 existing
               )
             : item;
-        return upsertNudgeItem(current, nextItem);
+        return updateItem(current, item.id, nextItem);
       }
-      return upsertNudgeItem(current, item);
+      return [item, ...current];
     });
 
     void (async () => {

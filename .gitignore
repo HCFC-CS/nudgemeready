@@ -2,7 +2,6 @@ node_modules/
 .expo/
 .expo-tmp-export/
 dist/
-screenshots/
 *.zip
 .DS_Store
 *.log

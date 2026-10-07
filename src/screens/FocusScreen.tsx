@@ -53,11 +53,7 @@ export function FocusScreen() {
   const [isRunning, setIsRunning] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [timerNotice, setTimerNotice] = useState("");
-  const [skippedIds, setSkippedIds] = useState<string[]>([]);
-  const focusItems = useMemo(
-    () => getFocusItems(items, mode).filter((item) => !skippedIds.includes(item.id)),
-    [items, mode, skippedIds]
-  );
+  const focusItems = useMemo(() => getFocusItems(items, mode), [items, mode]);
   const selectedItem = focusItems[selectedIndex % Math.max(focusItems.length, 1)];
   const timerText = formatTimer(remainingSeconds);
 
@@ -97,7 +93,6 @@ export function FocusScreen() {
   function chooseMode(nextMode: FocusMode) {
     setMode(nextMode);
     setSelectedIndex(0);
-    setSkippedIds([]);
     resetTimer(timerMinutes);
   }
 
@@ -123,7 +118,7 @@ export function FocusScreen() {
       <PageHeader
         title="Focus"
         showBack={false}
-        helpText="Too much? Let’s just do one thing. Start when ready. Sorted, Not this one, or stop anytime — no penalty."
+        helpText="One nudge at a time. Start when ready. Pause, Sorted, Break, or Next anytime — no penalty."
       />
 
       <RewardGlance />
@@ -132,7 +127,7 @@ export function FocusScreen() {
         {selectedItem ? (
           <>
             <AppText variant="caption" style={styles.eyebrow}>
-              Let’s just do one thing
+              This session
             </AppText>
             <AppText variant="heading">{selectedItem.title}</AppText>
             <AppText variant="muted">{formatFocusContext(selectedItem)}</AppText>
@@ -197,20 +192,8 @@ export function FocusScreen() {
       </SoftCard>
 
       <PrimaryButton onPress={startTimer} disabled={(!selectedItem && !isRunning) || isRunning}>
-        {isRunning ? "Focus running…" : "Start"}
+        {isRunning ? "Focus running…" : "Start Focus"}
       </PrimaryButton>
-
-      {selectedItem && !isComplete ? (
-        <SecondaryButton
-          onPress={() => {
-            setSkippedIds((current) => [...current, selectedItem.id]);
-            setSelectedIndex(0);
-            resetTimer(timerMinutes);
-          }}
-        >
-          Not this one
-        </SecondaryButton>
-      ) : null}
 
       {isRunning || remainingSeconds < timerMinutes * 60 ? (
         <View style={styles.quickActions}>
@@ -324,20 +307,6 @@ export function FocusScreen() {
           {selectedItem ? (
             <CompletionRewardCard points={difficultyForItem(selectedItem) === "really_hard" ? 3 : difficultyForItem(selectedItem) === "hard" ? 2 : 1} />
           ) : null}
-          <PrimaryButton
-            onPress={() => {
-              if (selectedItem) {
-                setSkippedIds((current) => [...current, selectedItem.id]);
-              }
-              setSelectedIndex(0);
-              resetTimer(timerMinutes);
-            }}
-          >
-            Give me another
-          </PrimaryButton>
-          <SecondaryButton onPress={() => navigation.navigate("Tabs", { screen: "Home" })}>
-            I'm done for now
-          </SecondaryButton>
         </>
       ) : null}
     </Screen>
