@@ -1,5 +1,4 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Pressable } from "react-native";
 
 import { LaunchShell } from "./LaunchShell";
 
@@ -20,16 +19,7 @@ export class LaunchErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.failed) {
-      return (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Try opening Nudge me Ready again"
-          onPress={() => this.setState({ failed: false })}
-          style={{ flex: 1 }}
-        >
-          <LaunchShell message="Tap to try again" />
-        </Pressable>
-      );
+      return <LaunchShell />;
     }
     return this.props.children;
   }

@@ -29,12 +29,6 @@ import { waitForNativeModules } from "../services/expoNotifications";
 import { peekPendingInvite } from "../services/pendingDeepLinks";
 import { resetSecurityLockPrompt } from "../services/securityLockPrompt";
 import {
-  nextSplashBootStep,
-  shouldShowSplashRegister,
-  shouldShowSplashWelcome,
-  type SplashBootStep
-} from "../services/splashBoot";
-import {
   isAppleSignInAvailable,
   isGoogleSignInConfigured,
   signInWithApple,
@@ -52,7 +46,16 @@ import { colors, radii, shadows, spacing } from "../theme/theme";
 import type { RootStackParamList } from "../types/navigation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
-type SignInStep = SplashBootStep;
+type SignInStep =
+  | "welcome"
+  | "register"
+  | "setup"
+  | "unlock"
+  | "forgot"
+  | "recoveryCode"
+  | "crewUnlock"
+  | "reset"
+  | "recoveryShown";
 
 export function SplashScreen({ navigation, route }: Props) {
   const { profile, completeRegistration, needsRegistration, needsFirstRun, isProfileReady } = useProfile();
@@ -135,17 +138,16 @@ export function SplashScreen({ navigation, route }: Props) {
     bootReady && !needsRegistration && !settings.hasCredential && !needsUnlock;
 
   useEffect(() => {
+    if (!bootReady) return;
     if (route.params?.recoverToken) return;
-    const next = nextSplashBootStep({
-      bootReady,
-      needsUnlock,
-      needsRegistration,
-      needsSecuritySetup,
-      hasCredential: settings.hasCredential,
-      current: step,
-      hasRecoverToken: Boolean(route.params?.recoverToken)
-    });
-    if (next === "register" && step !== "register") {
+    if (needsUnlock) {
+      setStep("unlock");
+      setError("");
+      setCredential("");
+      return;
+    }
+    if (needsRegistration) {
+      setStep("register");
       setRegName(profile.name);
       setRegEmail(profile.email);
       setRegPhone(profile.phone);
@@ -153,30 +155,26 @@ export function SplashScreen({ navigation, route }: Props) {
       setRegAuthProvider(profile.authProvider ?? "email");
       setRegIcon(profile.icon);
       setRegAvatarUri(profile.avatarUri);
+      return;
     }
-    if (next === "unlock" && step !== "unlock") {
-      setError("");
-      setCredential("");
-    }
-    if (next === "setup" && step !== "setup") {
+    if (needsSecuritySetup) {
+      setStep("setup");
       setRecoveryEmail(profile.email || recoveryEmail);
       setEnableFaceId(biometricsAvailable);
+      return;
     }
-    if (next !== step) {
-      setStep(next);
+    if (
+      step === "unlock" ||
+      step === "forgot" ||
+      step === "recoveryCode" ||
+      step === "crewUnlock" ||
+      step === "reset" ||
+      step === "register" ||
+      step === "setup"
+    ) {
+      setStep("welcome");
     }
-  }, [
-    bootReady,
-    needsUnlock,
-    needsRegistration,
-    needsSecuritySetup,
-    profile,
-    recoveryEmail,
-    biometricsAvailable,
-    route.params?.recoverToken,
-    settings.hasCredential,
-    step
-  ]);
+  }, [bootReady, needsUnlock, needsRegistration, needsSecuritySetup, route.params?.recoverToken]);
 
   // If the user doesn't have a recovery code, auto-send the reset email on the "Forgot password" screen.
   // Safety: only auto-send when the stored recovery email matches the registered email from the device profile.
@@ -759,7 +757,7 @@ export function SplashScreen({ navigation, route }: Props) {
             <AppText variant="muted" style={styles.subtitle}>
               {needsUnlock || step === "unlock"
                 ? `Sign in with ${settings.biometricsEnabled && biometricsAvailable ? `${faceLabel}, ` : ""}${activeLabel}`
-                : shouldShowSplashRegister(step, needsRegistration, needsUnlock) || step === "register"
+                : step === "register"
                   ? "Name, email and date of birth — then a password or PIN"
                   : step === "setup"
                     ? "Set a password or PIN, and optionally Face ID"
@@ -768,7 +766,7 @@ export function SplashScreen({ navigation, route }: Props) {
           </View>
 
           <View style={styles.panel}>
-            {shouldShowSplashWelcome(step, needsRegistration, needsUnlock) ? (
+            {step === "welcome" && !needsUnlock && !needsRegistration ? (
               <>
                 <Pressable
                   accessibilityRole="button"
@@ -813,7 +811,7 @@ export function SplashScreen({ navigation, route }: Props) {
               </>
             ) : null}
 
-            {shouldShowSplashRegister(step, needsRegistration, needsUnlock) ? (
+            {step === "register" ? (
               <>
                 <AppText variant="muted" style={styles.centerCopy}>
                   {peekPendingInvite()
