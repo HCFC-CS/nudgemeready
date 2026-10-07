@@ -1,10 +1,11 @@
 {
   "name": "nudge",
-  "version": "0.3.1",
+    "version": "0.4.0",
   "private": true,
   "main": "expo/AppEntry.js",
   "scripts": {
-    "start": "node scripts/start-variant.cjs v3",
+    "start": "node scripts/start-variant.cjs v4",
+    "start:v4": "node scripts/start-variant.cjs v4",
     "start:v3": "node scripts/start-variant.cjs v3",
     "start:v2": "node scripts/start-variant.cjs v2",
     "ios": "expo start --ios",
@@ -14,8 +15,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "build:ios:v4": "eas build --platform ios --profile v4",
     "build:ios:v3": "eas build --platform ios --profile v3",
     "build:ios:v2": "eas build --platform ios --profile production",
+    "submit:ios:v4": "eas submit --platform ios --profile v4 --latest",
     "submit:ios:v3": "eas submit --platform ios --profile v3 --latest"
   },
   "dependencies": {

@@ -66,6 +66,7 @@ const appLinking: LinkingOptions<RootStackParamList> = {
     ExpoLinking.createURL("/"),
     "nudge-me://",
     "nudge-me-v3://",
+    "nudge-me-v4://",
     "https://nudgemeready.app",
     "https://www.nudgemeready.app"
   ],
