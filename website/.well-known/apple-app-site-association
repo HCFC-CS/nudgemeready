@@ -1,0 +1,26 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "656UL52XWW.com.helencunliffe.nudgeme",
+        "paths": ["/invite", "/invite/*", "/recover", "/recover/*"]
+      },
+      {
+        "appID": "656UL52XWW.com.helencunliffe.nudgeme.v3",
+        "paths": ["/invite", "/invite/*", "/recover", "/recover/*"]
+      },
+      {
+        "appID": "656UL52XWW.com.helencunliffe.nudgeme.v4",
+        "paths": ["/invite", "/invite/*", "/recover", "/recover/*"]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "656UL52XWW.com.helencunliffe.nudgeme",
+      "656UL52XWW.com.helencunliffe.nudgeme.v3",
+      "656UL52XWW.com.helencunliffe.nudgeme.v4"
+    ]
+  }
+}

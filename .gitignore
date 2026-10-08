@@ -1,0 +1,13 @@
+node_modules/
+.expo/
+.expo-tmp-export/
+dist/
+*.zip
+.DS_Store
+*.log
+.env
+.env.local
+
+.vscode/
+.idea/
+coverage/

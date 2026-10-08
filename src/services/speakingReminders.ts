@@ -1,0 +1,207 @@
+import * as Notifications from "expo-notifications";
+import * as Speech from "expo-speech";
+
+import { getTimedNudgeAt, shouldScheduleTimedNudge } from "./timedNudge";
+import { resolveItemCreator } from "./itemPermissions";
+import { adjustDateForQuietHours, shouldAllowNotifications } from "./notificationPrefs";
+import type { NudgeItem } from "../types/nudge";
+
+const TEN_MINUTES_SECONDS = 10 * 60;
+
+export function getSpeakingReminderText(item: NudgeItem) {
+  return item.speakingReminderText?.trim() || item.notes?.trim() || item.title;
+}
+
+export function hasSpeakingReminder(item: NudgeItem) {
+  return Boolean(item.speakingReminderText?.trim() || item.voiceNoteUrl);
+}
+
+export function playSpeakingReminder(item: NudgeItem) {
+  const text = getSpeakingReminderText(item);
+  if (!text) {
+    return;
+  }
+  Speech.stop();
+  Speech.speak(text);
+}
+
+export { getTimedNudgeAt, shouldScheduleTimedNudge } from "./timedNudge";
+
+export async function cancelSpeakingReminderNotifications(item: NudgeItem) {
+  const ids = new Set(item.reminderNotificationIds ?? []);
+
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const entry of scheduled) {
+      const data = entry.content.data as { itemId?: string } | undefined;
+      if (data?.itemId === item.id) {
+        ids.add(entry.identifier);
+      }
+    }
+  } catch {
+    // Fall back to stored ids only.
+  }
+
+  await Promise.all(
+    [...ids].map((id) => Notifications.cancelScheduledNotificationAsync(id).catch(() => undefined))
+  );
+}
+
+export async function syncSpeakingReminderNotifications(item: NudgeItem): Promise<string[]> {
+  await cancelSpeakingReminderNotifications(item);
+
+  if (!shouldScheduleTimedNudge(item)) {
+    return [];
+  }
+
+  const gate = await shouldAllowNotifications();
+  if (!gate.prefs.pushNotifications) {
+    return [];
+  }
+
+  const hasPermission = await ensureNotificationPermission();
+  if (!hasPermission) {
+    return [];
+  }
+
+  const speakingText = getSpeakingReminderText(item);
+  const creator = resolveItemCreator(item);
+  const ids: string[] = [];
+
+  const reminderDateRaw = getTimedNudgeAt(item);
+  const reminderDate =
+    reminderDateRaw && !Number.isNaN(reminderDateRaw.getTime())
+      ? adjustDateForQuietHours(reminderDateRaw, gate.prefs.quietHours)
+      : undefined;
+  const hasValidDate = reminderDate && reminderDate.getTime() > Date.now();
+
+  if (hasValidDate && reminderDate) {
+    ids.push(
+      await Notifications.scheduleNotificationAsync({
+        content: buildNudgeeNotificationContent(item, speakingText, "initial"),
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminderDate }
+      })
+    );
+  }
+
+  if (item.nudgeEveryTenMinutesUntilDone) {
+    ids.push(
+      await Notifications.scheduleNotificationAsync({
+        content: buildNudgeeNotificationContent(item, speakingText, "repeat"),
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: TEN_MINUTES_SECONDS,
+          repeats: true
+        }
+      })
+    );
+  }
+
+  if (item.notifyNudgerIfNotDone) {
+    ids.push(
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Gentle check-in",
+          body: `${item.title} is still open if you need it — no pressure.`,
+          data: {
+            itemId: item.id,
+            role: "nudger",
+            nudgerId: creator.id,
+            nudgerName: creator.name
+          }
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: TEN_MINUTES_SECONDS,
+          repeats: true
+        }
+      })
+    );
+  }
+
+  return ids.filter(Boolean);
+}
+
+export async function resyncTimedNudges(items: NudgeItem[]): Promise<Record<string, string[]>> {
+  const next: Record<string, string[]> = {};
+  for (const item of items) {
+    next[item.id] = await syncSpeakingReminderNotifications(item);
+  }
+  return next;
+}
+
+export function handleSpeakingReminderNotification(
+  notification: Notifications.Notification,
+  items: NudgeItem[],
+  actorId: string
+): NudgeItem | undefined {
+  const data = notification.request.content.data as {
+    itemId?: string;
+    role?: "nudgee" | "nudger";
+    speakText?: string;
+    nudgerId?: string;
+  };
+
+  if (data.role === "nudger") {
+    if (data.nudgerId && data.nudgerId !== actorId) {
+      return undefined;
+    }
+    if (data.itemId) {
+      return items.find((candidate) => candidate.id === data.itemId);
+    }
+    return undefined;
+  }
+
+  if (data.itemId) {
+    const item = items.find((candidate) => candidate.id === data.itemId);
+    if (item && (item.status === "done" || item.status === "cancelled" || item.status === "paused")) {
+      void cancelSpeakingReminderNotifications(item);
+      return undefined;
+    }
+    if (item) {
+      playSpeakingReminder(item);
+      return item;
+    }
+  }
+
+  const speakText = data.speakText ?? notification.request.content.body;
+  if (speakText) {
+    Speech.stop();
+    Speech.speak(String(speakText));
+  }
+  return undefined;
+}
+
+function buildNudgeeNotificationContent(
+  item: NudgeItem,
+  speakingText: string,
+  phase: "initial" | "repeat"
+) {
+  const title = phase === "initial" ? item.title : `Reminder: ${item.title}`;
+  const body =
+    speakingText ||
+    (phase === "repeat"
+      ? "This reminder repeats every 10 minutes until you mark it done."
+      : "This is ready when you are.");
+
+  return {
+    title,
+    body,
+    sound: true,
+    data: {
+      itemId: item.id,
+      role: "nudgee",
+      speakText: speakingText,
+      phase
+    }
+  };
+}
+
+async function ensureNotificationPermission() {
+  const current = await Notifications.getPermissionsAsync();
+  if (current.granted) {
+    return true;
+  }
+  const requested = await Notifications.requestPermissionsAsync();
+  return requested.granted;
+}
