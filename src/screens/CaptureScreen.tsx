@@ -110,8 +110,8 @@ export function CaptureScreen() {
     );
   }
 
-  function finishDraft(draft: NudgeItem) {
-    if (!canQuickSave(draft.title)) {
+  function finishDraft(draft: NudgeItem, promptTitle?: string) {
+    if (!canQuickSave(draft.title, promptTitle)) {
       navigation.navigate("ItemDetails", { draft });
       return;
     }
@@ -156,7 +156,7 @@ export function CaptureScreen() {
         status: "open" as const
       }))
     });
-    finishDraft(draft);
+    finishDraft(draft, action.defaultTitle);
   }
 
   function createFromSomethingElse(rawText: string, voiceNoteUrl?: string) {

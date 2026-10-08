@@ -65,8 +65,23 @@ export function applyDefaultWhen(
   };
 }
 
-export function canQuickSave(title: string): boolean {
-  return title.trim().length > 0;
+export function isUnfinishedPromptTitle(title: string, promptTitle?: string): boolean {
+  const trimmed = title.trim();
+  if (!trimmed) {
+    return true;
+  }
+  if (!promptTitle) {
+    return false;
+  }
+  const isPrompt = /[\s:]$/.test(promptTitle);
+  if (!isPrompt) {
+    return false;
+  }
+  return trimmed === promptTitle.trim();
+}
+
+export function canQuickSave(title: string, promptTitle?: string): boolean {
+  return !isUnfinishedPromptTitle(title, promptTitle);
 }
 
 export function formatNudgeWhen(iso?: string): string {
