@@ -318,7 +318,7 @@ function WeekBody({
         </View>
       ) : (
         week.days.map((day) => {
-          const expanded = expandedDays[day.dateKey] ?? day.dateKey === week.days[0]?.dateKey;
+          const expanded = expandedDays[day.dateKey] ?? (showAll || day.dateKey === week.days[0]?.dateKey);
           return (
             <View key={day.dateKey} style={styles.dayBlock}>
               <Pressable onPress={() => onToggleDay(day.dateKey)} accessibilityRole="button">
