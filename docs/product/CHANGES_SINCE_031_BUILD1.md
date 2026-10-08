@@ -195,6 +195,10 @@ Do not treat these as “new” slices. They were in the first drop:
 
 ---
 
-## Suggested first step
+## Status
 
-Slices **1–5 are in git** on this branch and have been checked here (tests). No Expo credit yet. Checkpoint 1 is the next phone TestFlight, when you want it.
+Slices **1–9 are in git** on this branch and have been checked here (tests). No Expo credit yet.
+
+Slice **10** (first-run / splash) is next in code, and is the highest-risk product slice. We have not applied it yet.
+
+Phone checkpoints, when you want them: after 1–5, after 6 (document picker), after 7–9 (Nudges timeline).
