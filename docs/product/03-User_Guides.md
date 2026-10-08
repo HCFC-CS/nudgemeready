@@ -59,11 +59,11 @@ If lock is off, Home may show a gentle **Protect your nudges** tip. Use **Turn o
 
 | Place | What it’s for |
 | --- | --- |
-| **Home** | Calm hub — Focus, My Nudges, ReadyPacks, My Crew, Completed |
+| **Home** | Calm hub — Focus, My Nudges, Ready4Packs, My Crew, Completed |
 | **Today** | Your open nudges (or the person you support) |
 | **+nudge** | Capture — create or browse by type |
 | **Focus** | One thing at a time |
-| **More** | ReadyPacks, Crew, Profile, Settings, Legal |
+| **More** | Ready4Packs, Crew, Profile, Settings, Legal |
 
 ---
 
@@ -78,7 +78,7 @@ If lock is off, Home may show a gentle **Protect your nudges** tip. Use **Turn o
 
 ### Edit anytime
 
-Open the nudge → change anything → save. All ReadyPack items are editable after install.
+Open the nudge → change anything → save. All Ready4 pack items are editable after install.
 
 ### Kind actions
 
@@ -104,11 +104,11 @@ Open the nudge → change anything → save. All ReadyPack items are editable af
 
 ---
 
-## 6. ReadyPacks (Ready 4)
+## 6. Ready4Packs (Ready4)
 
 ### Browse
 
-**Home → ReadyPacks** or **More → ReadyPacks**
+**Home → Ready4Packs** or **More → Ready4Packs**
 
 ### Preview
 
@@ -120,8 +120,8 @@ Tap install / add. Items appear in **My Nudges** with pack provenance where show
 
 ### Free packs
 
-- **Ready 4 Home**  
-- **Ready 4 Wellbeing**  
+- **Ready4 Home**  
+- **Ready4 Wellbeing**  
 
 ### Paid packs
 
@@ -133,7 +133,7 @@ Marked in the catalogue. On TestFlight, if purchases are not enabled, the app te
 
 ### Uninstall / remove
 
-Use pack management in ReadyPacks / Settings flows where available; editing or completing items never requires keeping unused templates.
+Use pack management in Ready4Packs / Settings flows where available; editing or completing items never requires keeping unused templates.
 
 ---
 
@@ -142,7 +142,7 @@ Use pack management in ReadyPacks / Settings flows where available; editing or c
 1. Create an **appointment**  
 2. Add **guests** from Contacts (allow permission when asked)  
 3. Optionally **link to your phone calendar**  
-4. Add travel / prep lists if using Ready 4 Appointments or Travel  
+4. Add travel / prep lists if using Ready4 Appointments or Travel  
 
 Import phone calendar events from Settings when offered.
 
@@ -202,7 +202,7 @@ Attach photos or files to a nudge (e.g. tickets, letters). Treat sensitive docs 
 | Security | App lock, recovery email, new recovery code |
 | Contacts & calendars | Guests and sync |
 | Leaving home | Optional location nudges |
-| ReadyPack purchases | Restore when billing is live |
+| Ready4Packs purchases | Restore when billing is live |
 
 ---
 
@@ -228,7 +228,7 @@ Some packs (especially Travel) open shops or booking sites. Affiliate commission
 
 1. Register → optional lock → save recovery code  
 2. Install Home + Wellbeing  
-3. Install one paid Ready 4 pack (confirm honesty copy)  
+3. Install one paid Ready4 pack (confirm honesty copy)  
 4. Add appointment + guest + calendar  
 5. Invite Crew (or accept invite)  
 6. Lock app → unlock  

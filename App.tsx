@@ -1,9 +1,11 @@
 import "react-native-gesture-handler";
 import "./src/services/leavingHomeGeofence";
+import "./src/services/payLaterGeofence";
 
 import * as ExpoLinking from "expo-linking";
 import { NavigationContainer, getStateFromPath as defaultGetStateFromPath, type LinkingOptions } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -12,12 +14,14 @@ import { AppProviders } from "./src/AppProviders";
 import { AppLockGate } from "./src/components/AppLockGate";
 import { AppSecurityProvider } from "./src/hooks/useAppSecurity";
 import { useLeavingHomeMonitor } from "./src/hooks/useLeavingHomeMonitor";
+import { usePayLaterMonitor } from "./src/hooks/usePayLaterMonitor";
 import { usePhoneCalendarImport } from "./src/hooks/usePhoneCalendarImport";
 import { useSpeakingReminderNotifications } from "./src/hooks/useSpeakingReminderNotifications";
 import { navigationRef } from "./src/navigation/navigationRef";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { getScreenshotInitialState, getScreenshotScreenId } from "./src/navigation/screenshotState";
 import { parseInviteFromUrl } from "./src/services/crewInvites";
+import { installOtaUpdateSync } from "./src/services/expoUpdates";
 import {
   isDeepLinkLockActive,
   stashPendingInvite,
@@ -63,6 +67,8 @@ const appLinking: LinkingOptions<RootStackParamList> = {
   prefixes: [
     ExpoLinking.createURL("/"),
     "nudge-me://",
+    "nudge-me-v3://",
+    "nudge-me-v4://",
     "https://nudgemeready.app",
     "https://www.nudgemeready.app"
   ],
@@ -72,8 +78,7 @@ const appLinking: LinkingOptions<RootStackParamList> = {
       Splash: "splash",
       Settings: "settings",
       LegalInfo: "legal",
-      MyCrew: "my-crew",
-      CrewsISupport: "crews-i-support",
+      CrewHub: "crew",
       InviteCrew: "invite-crew",
       Tabs: {
         path: "",
@@ -123,7 +128,11 @@ const appLinking: LinkingOptions<RootStackParamList> = {
 function AppContent() {
   useSpeakingReminderNotifications();
   useLeavingHomeMonitor();
+  usePayLaterMonitor();
   usePhoneCalendarImport();
+  useEffect(() => {
+    installOtaUpdateSync();
+  }, []);
 
   return (
     <>

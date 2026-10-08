@@ -3,8 +3,27 @@ import { getEncryptedItem, setEncryptedItem } from "./encryptedStorage";
 export const HOME_SETTINGS_KEY = "nudge-me:home-settings-v2";
 const LEGACY_HOME_SETTINGS_KEY = "nudge-me:home-settings";
 
-export const HOME_THRESHOLD_OPTIONS = [5, 10, 25, 50, 100] as const;
-export type HomeThresholdMeters = (typeof HOME_THRESHOLD_OPTIONS)[number];
+/** Leaving-place distance scale (metres). */
+export const HOME_THRESHOLD_MIN_METERS = 1;
+export const HOME_THRESHOLD_MAX_METERS = 50;
+export const HOME_THRESHOLD_DEFAULT_METERS = 25;
+
+/** @deprecated Prefer the 1–50 m scale; kept for older UI references. */
+export const HOME_THRESHOLD_OPTIONS = [1, 10, 25, 50] as const;
+
+export type HomeThresholdMeters = number;
+
+export function clampHomeThresholdMeters(
+  value: unknown,
+  min = HOME_THRESHOLD_MIN_METERS,
+  max = HOME_THRESHOLD_MAX_METERS
+): HomeThresholdMeters {
+  const raw = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(raw)) {
+    return HOME_THRESHOLD_DEFAULT_METERS;
+  }
+  return Math.min(max, Math.max(min, Math.round(raw)));
+}
 
 export type HomeLocationSource = "gps" | "address";
 
@@ -18,6 +37,14 @@ export const PLACE_LABELS: Record<PlaceKind, string> = {
   safe: "Safe place"
 };
 
+/** Suggested “don’t forget” items — editable per place. */
+export const DEFAULT_PLACE_CHECKLISTS: Record<PlaceKind, string[]> = {
+  home: ["keys", "phone", "wallet"],
+  work: ["laptop", "notes", "charger"],
+  school: ["homework", "gym kit", "lunch"],
+  safe: ["phone", "keys"]
+};
+
 export type SavedPlace = {
   kind: PlaceKind;
   postcode: string;
@@ -27,14 +54,18 @@ export type SavedPlace = {
   latitude: number | null;
   longitude: number | null;
   locationSource: HomeLocationSource | null;
+  /** When on, GPS leave at this place’s distance fires that place’s checklist only. */
   reminderEnabled: boolean;
+  /** Metres from this place before a leaving nudge. */
+  thresholdMeters: HomeThresholdMeters;
+  /** Items to mention only when leaving this place. */
+  checklistItems: string[];
 };
 
 export type HomeSettings = {
+  /** Master switch — no daily “forget something” schedule; GPS leave only. */
   enabled: boolean;
   places: Record<PlaceKind, SavedPlace>;
-  thresholdMeters: HomeThresholdMeters;
-  checklistItems: string[];
 };
 
 function emptyPlace(kind: PlaceKind, reminderEnabled = kind === "home"): SavedPlace {
@@ -47,7 +78,9 @@ function emptyPlace(kind: PlaceKind, reminderEnabled = kind === "home"): SavedPl
     latitude: null,
     longitude: null,
     locationSource: null,
-    reminderEnabled
+    reminderEnabled,
+    thresholdMeters: HOME_THRESHOLD_DEFAULT_METERS,
+    checklistItems: [...DEFAULT_PLACE_CHECKLISTS[kind]]
   };
 }
 
@@ -62,9 +95,7 @@ export function createDefaultPlaces(): Record<PlaceKind, SavedPlace> {
 
 export const defaultHomeSettings: HomeSettings = {
   enabled: false,
-  places: createDefaultPlaces(),
-  thresholdMeters: 25,
-  checklistItems: ["phone", "wallet", "keys"]
+  places: createDefaultPlaces()
 };
 
 export function buildLeavingHomeSpeechText(items: string[]) {
@@ -121,6 +152,15 @@ export function getPlaceSummary(place: SavedPlace) {
   );
 }
 
+export function getPlaceChecklist(place: SavedPlace) {
+  const cleaned = place.checklistItems.map((item) => item.trim()).filter(Boolean);
+  return cleaned.length ? cleaned : DEFAULT_PLACE_CHECKLISTS[place.kind];
+}
+
+export function getPlaceThresholdMeters(place: SavedPlace) {
+  return clampHomeThresholdMeters(place.thresholdMeters);
+}
+
 export function getReminderPlaces(settings: HomeSettings) {
   return PLACE_KINDS.map((kind) => settings.places[kind]).filter(
     (place) => place.reminderEnabled && hasPlaceCoordinates(place)
@@ -136,7 +176,30 @@ export function hasHomeCoordinates(settings: HomeSettings) {
   return PLACE_KINDS.some((kind) => hasPlaceCoordinates(settings.places[kind]));
 }
 
-function normalizePlace(kind: PlaceKind, value?: Partial<SavedPlace>): SavedPlace {
+function normalizeChecklist(value: unknown, kind: PlaceKind): string[] {
+  if (Array.isArray(value) && value.length > 0) {
+    return value.map(String);
+  }
+  return [...DEFAULT_PLACE_CHECKLISTS[kind]];
+}
+
+function normalizePlace(
+  kind: PlaceKind,
+  value: Partial<SavedPlace> | undefined,
+  legacy?: { thresholdMeters?: unknown; checklistItems?: unknown }
+): SavedPlace {
+  const hasOwnChecklist = Array.isArray(value?.checklistItems) && value.checklistItems.length > 0;
+  const checklistItems = hasOwnChecklist
+    ? normalizeChecklist(value?.checklistItems, kind)
+    : kind === "home" && legacy?.checklistItems != null
+      ? normalizeChecklist(legacy.checklistItems, kind)
+      : [...DEFAULT_PLACE_CHECKLISTS[kind]];
+
+  const hasOwnThreshold = typeof value?.thresholdMeters === "number";
+  const thresholdMeters = clampHomeThresholdMeters(
+    hasOwnThreshold ? value?.thresholdMeters : legacy?.thresholdMeters
+  );
+
   return {
     ...emptyPlace(kind, kind === "home"),
     ...value,
@@ -147,42 +210,50 @@ function normalizePlace(kind: PlaceKind, value?: Partial<SavedPlace>): SavedPlac
     label: typeof value?.label === "string" ? value.label : "",
     latitude: typeof value?.latitude === "number" ? value.latitude : null,
     longitude: typeof value?.longitude === "number" ? value.longitude : null,
-    locationSource: value?.locationSource === "gps" || value?.locationSource === "address" ? value.locationSource : null,
-    reminderEnabled: typeof value?.reminderEnabled === "boolean" ? value.reminderEnabled : kind === "home"
+    locationSource:
+      value?.locationSource === "gps" || value?.locationSource === "address" ? value.locationSource : null,
+    reminderEnabled: typeof value?.reminderEnabled === "boolean" ? value.reminderEnabled : kind === "home",
+    thresholdMeters,
+    checklistItems
   };
 }
 
 function migrateLegacySettings(parsed: Record<string, unknown>): HomeSettings {
+  const legacy = {
+    thresholdMeters: parsed.thresholdMeters,
+    checklistItems: parsed.checklistItems
+  };
   const places = createDefaultPlaces();
   const latitude = typeof parsed.latitude === "number" ? parsed.latitude : null;
   const longitude = typeof parsed.longitude === "number" ? parsed.longitude : null;
-  places.home = normalizePlace("home", {
-    label: typeof parsed.label === "string" ? parsed.label : "",
-    postcode: typeof parsed.postcode === "string" ? parsed.postcode : "",
-    houseNumber: typeof parsed.houseNumber === "string" ? parsed.houseNumber : "",
-    address: typeof parsed.address === "string" ? parsed.address : "",
-    latitude,
-    longitude,
-    locationSource:
-      parsed.locationSource === "gps" || parsed.locationSource === "address"
-        ? parsed.locationSource
-        : null,
-    reminderEnabled: true
-  });
+  places.home = normalizePlace(
+    "home",
+    {
+      label: typeof parsed.label === "string" ? parsed.label : "",
+      postcode: typeof parsed.postcode === "string" ? parsed.postcode : "",
+      houseNumber: typeof parsed.houseNumber === "string" ? parsed.houseNumber : "",
+      address: typeof parsed.address === "string" ? parsed.address : "",
+      latitude,
+      longitude,
+      locationSource:
+        parsed.locationSource === "gps" || parsed.locationSource === "address"
+          ? parsed.locationSource
+          : null,
+      reminderEnabled: true
+    },
+    legacy
+  );
 
-  const thresholdMeters = HOME_THRESHOLD_OPTIONS.includes(parsed.thresholdMeters as HomeThresholdMeters)
-    ? (parsed.thresholdMeters as HomeThresholdMeters)
-    : defaultHomeSettings.thresholdMeters;
-  const checklistItems =
-    Array.isArray(parsed.checklistItems) && parsed.checklistItems.length > 0
-      ? parsed.checklistItems.map(String)
-      : defaultHomeSettings.checklistItems;
+  for (const kind of PLACE_KINDS) {
+    if (kind === "home") {
+      continue;
+    }
+    places[kind] = normalizePlace(kind, places[kind], { thresholdMeters: legacy.thresholdMeters });
+  }
 
   return {
     enabled: Boolean(parsed.enabled),
-    places,
-    thresholdMeters,
-    checklistItems
+    places
   };
 }
 
@@ -191,24 +262,23 @@ function normalizeSettings(parsed: Partial<HomeSettings> & Record<string, unknow
     return migrateLegacySettings(parsed);
   }
 
+  const legacy = {
+    thresholdMeters: parsed.thresholdMeters,
+    checklistItems: parsed.checklistItems
+  };
+
   const places = createDefaultPlaces();
   for (const kind of PLACE_KINDS) {
-    places[kind] = normalizePlace(kind, (parsed.places as Record<PlaceKind, SavedPlace>)[kind]);
+    places[kind] = normalizePlace(
+      kind,
+      (parsed.places as Record<PlaceKind, SavedPlace>)[kind],
+      legacy
+    );
   }
-
-  const thresholdMeters = HOME_THRESHOLD_OPTIONS.includes(parsed.thresholdMeters as HomeThresholdMeters)
-    ? (parsed.thresholdMeters as HomeThresholdMeters)
-    : defaultHomeSettings.thresholdMeters;
-  const checklistItems =
-    Array.isArray(parsed.checklistItems) && parsed.checklistItems.length > 0
-      ? parsed.checklistItems.map(String)
-      : defaultHomeSettings.checklistItems;
 
   return {
     enabled: Boolean(parsed.enabled),
-    places,
-    thresholdMeters,
-    checklistItems
+    places
   };
 }
 

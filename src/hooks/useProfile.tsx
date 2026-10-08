@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import { getEncryptedItem, setEncryptedItem } from "../services/encryptedStorage";
+import type { SocialAuthProvider } from "../services/socialSignIn";
 
 const PROFILE_KEY = "do-enough-done:profile";
 
@@ -32,14 +33,23 @@ export const profileIcons: Array<{ id: ProfileIcon; symbol: string; label: strin
   { id: "wave", symbol: "🌊", label: "Wave" }
 ];
 
+export type AuthProvider = SocialAuthProvider | "email";
+
 type Profile = {
   name: string;
   icon: ProfileIcon;
   avatarUri?: string;
   email: string;
   phone: string;
+  /** ISO date YYYY-MM-DD */
+  dateOfBirth?: string;
+  /** How the user started signup (details still stored locally). */
+  authProvider?: AuthProvider;
   /** ISO timestamp set when first-install registration is completed. */
   registeredAt?: string;
+  /** True only after a new registration, until the short first-run is finished. */
+  pendingFirstRun?: boolean;
+  firstRunCompletedAt?: string;
   /** When the user accepted Terms of Use */
   termsOfUseAcceptedAt?: string;
   termsOfUseVersion?: string;
@@ -57,8 +67,11 @@ type ProfileContextValue = {
   clearAvatar: () => void;
   updateEmail: (email: string) => void;
   updatePhone: (phone: string) => void;
+  updateDateOfBirth: (dateOfBirth: string) => void;
   saveProfile: (next: ProfileDraft) => void;
   completeRegistration: (next: ProfileDraft) => void;
+  completeFirstRun: () => void;
+  needsFirstRun: boolean;
 };
 
 const defaultProfile: Profile = {
@@ -119,18 +132,37 @@ export function ProfileProvider({ children }: PropsWithChildren) {
     setProfile((current) => ({ ...current, phone }));
   }, []);
 
-  const saveProfile = useCallback((next: ProfileDraft) => {
-    setProfile({
-      name: next.name.trim(),
-      icon: next.icon,
-      avatarUri: next.avatarUri,
-      email: next.email.trim(),
-      phone: next.phone.trim(),
-      registeredAt: next.registeredAt ?? profile.registeredAt,
-      termsOfUseAcceptedAt: next.termsOfUseAcceptedAt ?? profile.termsOfUseAcceptedAt,
-      termsOfUseVersion: next.termsOfUseVersion ?? profile.termsOfUseVersion
-    });
-  }, [profile.registeredAt, profile.termsOfUseAcceptedAt, profile.termsOfUseVersion]);
+  const updateDateOfBirth = useCallback((dateOfBirth: string) => {
+    setProfile((current) => ({ ...current, dateOfBirth }));
+  }, []);
+
+  const saveProfile = useCallback(
+    (next: ProfileDraft) => {
+      setProfile({
+        name: next.name.trim(),
+        icon: next.icon,
+        avatarUri: next.avatarUri,
+        email: next.email.trim(),
+        phone: next.phone.trim(),
+        dateOfBirth: next.dateOfBirth?.trim() || profile.dateOfBirth,
+        authProvider: next.authProvider ?? profile.authProvider,
+        registeredAt: next.registeredAt ?? profile.registeredAt,
+        pendingFirstRun: next.pendingFirstRun ?? profile.pendingFirstRun,
+        firstRunCompletedAt: next.firstRunCompletedAt ?? profile.firstRunCompletedAt,
+        termsOfUseAcceptedAt: next.termsOfUseAcceptedAt ?? profile.termsOfUseAcceptedAt,
+        termsOfUseVersion: next.termsOfUseVersion ?? profile.termsOfUseVersion
+      });
+    },
+    [
+      profile.authProvider,
+      profile.dateOfBirth,
+      profile.registeredAt,
+      profile.pendingFirstRun,
+      profile.firstRunCompletedAt,
+      profile.termsOfUseAcceptedAt,
+      profile.termsOfUseVersion
+    ]
+  );
 
   const completeRegistration = useCallback((next: ProfileDraft) => {
     setProfile({
@@ -139,13 +171,33 @@ export function ProfileProvider({ children }: PropsWithChildren) {
       avatarUri: next.avatarUri,
       email: next.email.trim().toLowerCase(),
       phone: next.phone.trim(),
+      dateOfBirth: next.dateOfBirth?.trim(),
+      authProvider: next.authProvider ?? "email",
       registeredAt: new Date().toISOString(),
+      pendingFirstRun: true,
+      firstRunCompletedAt: undefined,
       termsOfUseAcceptedAt: next.termsOfUseAcceptedAt ?? new Date().toISOString(),
       termsOfUseVersion: next.termsOfUseVersion
     });
   }, []);
 
-  const needsRegistration = isReady && (!profile.registeredAt || !profile.name.trim());
+  const completeFirstRun = useCallback(() => {
+    setProfile((current) => ({
+      ...current,
+      pendingFirstRun: false,
+      firstRunCompletedAt: current.firstRunCompletedAt ?? new Date().toISOString()
+    }));
+  }, []);
+
+  // First install, or complete missing mandatory fields (email / date of birth).
+  const needsRegistration =
+    isReady &&
+    (!profile.registeredAt ||
+      !profile.name.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim()) ||
+      !profile.dateOfBirth);
+
+  const needsFirstRun = isReady && !needsRegistration && profile.pendingFirstRun === true;
 
   return (
     <ProfileContext.Provider
@@ -153,14 +205,17 @@ export function ProfileProvider({ children }: PropsWithChildren) {
         profile,
         isProfileReady: isReady,
         needsRegistration,
+        needsFirstRun,
         updateName,
         updateIcon,
         updateAvatarUri,
         clearAvatar,
         updateEmail,
         updatePhone,
+        updateDateOfBirth,
         saveProfile,
-        completeRegistration
+        completeRegistration,
+        completeFirstRun
       }}
     >
       {children}

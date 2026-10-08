@@ -41,6 +41,7 @@ export async function getCurrentCoordinates() {
 }
 
 export const locationReminderExamples = [
+  "Leaving work? Got your laptop and notes?",
   "Leaving home? Got your keys, wallet, and phone?",
-  "Arriving nearby? Take a breath, then choose one next step."
+  "Leaving school? Got your homework and gym kit?"
 ];

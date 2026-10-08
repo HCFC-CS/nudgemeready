@@ -1,22 +1,28 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useId } from "react";
 import { Alert, Pressable, StyleSheet, Vibration } from "react-native";
 
-import { useSpeechToText } from "../hooks/useSpeechToText";
+import { useSpeechCapture } from "../hooks/useSpeechCapture";
 import { useOptionalVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
 import { isSpeechRecognitionSupported } from "../services/speechRecognition";
+import { releasePlaybackForMicrophone } from "../services/textToSpeech";
 import { colors } from "../theme/theme";
 
 export function SpeakButton({
   onTranscript,
   size = 28,
-  disabled
+  disabled,
+  captureId
 }: {
   onTranscript: (text: string) => void;
   size?: number;
   disabled?: boolean;
+  captureId?: string;
 }) {
+  const generatedId = useId();
+  const targetId = captureId ?? generatedId;
   const settings = useOptionalVoiceCaptureSettings();
-  const speech = useSpeechToText();
+  const speech = useSpeechCapture(targetId);
   const enabled = settings?.enabled ?? true;
   const supported = isSpeechRecognitionSupported();
   const iconSize = size <= 28 ? 16 : 18;
@@ -35,7 +41,7 @@ export function SpeakButton({
     }
 
     if (speech.isListening) {
-      const { capturedText } = speech.finish();
+      const { capturedText } = await speech.finish();
       if (capturedText) {
         onTranscript(capturedText);
         Vibration.vibrate(160);
@@ -43,6 +49,7 @@ export function SpeakButton({
       return;
     }
 
+    await releasePlaybackForMicrophone();
     const started = await speech.start();
     if (started) {
       Vibration.vibrate(100);

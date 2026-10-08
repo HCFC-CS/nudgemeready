@@ -1,5 +1,11 @@
 import { requireOptionalNativeModule } from "expo";
 
+export {
+  buildSpeechStartOptions,
+  resultTranscript,
+  speechErrorCopy
+} from "./speechCapture";
+
 type SpeechRecognitionLib = typeof import("expo-speech-recognition");
 type SpeechRecognitionModule = SpeechRecognitionLib["ExpoSpeechRecognitionModule"];
 

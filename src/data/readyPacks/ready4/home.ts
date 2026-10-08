@@ -5,6 +5,7 @@ export const ready4HomePack = ready4Pack({
   name: "Home",
   icon: "home-outline",
   category: "lifestyle",
+  version: "1.1.0",
   summary:
     "Calm home routines — daily reset, cleaning, bins, maintenance and bills — without overwhelm.",
   features: [
@@ -17,6 +18,21 @@ export const ready4HomePack = ready4Pack({
   ],
   // Free — one of two included packs
   templates: [
+    {
+      id: "what-helps",
+      title: "What would help at home?",
+      type: "list",
+      notes: "Pick one. Rest counts. Open that tool next.",
+      listItems: [
+        { title: "Daily home reset" },
+        { title: "Leaving-home check" },
+        { title: "Cleaning planner" },
+        { title: "Bin day" },
+        { title: "Maintenance glance" },
+        { title: "Household bills" },
+        { title: "Rest — also valid" }
+      ]
+    },
     {
       id: "daily-reset",
       title: "Daily home reset",
@@ -89,7 +105,7 @@ export const ready4HomePack = ready4Pack({
         { title: "Rent / mortgage noted" },
         { title: "Utilities noted" },
         { title: "Council tax / service charge" },
-        { title: "Any overdue item handled or deferred kindly" }
+        { title: "Any leftover item handled or deferred kindly" }
       ]
     }
   ],

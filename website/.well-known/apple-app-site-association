@@ -5,6 +5,14 @@
       {
         "appID": "656UL52XWW.com.helencunliffe.nudgeme",
         "paths": ["/invite", "/invite/*", "/recover", "/recover/*"]
+      },
+      {
+        "appID": "656UL52XWW.com.helencunliffe.nudgeme.v3",
+        "paths": ["/invite", "/invite/*", "/recover", "/recover/*"]
+      },
+      {
+        "appID": "656UL52XWW.com.helencunliffe.nudgeme.v4",
+        "paths": ["/invite", "/invite/*", "/recover", "/recover/*"]
       }
     ]
   },

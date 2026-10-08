@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   },
   caption: {
     fontSize: typography.caption,
-    lineHeight: 14,
+    lineHeight: 18,
     fontWeight: "500",
     color: colors.mutedText
   },

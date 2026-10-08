@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { getPack, listPacks } from "../data/readyPacks/catalogue";
+import { READY_4_PACK_LABEL } from "../content/ready4Copy";
 import { useNudgeItems } from "./useNudgeItems";
 import {
   defaultAppPreferences,
@@ -111,7 +112,7 @@ export function ReadyPacksProvider({ children }: PropsWithChildren) {
     async (packId: string) => {
       const pack = getPack(packId);
       if (!pack) {
-        throw new Error("ReadyPack not found.");
+        throw new Error(`${READY_4_PACK_LABEL} not found.`);
       }
       if (isCosmeticPackKind(pack.kind) && !READY_PACK_COSMETICS_ENABLED) {
         throw new Error("Themes, voices and characters are coming in a later update.");
@@ -143,7 +144,7 @@ export function ReadyPacksProvider({ children }: PropsWithChildren) {
     async (packId: string) => {
       const pack = getPack(packId);
       if (!pack) {
-        throw new Error("ReadyPack not found.");
+        throw new Error(`${READY_4_PACK_LABEL} not found.`);
       }
       const result = migratePack(pack, items, installState);
       replaceItems(result.items);

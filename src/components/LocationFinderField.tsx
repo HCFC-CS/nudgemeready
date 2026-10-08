@@ -6,6 +6,7 @@ import { useOptionalItemEdit } from "../hooks/useItemEdit";
 import { getLocationLabel, openInMaps, searchPlaces, toNudgeLocation } from "../services/placeSearch";
 import { colors, radii, spacing } from "../theme/theme";
 import type { NudgeLocation } from "../types/nudge";
+import { LocationDirectionsActions } from "./LocationDirectionsActions";
 import { AppText } from "./Text";
 import { VoiceFieldActions } from "./VoiceFieldActions";
 
@@ -15,6 +16,8 @@ type LocationFinderFieldProps = {
   onChange: (location: NudgeLocation | undefined) => void;
   placeholder?: string;
   editable?: boolean;
+  /** Show Directions / Maps / Waze (e.g. event venues). */
+  showDirectionsOptions?: boolean;
 };
 
 export function LocationFinderField({
@@ -22,7 +25,8 @@ export function LocationFinderField({
   value,
   onChange,
   placeholder = "Search venue or place",
-  editable
+  editable,
+  showDirectionsOptions = false
 }: LocationFinderFieldProps) {
   const edit = useOptionalItemEdit();
   const isEditable = editable ?? edit?.editable ?? true;
@@ -145,7 +149,9 @@ export function LocationFinderField({
 
       {searchError ? <AppText variant="caption" style={styles.error}>{searchError}</AppText> : null}
 
-      {value && (value.address || value.label) ? (
+      {showDirectionsOptions ? (
+        <LocationDirectionsActions location={value} />
+      ) : value && (value.address || value.label) ? (
         <Pressable
           accessibilityRole="button"
           onPress={handleOpenMaps}

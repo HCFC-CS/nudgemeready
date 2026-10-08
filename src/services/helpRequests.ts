@@ -23,8 +23,9 @@ async function saveQueue(items: HelpRequestDraft[]) {
   await setEncryptedJson(HELP_QUEUE_KEY, items);
 }
 
-function buildHelpMessage(personName: string, helpType: string) {
-  return `Hi ${personName}, could you ${helpType.toLowerCase()}? I’m asking gently through Nudge me Ready.`;
+function buildHelpMessage(personName: string, helpType: string, nudgeTitle?: string) {
+  const about = nudgeTitle?.trim() ? ` with “${nudgeTitle.trim()}”` : "";
+  return `Hi ${personName}, could you ${helpType.toLowerCase()}${about}? I’m asking gently through Nudge me Ready.`;
 }
 
 export async function sendHelpRequest(input: {
@@ -32,6 +33,7 @@ export async function sendHelpRequest(input: {
   personName: string;
   personContact?: string;
   helpType: string;
+  nudgeTitle?: string;
 }): Promise<{ ok: boolean; queued: boolean; message: string }> {
   const draft: HelpRequestDraft = {
     id: `help-${Date.now()}`,
@@ -43,7 +45,7 @@ export async function sendHelpRequest(input: {
     status: "pending"
   };
 
-  const body = buildHelpMessage(input.personName, input.helpType);
+  const body = buildHelpMessage(input.personName, input.helpType, input.nudgeTitle);
   const contact = input.personContact?.trim();
 
   try {
@@ -96,6 +98,8 @@ export async function sendHelpRequest(input: {
     };
   }
 }
+
+export { buildHelpMessage };
 
 export async function listQueuedHelpRequests() {
   return loadQueue();

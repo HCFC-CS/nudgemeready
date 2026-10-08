@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { useEffect, useId, useMemo, useState, type PropsWithChildren } from "react";
 import { Pressable, StyleSheet, TextInput, Vibration, View, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { type MockContact } from "../data/mockData";
 import { useOptionalItemEdit } from "../hooks/useItemEdit";
-import { useSpeechToText } from "../hooks/useSpeechToText";
+import { useSpeechCapture } from "../hooks/useSpeechCapture";
 import { useOptionalVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
 import {
   applyFavoriteFlags,
@@ -18,11 +18,12 @@ import {
   type DeviceContact
 } from "../services/deviceContacts";
 import { contactFavoriteKey, toggleFavoriteContactKey } from "../services/favoriteContactsStorage";
+import { releasePlaybackForMicrophone } from "../services/textToSpeech";
 import { colors, radii, shadows, spacing } from "../theme/theme";
-import type { TaskItem } from "../types/models";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import { ContactSuggestionRow } from "./ContactSuggestionRow";
+import { HelpTip } from "./HelpTip";
 import { ItemEditBanner } from "./ItemEditBanner";
 import { HeroSurface, SearchBar } from "./ModernUI";
 import { AppText } from "./Text";
@@ -52,20 +53,45 @@ export function BackButton({ onPress }: { onPress?: () => void }) {
 export function PageHeader({
   title,
   subtitle,
-  showBack = true
+  showBack = true,
+  helpText,
+  helpTitle
 }: {
   title: string;
+  /** Informational copy — shown via the “i” tip, not as body text. */
   subtitle?: string;
   showBack?: boolean;
+  /** Optional extra information behind the “i” tip. */
+  helpText?: string;
+  helpTitle?: string;
 }) {
   const navigation = useNavigation();
   const canShowBack = showBack && navigation.canGoBack();
+  const infoText = [helpText?.trim(), subtitle?.trim()].filter(Boolean).join("\n\n");
 
   return (
     <View style={styles.header}>
-      {canShowBack ? <BackButton /> : null}
-      <AppText variant="title">{title}</AppText>
-      {subtitle ? <AppText variant="muted">{subtitle}</AppText> : null}
+      <View style={styles.headerTop}>
+        {canShowBack ? <BackButton /> : null}
+        <View style={styles.headerTitleRow}>
+          <AppText variant="title" style={styles.headerTitle}>
+            {title}
+          </AppText>
+          {infoText ? <HelpTip title={helpTitle ?? title} text={infoText} /> : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Heading + optional “i” information tip for SoftCard sections. */
+export function SectionHeading({ title, info }: { title: string; info?: string }) {
+  return (
+    <View style={styles.sectionHeadingRow}>
+      <AppText variant="heading" style={styles.sectionHeadingTitle}>
+        {title}
+      </AppText>
+      {info ? <HelpTip title={title} text={info} size={36} /> : null}
     </View>
   );
 }
@@ -84,9 +110,15 @@ export function PageHeaderWithEdit({
 
   return (
     <View style={styles.header}>
-      {canShowBack ? <BackButton /> : null}
-      <AppText variant="title">{title}</AppText>
-      {subtitle ? <AppText variant="muted">{subtitle}</AppText> : null}
+      <View style={styles.headerTop}>
+        {canShowBack ? <BackButton /> : null}
+        <View style={styles.headerTitleRow}>
+          <AppText variant="title" style={styles.headerTitle}>
+            {title}
+          </AppText>
+          {subtitle ? <HelpTip title={title} text={subtitle} /> : null}
+        </View>
+      </View>
       <ItemEditBanner />
     </View>
   );
@@ -130,27 +162,6 @@ export function CategoryChip({
     <Button tone={selected ? "primary" : "quiet"} style={styles.chip} onPress={onPress} disabled={isDisabled || !onPress}>
       {label}
     </Button>
-  );
-}
-
-export function ItemCard({ item, onPress, onDone }: { item: TaskItem; onPress?: () => void; onDone?: () => void }) {
-  return (
-    <Pressable onPress={onPress} disabled={!onPress}>
-      <SoftCard>
-        <View style={styles.itemRow}>
-          <View style={styles.itemText}>
-            <AppText variant="heading">{item.title}</AppText>
-            <AppText variant="muted">
-              {formatItemType(item.taskType)}
-              {item.dueDate ? ` - ${item.dueDate}` : ""}
-            </AppText>
-          </View>
-          <Pressable onPress={onDone} disabled={!onDone} style={[styles.doneDot, item.isCompleted && styles.doneDotActive]}>
-            <AppText variant="small">{item.isCompleted ? "OK" : ""}</AppText>
-          </Pressable>
-        </View>
-      </SoftCard>
-    </Pressable>
   );
 }
 
@@ -341,7 +352,8 @@ export function VoiceCaptureButton({
   idleLabel = "Tap to speak",
   idleTone = "secondary",
   compact = false,
-  layout = "card"
+  layout = "card",
+  captureId
 }: {
   onCaptured?: (text: string, voiceNoteUrl: string) => void;
   placeholder?: string;
@@ -349,10 +361,12 @@ export function VoiceCaptureButton({
   idleTone?: "primary" | "secondary";
   compact?: boolean;
   layout?: "card" | "heroMic";
+  captureId?: string;
 }) {
   const [fallbackInput, setFallbackInput] = useState("");
   const [fallbackListening, setFallbackListening] = useState(false);
-  const speech = useSpeechToText();
+  const generatedId = useId();
+  const speech = useSpeechCapture(captureId ?? `voice-capture:${generatedId}`);
   const voiceSettings = useOptionalVoiceCaptureSettings();
   const edit = useOptionalItemEdit();
   const isEditable = edit?.editable ?? true;
@@ -365,6 +379,7 @@ export function VoiceCaptureButton({
     if (!isEditable) {
       return;
     }
+    await releasePlaybackForMicrophone();
     if (useSpeech) {
       const started = await speech.start();
       if (started) {
@@ -377,9 +392,9 @@ export function VoiceCaptureButton({
     Vibration.vibrate(100);
   }
 
-  function captureText() {
+  async function captureText() {
     if (useSpeech) {
-      const { capturedText, voiceNoteUrl } = speech.finish();
+      const { capturedText, voiceNoteUrl } = await speech.finish();
       if (!capturedText) {
         return;
       }
@@ -417,7 +432,13 @@ export function VoiceCaptureButton({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={isListening ? "Done speaking" : "Tap to speak"}
-          onPress={isListening ? captureText : startListening}
+          onPress={() => {
+            if (isListening) {
+              void captureText();
+            } else {
+              void startListening();
+            }
+          }}
           disabled={!isEditable}
           style={({ pressed }) => [
             styles.compactMic,
@@ -440,7 +461,7 @@ export function VoiceCaptureButton({
             style={styles.compactInput}
             autoFocus={!useSpeech}
             editable={!useSpeech}
-            onSubmitEditing={captureText}
+            onSubmitEditing={() => void captureText()}
           />
         ) : null}
         {speech.error ? (
@@ -451,12 +472,52 @@ export function VoiceCaptureButton({
   }
 
   if (layout === "heroMic") {
+    if (!useSpeech) {
+      return (
+        <View style={styles.heroMicWrap}>
+          <AppText variant="heading" style={styles.heroMicLabel}>
+            Voice works on iPhone
+          </AppText>
+          <AppText variant="muted" style={styles.heroMicHint}>
+            On this device, type what you want to remember. The microphone is for iPhone and iPad.
+          </AppText>
+          <TextInput
+            value={fallbackInput}
+            onChangeText={setFallbackInput}
+            placeholder={placeholder}
+            placeholderTextColor={colors.mutedText}
+            style={styles.input}
+            accessibilityLabel="Type instead of speaking"
+          />
+          <Button
+            tone={idleTone}
+            onPress={() => {
+              const capturedText = fallbackInput.trim();
+              if (!capturedText || !isEditable) {
+                return;
+              }
+              onCaptured?.(capturedText, `typed-note://${Date.now()}`);
+              setFallbackInput("");
+            }}
+            disabled={!isEditable}
+          >
+            Use this text
+          </Button>
+        </View>
+      );
+    }
     return (
       <View style={styles.heroMicWrap}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={isListening ? "Done speaking" : idleLabel}
-          onPress={isListening ? captureText : startListening}
+          onPress={() => {
+            if (isListening) {
+              void captureText();
+            } else {
+              void startListening();
+            }
+          }}
           disabled={!isEditable}
           style={({ pressed }) => [
             styles.heroMicButton,
@@ -473,7 +534,7 @@ export function VoiceCaptureButton({
           <Ionicons name="mic" size={40} color={colors.primaryDark} />
         </Pressable>
         <AppText variant="heading" style={styles.heroMicLabel}>
-          {isListening ? "Listening…" : idleLabel}
+          {isListening ? liveText || "Listening…" : idleLabel}
         </AppText>
         {isListening ? (
           <AppText variant="caption" style={styles.heroMicHint}>
@@ -520,7 +581,13 @@ export function VoiceCaptureButton({
       </View>
       <Button
         tone={isListening ? "primary" : idleTone}
-        onPress={isListening ? captureText : startListening}
+        onPress={() => {
+          if (isListening) {
+            void captureText();
+          } else {
+            void startListening();
+          }
+        }}
         disabled={!isEditable}
       >
         {isListening ? "Done speaking" : idleLabel}
@@ -577,27 +644,36 @@ export function SoftTextInput({
   return <SearchBar value={value} onChangeText={onChangeText} placeholder={placeholder} />;
 }
 
-function formatItemType(type: TaskItem["taskType"]) {
-  if (type === "taskJob") {
-    return "Task";
-  }
-  if (type === "chore") {
-    return "Routine";
-  }
-  if (type === "occasion") {
-    return "Occasion";
-  }
-  return type.charAt(0).toUpperCase() + type.slice(1);
-}
-
 const styles = StyleSheet.create({
   header: {
     gap: spacing.xs,
     paddingBottom: spacing.sm
   },
+  headerTop: {
+    gap: spacing.xs
+  },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  headerTitle: {
+    flexShrink: 1,
+    flex: 1
+  },
+  sectionHeadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    marginBottom: spacing.xs
+  },
+  sectionHeadingTitle: {
+    flex: 1
+  },
   backButton: {
     alignSelf: "flex-start",
-    minHeight: 32,
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
@@ -614,34 +690,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card
   },
   chip: {
-    minHeight: 36,
-    paddingHorizontal: 14,
+    minHeight: 44,
+    paddingHorizontal: 16,
     borderRadius: radii.pill
   },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm
-  },
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md
-  },
-  itemText: {
-    flex: 1
-  },
-  doneDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.primaryDark,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  doneDotActive: {
-    backgroundColor: colors.primary
   },
   picker: {
     gap: spacing.xs
@@ -776,7 +832,7 @@ const styles = StyleSheet.create({
   },
   compactInput: {
     width: 160,
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.borderLight,
