@@ -96,5 +96,13 @@ describe("OTA stays off the splash path", () => {
     expect(eas.build.v4.channel).toBe("v4");
     expect(eas.build.v3.channel).toBe("v3");
     expect(eas.build.production.channel).toBe("production");
+    expect(eas.build.v4.cache.key).toBe("v4-updates-sdk54-devclient6");
+    expect(eas.build.v4.ios.image).toBe("sdk-54");
+  });
+
+  it("pins expo-dev-client to the SDK 54 release so pods can install with expo-updates", () => {
+    const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+    expect(pkg.dependencies["expo-dev-client"]).toMatch(/^~6\./);
+    expect(pkg.dependencies["expo-updates"]).toMatch(/^~29\./);
   });
 });

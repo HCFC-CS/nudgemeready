@@ -43,11 +43,15 @@
       "autoIncrement": true,
       "distribution": "store",
       "channel": "v4",
+      "cache": {
+        "key": "v4-updates-sdk54-devclient6"
+      },
       "env": {
         "APP_VARIANT": "v4"
       },
       "ios": {
-        "distribution": "store"
+        "distribution": "store",
+        "image": "sdk-54"
       }
     }
   },

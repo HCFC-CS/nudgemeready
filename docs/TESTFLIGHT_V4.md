@@ -86,6 +86,8 @@ npx eas-cli build --platform ios --profile v4
 6. If it asks which Apple team, choose **656UL52XWW**.  
 7. Wait until Expo says the build finished. This can take a while. Leave the window open.
 
+If the build fails at **Install pods**, pull again (a CocoaPods pin for SDK 54 is on this branch), then rerun step 4 with `--profile v4` only. That retry uses another build credit.
+
 ### C. On your PC — send it to TestFlight
 
 8. When the build is finished, run:
