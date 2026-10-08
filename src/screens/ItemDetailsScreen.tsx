@@ -1075,7 +1075,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             placeholder="List name"
             placeholderTextColor={colors.mutedText}
           />
-          <VoiceFieldActions value={title} onChangeText={setTitle} size={28} />
+          <VoiceFieldActions captureId="list-title" value={title} onChangeText={setTitle} size={28} />
           {activeProfile.isSelf ? (
             <Pressable accessibilityRole="button" onPress={() => setShareOpen(true)} style={ls.shareBtn}>
               <Ionicons name={sharedWith.length ? "people" : "people-outline"} size={20} color={colors.accent} />
@@ -1153,7 +1153,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
             multiline
             onSubmitEditing={() => addListItem(newListItem, setListItems, setNewListItem)}
           />
-          <VoiceFieldActions value={newListItem} onChangeText={setNewListItem} size={28} />
+          <VoiceFieldActions captureId="list-new-item" value={newListItem} onChangeText={setNewListItem} size={28} />
           {newListItem.trim() ? (
             <Pressable
               accessibilityRole="button"
@@ -1382,7 +1382,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
               placeholderTextColor={colors.mutedText}
               multiline
             />
-            <VoiceFieldActions value={title} onChangeText={setTitle} size={28} />
+            <VoiceFieldActions captureId="reminder-title" value={title} onChangeText={setTitle} size={28} />
           </View>
         </View>
 
@@ -1408,6 +1408,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
               multiline
             />
             <VoiceFieldActions
+              captureId="reminder-speak-text"
               value={speakingReminderText}
               onChangeText={setSpeakingReminderText}
               size={28}
@@ -1501,7 +1502,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
         {showReminderNotes ? (
           <View style={rs.notesWrap}>
             <View style={rs.notesHeader}>
-              <VoiceFieldActions value={notes} onChangeText={setNotes} size={28} />
+              <VoiceFieldActions captureId="reminder-notes" value={notes} onChangeText={setNotes} size={28} />
             </View>
             <TextInput
               style={rs.notesInput}

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { StyleSheet, Switch, TextInput, View, type TextInputProps } from "react-native";
 
 import { useOptionalItemEdit } from "../hooks/useItemEdit";
@@ -45,6 +46,8 @@ export function Field({
   autoCapitalize?: TextInputProps["autoCapitalize"];
 }) {
   const isEditable = useFieldEditable(editable);
+  const fieldInstanceId = useId();
+  const fieldCaptureId = `field:${label}:${fieldInstanceId}`;
   const resolvedCapitalize =
     autoCapitalize ??
     (secureTextEntry || keyboardType === "email-address" ? "none" : undefined);
@@ -56,7 +59,12 @@ export function Field({
           {label}
         </AppText>
         {voiceEnabled ? (
-          <VoiceFieldActions value={value} onChangeText={onChangeText} editable={isEditable} />
+          <VoiceFieldActions
+            value={value}
+            onChangeText={onChangeText}
+            editable={isEditable}
+            captureId={fieldCaptureId}
+          />
         ) : null}
       </View>
       <TextInput

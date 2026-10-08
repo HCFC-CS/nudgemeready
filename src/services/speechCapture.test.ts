@@ -3,7 +3,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { buildSpeechStartOptions, resultTranscript, speechErrorCopy } from "./speechCapture";
+import {
+  buildSpeechStartOptions,
+  isSpeechTargetActive,
+  resultTranscript,
+  speechErrorCopy
+} from "./speechCapture";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..");
@@ -42,5 +47,34 @@ describe("microphone is not blocked by Ready", () => {
     expect(capture).not.toContain("announceVoiceReady");
     expect(speakBtn).toContain("releasePlaybackForMicrophone");
     expect(speakBtn).not.toContain("announceVoiceReady");
+  });
+});
+
+describe("only the tapped field receives speech", () => {
+  it("treats another field, notes capture, and no target as inactive", () => {
+    expect(isSpeechTargetActive("field:Title", "field:Title")).toBe(true);
+    expect(isSpeechTargetActive("field:Title", "field:Notes")).toBe(false);
+    expect(isSpeechTargetActive("field:Title", "voice-capture:notes")).toBe(false);
+    expect(isSpeechTargetActive(null, "field:Title")).toBe(false);
+    expect(isSpeechTargetActive("", "field:Title")).toBe(false);
+  });
+
+  it("gives each speak control its own capture id and one shared engine", () => {
+    const speakBtn = readFileSync(join(root, "src/components/SpeakButton.tsx"), "utf8");
+    const voiceCapture = readFileSync(join(root, "src/components/NudgeComponents.tsx"), "utf8");
+    const field = readFileSync(join(root, "src/components/FormControls.tsx"), "utf8");
+    const providers = readFileSync(join(root, "src/AppProviders.tsx"), "utf8");
+    const captureHook = readFileSync(join(root, "src/hooks/useSpeechCapture.tsx"), "utf8");
+    const speechHook = readFileSync(join(root, "src/hooks/useSpeechToText.ts"), "utf8");
+
+    expect(providers).toContain("SpeechCaptureProvider");
+    expect(speakBtn).toContain("useSpeechCapture");
+    expect(speakBtn).not.toContain("useSpeechToText");
+    expect(voiceCapture).toContain("useSpeechCapture");
+    expect(voiceCapture).not.toContain("useSpeechToText");
+    expect(field).toContain("captureId={fieldCaptureId}");
+    expect(captureHook).toContain("finishFor");
+    expect(captureHook).toContain("isSpeechTargetActive");
+    expect(speechHook).toContain("addListener");
   });
 });

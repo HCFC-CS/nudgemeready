@@ -48,6 +48,10 @@ export function speechErrorCopy(code?: string, message?: string): string {
   }
 }
 
+export function isSpeechTargetActive(activeId: string | null | undefined, targetId: string) {
+  return Boolean(activeId && activeId === targetId);
+}
+
 export function resultTranscript(event: { results?: Array<{ transcript?: string }> } | null | undefined): string {
   return (event?.results ?? [])
     .map((result) => result?.transcript ?? "")

@@ -8,7 +8,7 @@ import { AppText } from "../components/Text";
 import { useNudgeActor } from "../hooks/useNudgeActor";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useProfile } from "../hooks/useProfile";
-import { useSpeechToText } from "../hooks/useSpeechToText";
+import { useSpeechCaptureStatus } from "../hooks/useSpeechCapture";
 import { loadAppPreferences, saveAppPreferences } from "../services/appPreferencesStorage";
 import { buildCapturePreview, resolveCaptureSave } from "../services/capturePreview";
 import { createItem } from "../services/nudgeItems";
@@ -30,7 +30,7 @@ export function FirstRunScreen() {
   const actor = useNudgeActor();
   const { saveItem } = useNudgeItems();
   const { completeFirstRun } = useProfile();
-  const speech = useSpeechToText();
+  const speechStatus = useSpeechCaptureStatus();
   const [step, setStep] = useState<Step>("welcome");
   const [helpChoice, setHelpChoice] = useState<string | null>(null);
   const [composeText, setComposeText] = useState("");
@@ -39,7 +39,7 @@ export function FirstRunScreen() {
   const [busy, setBusy] = useState(false);
 
   const preview = useMemo(() => buildCapturePreview(composeText), [composeText]);
-  const voiceAvailable = speech.isAvailable;
+  const voiceAvailable = speechStatus.isAvailable;
 
   async function rememberHelp(choice: string | null) {
     const prefs = await loadAppPreferences();

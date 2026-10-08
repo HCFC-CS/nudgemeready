@@ -10,6 +10,7 @@ import { RewardBankProvider } from "./hooks/useRewardBank";
 import { SavedThingsProvider } from "./hooks/useSavedThings";
 import { BudgetProvider } from "./hooks/useBudget";
 import { Ready4PlannerProvider } from "./hooks/useReady4Planner";
+import { SpeechCaptureProvider } from "./hooks/useSpeechCapture";
 import { VoiceCaptureSettingsProvider } from "./hooks/useVoiceCaptureSettings";
 
 /** CircleProvider removed — Crew is the only support graph. */
@@ -17,23 +18,25 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <ProfileProvider>
       <VoiceCaptureSettingsProvider>
-        <HomeSettingsProvider>
-          <CrewProvider>
-            <NudgeItemsProvider>
-              <RewardBankProvider>
-                <SavedThingsProvider>
-                  <BudgetProvider>
-                    <AlexaLinkProvider>
-                      <ReadyPacksProvider>
-                        <Ready4PlannerProvider>{children}</Ready4PlannerProvider>
-                      </ReadyPacksProvider>
-                    </AlexaLinkProvider>
-                  </BudgetProvider>
-                </SavedThingsProvider>
-              </RewardBankProvider>
-            </NudgeItemsProvider>
-          </CrewProvider>
-        </HomeSettingsProvider>
+        <SpeechCaptureProvider>
+          <HomeSettingsProvider>
+            <CrewProvider>
+              <NudgeItemsProvider>
+                <RewardBankProvider>
+                  <SavedThingsProvider>
+                    <BudgetProvider>
+                      <AlexaLinkProvider>
+                        <ReadyPacksProvider>
+                          <Ready4PlannerProvider>{children}</Ready4PlannerProvider>
+                        </ReadyPacksProvider>
+                      </AlexaLinkProvider>
+                    </BudgetProvider>
+                  </SavedThingsProvider>
+                </RewardBankProvider>
+              </NudgeItemsProvider>
+            </CrewProvider>
+          </HomeSettingsProvider>
+        </SpeechCaptureProvider>
       </VoiceCaptureSettingsProvider>
     </ProfileProvider>
   );

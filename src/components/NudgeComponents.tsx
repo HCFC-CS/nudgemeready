@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { useEffect, useId, useMemo, useState, type PropsWithChildren } from "react";
 import { Pressable, StyleSheet, TextInput, Vibration, View, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { type MockContact } from "../data/mockData";
 import { useOptionalItemEdit } from "../hooks/useItemEdit";
-import { useSpeechToText } from "../hooks/useSpeechToText";
+import { useSpeechCapture } from "../hooks/useSpeechCapture";
 import { useOptionalVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
 import {
   applyFavoriteFlags,
@@ -352,7 +352,8 @@ export function VoiceCaptureButton({
   idleLabel = "Tap to speak",
   idleTone = "secondary",
   compact = false,
-  layout = "card"
+  layout = "card",
+  captureId
 }: {
   onCaptured?: (text: string, voiceNoteUrl: string) => void;
   placeholder?: string;
@@ -360,10 +361,12 @@ export function VoiceCaptureButton({
   idleTone?: "primary" | "secondary";
   compact?: boolean;
   layout?: "card" | "heroMic";
+  captureId?: string;
 }) {
   const [fallbackInput, setFallbackInput] = useState("");
   const [fallbackListening, setFallbackListening] = useState(false);
-  const speech = useSpeechToText();
+  const generatedId = useId();
+  const speech = useSpeechCapture(captureId ?? `voice-capture:${generatedId}`);
   const voiceSettings = useOptionalVoiceCaptureSettings();
   const edit = useOptionalItemEdit();
   const isEditable = edit?.editable ?? true;
