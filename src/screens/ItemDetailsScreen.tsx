@@ -219,7 +219,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
   function buildSavedItem(status: NudgeItemStatus = draft.status): NudgeItem {
     return {
       ...draft,
-      title: title.trim() || draft.title,
+      title: title.trim() || draft.title.trim() || (draft.type === "project" ? "Project" : draft.title),
       status,
       createdBy: resolveItemCreator(draft),
       isLocked,
@@ -328,7 +328,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     return <PackProvenanceBanner sourcePackId={draft.sourcePackId} userEdited={draft.userEdited} />;
   }
 
-  async function saveAndOpenWorld(status = draft.status) {
+  async function saveAndOpenWorld(status = draft.status, leaveProject = false) {
     if (!editable) {
       return;
     }
@@ -385,6 +385,14 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
 
     saveItem(saved);
     syncAppointmentRemindersFor(saved);
+    if (saved.parentId) {
+      navigation.goBack();
+      return;
+    }
+    if (saved.type === "project" && !leaveProject) {
+      setNotice("Saved. Add a task or anything else whenever you like.");
+      return;
+    }
     navigation.navigate("Tabs", { screen: "Today" });
   }
 
@@ -426,6 +434,10 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
       });
     }
     saveItem(buildSavedItem("done"));
+    if (draft.parentId) {
+      navigation.goBack();
+      return;
+    }
     if (goToDoneScreen) {
       navigation.navigate("Done");
       return;
@@ -915,28 +927,33 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
       "note"
     ];
 
-    function buildProjectChildDraft(type: NudgeItemType): NudgeItem {
-      const now = new Date().toISOString();
-      return {
-        id: `draft-${type}-${Date.now()}`,
+    function openProjectChild(type: NudgeItemType) {
+      if (!editable) {
+        return;
+      }
+      const parent = {
+        ...buildSavedItem(),
+        title: title.trim() || draft.title.trim() || "Project"
+      };
+      saveItem(parent);
+      if (parent.title !== title) {
+        setTitle(parent.title);
+      }
+      const child = createItem({
         title: "",
         type,
-        status: "open",
-        parentId: draft.id,
-        children: [],
-        createdAt: now,
-        updatedAt: now,
-        attachments: [],
-        listItems: [],
-        progress: 0,
-        notes: `For project: ${title || draft.title}`
-      };
+        parentId: parent.id,
+        createdBy: parent.createdBy,
+        notes: `For project: ${parent.title}`
+      });
+      navigation.push("ItemDetails", { draft: child });
     }
 
     return (
       <Screen>
         <PageHeaderWithEdit title="Project" subtitle="Big things, broken down." />
         {renderPackProvenance()}
+        {notice ? <AppText variant="small">{notice}</AppText> : null}
         <SoftCard>
           <Field label="Project title" value={title} onChangeText={setTitle} placeholder="Kitchen Refresh" />
           <Field label="Goal" value={projectGoal} onChangeText={setProjectGoal} multiline placeholder="What would feel good to move forward?" />
@@ -969,7 +986,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
                   key={type}
                   accessibilityRole="button"
                   disabled={!editable}
-                  onPress={() => navigation.navigate("ItemDetails", { draft: buildProjectChildDraft(type) })}
+                  onPress={() => openProjectChild(type)}
                   style={({ pressed }) => [
                     styles.projectTypeChip,
                     {
@@ -998,7 +1015,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
               {projectChildren.map((child) => (
                 <Pressable
                   key={child.id}
-                  onPress={() => navigation.navigate("ItemDetails", { draft: child })}
+                  onPress={() => navigation.push("ItemDetails", { draft: child })}
                   style={styles.projectChildRow}
                 >
                   <AppText style={{ flex: 1 }}>{child.title || "Untitled"}</AppText>
@@ -1013,7 +1030,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
         {renderReadyPackOutboundLinks()}
         {renderDocumentsSection()}
         {renderItemOptions(() => saveAndOpenWorld())}
-        <SecondaryButton onPress={() => saveAndOpenWorld()}>Just keep it simple</SecondaryButton>
+        <SecondaryButton onPress={() => void saveAndOpenWorld(draft.status, true)}>Just keep it simple</SecondaryButton>
       </Screen>
     );
   }

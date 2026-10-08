@@ -72,6 +72,33 @@ export function updateItem(items: NudgeItem[], itemId: string, updates: Partial<
   );
 }
 
+/** Keep parent.children in sync when a linked nudge is saved. */
+export function linkChildToParent(items: NudgeItem[], child: NudgeItem, now = new Date()): NudgeItem[] {
+  const parentId = child.parentId;
+  if (!parentId) {
+    return items;
+  }
+  return items.map((item) => {
+    if (item.id !== parentId) {
+      return item;
+    }
+    if (item.children.includes(child.id)) {
+      return item;
+    }
+    return {
+      ...item,
+      children: [...item.children, child.id],
+      updatedAt: now.toISOString()
+    };
+  });
+}
+
+export function upsertNudgeItem(items: NudgeItem[], item: NudgeItem, now = new Date()): NudgeItem[] {
+  const exists = items.some((candidate) => candidate.id === item.id);
+  const next = exists ? updateItem(items, item.id, item, now) : [{ ...item, updatedAt: now.toISOString() }, ...items];
+  return linkChildToParent(next, item, now);
+}
+
 export function deleteItem(items: NudgeItem[], itemId: string) {
   const descendantIds = getDescendantIds(items, itemId);
   const idsToRemove = new Set([itemId, ...descendantIds]);

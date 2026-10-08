@@ -6,7 +6,7 @@ import {
   resyncTimedNudges,
   syncSpeakingReminderNotifications
 } from "../services/speakingReminders";
-import { completeItem, deleteItem, updateItem } from "../services/nudgeItems";
+import { completeItem, deleteItem, updateItem, upsertNudgeItem } from "../services/nudgeItems";
 import { markPackItemEdited } from "../services/readyPackInstall";
 import { cleanupAttachmentsForItem } from "../services/documentAttachments";
 import { clearNudgeItemsStorage, loadNudgeItems, saveNudgeItems } from "../services/nudgeItemsStorage";
@@ -120,9 +120,9 @@ export function NudgeItemsProvider({ children }: PropsWithChildren) {
                 existing
               )
             : item;
-        return updateItem(current, item.id, nextItem);
+        return upsertNudgeItem(current, nextItem);
       }
-      return [item, ...current];
+      return upsertNudgeItem(current, item);
     });
 
     void (async () => {
