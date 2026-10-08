@@ -197,4 +197,4 @@ Do not treat these as “new” slices. They were in the first drop:
 
 ## Suggested first step
 
-I add **Slice 1** (readable type chips) in code and check it here. No Expo credit for that. We only build TestFlight at checkpoint 1, after slices 1–5 look safe.
+Slices **1–5 are in git** on this branch and have been checked here (tests). No Expo credit yet. Checkpoint 1 is the next phone TestFlight, when you want it.
