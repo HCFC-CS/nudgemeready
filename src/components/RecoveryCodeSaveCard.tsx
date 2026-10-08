@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Share, StyleSheet, View } from "react-native";
+import { Alert, Platform, Share, StyleSheet, View } from "react-native";
 
 import { colors, radii, spacing } from "../theme/theme";
 import { Button } from "./Button";
@@ -41,14 +41,23 @@ export function RecoveryCodeSaveCard({
 
   function handleContinue() {
     if (!shared) {
-      Alert.alert(
-        "Saved offline?",
-        "Write the code down or share it to a password manager / paper note before continuing. It will not be shown again.",
-        [
-          { text: "Go back", style: "cancel" },
-          { text: "I’ve saved it", onPress: onSaved }
-        ]
-      );
+      const title = "Saved offline?";
+      const message =
+        "Write the code down or share it to a password manager / paper note before continuing. It will not be shown again.";
+      // Alert.alert is iOS/Android only; without this, web Continue never fires onSaved.
+      if (Platform.OS === "web") {
+        const confirmed =
+          typeof globalThis.confirm === "function" &&
+          globalThis.confirm(`${title}\n\n${message}`);
+        if (confirmed) {
+          onSaved();
+        }
+        return;
+      }
+      Alert.alert(title, message, [
+        { text: "Go back", style: "cancel" },
+        { text: "I’ve saved it", onPress: onSaved }
+      ]);
       return;
     }
     onSaved();
