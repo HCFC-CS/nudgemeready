@@ -1,8 +1,10 @@
 # Changes after 0.3.1 (1)
 
-This is the list of **product work after the first 0.3.1 TestFlight drop**, so we can put it back **one TestFlight build at a time**.
+This is the list of **product work after the first 0.3.1 TestFlight drop**, so we can put it back **one change at a time**.
 
 Applying every later commit in one IPA is what crashed on iOS 26. Do not do that again.
+
+**You do not spend an Expo credit on every slice.** I add one change, then I check it here (tests, launch-path review). We only use a TestFlight credit when we agree a checkpoint is worth installing on your iPhone.
 
 ## Where we are now
 
@@ -15,13 +17,31 @@ Applying every later commit in one IPA is what crashed on iOS 26. Do not do that
 
 v4 **0.4.0 (1)** is the same app as 0.3.1 (1), not the later features.
 
+## Who checks what (credits)
+
+| | Who | Uses Expo credits? |
+| --- | --- | --- |
+| Add one slice of code | Me | No |
+| Run tests and look at launch / crash risk | Me | No |
+| Confirm it actually opens on your iPhone | You, on TestFlight | Yes — only at a checkpoint |
+
+I cannot see your phone from here, and this environment is not logged into Expo, so I cannot start an EAS build. A real iOS 26 crash only shows up on a real IPA.
+
+**Checkpoints** (the only times to spend a credit):
+
+1. After slices 1–5 (small JS fixes, no new native modules)
+2. After slice 6 (document picker — native)
+3. After slice 7 (Nudges timeline — big screens)
+4. After slice 10 (first-run / splash path)
+
+Between checkpoints, I keep going in git. If my checks fail, I stop and we do not build.
+
 ## How to use this list
 
-1. Keep v4 opening on the phone (Home after signup, add a nudge, Later / Sorted).
-2. Add **one slice** from the recommended order.
-3. Ship **one** TestFlight build.
-4. If that build opens, keep the slice. If it crashes on launch, that slice is the suspect — revert it and skip to a note, do not stack the old splash/native crash fixes on top.
-5. Only then start the next slice.
+1. Keep the v4 that already opens on the phone.
+2. I add **one slice** and check it here.
+3. At a checkpoint, you run one EAS/TestFlight build from the v4 folder.
+4. If that IPA opens, we keep those slices. If it crashes, those slices are the suspect — we revert them. We do not stack the old splash/native crash fixes on top.
 
 Do **not** re-apply the September–October splash / Keychain / new-architecture / Expo Updates series. Those were crash-loop patches, not product features.
 
@@ -42,9 +62,9 @@ These never needed to be inside the IPA. Leave them out of v4 builds.
 
 ---
 
-## Recommended TestFlight order
+## Recommended order
 
-Each slice is one IPA. “What to try” is the check before the next slice.
+Each slice is one **code** change. “What to try” is what I check here, and what you try on the phone at the next checkpoint.
 
 ### Slice 1 — Readable type chips
 
@@ -177,4 +197,4 @@ Do not treat these as “new” slices. They were in the first drop:
 
 ## Suggested first step
 
-Ship **Slice 1 only** (readable type chips) on v4. If that IPA opens, Slice 1 is safe and we continue. If it crashes, we learned something with one small theme change instead of the whole autumn.
+I add **Slice 1** (readable type chips) in code and check it here. No Expo credit for that. We only build TestFlight at checkpoint 1, after slices 1–5 look safe.
