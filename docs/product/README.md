@@ -13,6 +13,7 @@ Living documentation for the **0.2.0** TestFlight product line. Sourced from the
 | [Ready4 — Per-pack product specs](./ready4/README.md) | Individual product specs for all 15 Ready4 content packs |
 | [03 — User Guides](./03-User_Guides.md) | End-user how-tos for install, lock, nudges, Ready4Packs, Crew, settings |
 | [04 — Process Flows](./04-Process_Flows.md) | Diagrams for registration, lock, Ready4 pack install, Crew invite, appointments |
+| [Changes after 0.3.1 (1)](./CHANGES_SINCE_031_BUILD1.md) | One TestFlight slice at a time so v4 does not crash again |
 
 ## Related links
 
