@@ -197,8 +197,8 @@ Do not treat these as “new” slices. They were in the first drop:
 
 ## Status
 
-Slices **1–9 are in git** on this branch and have been checked here (tests). No Expo credit yet.
+Slices **1–11 are in git** on this branch and have been checked here (tests). No Expo credit yet.
 
-Slice **10** (first-run / splash) is next in code, and is the highest-risk product slice. We have not applied it yet.
+The September–October splash / Keychain / Expo Updates crash-fix series is still **not** applied.
 
-Phone checkpoints, when you want them: after 1–5, after 6 (document picker), after 7–9 (Nudges timeline).
+The next phone TestFlight would cover all eleven slices in one IPA. That is the first real-device check of first-run after signup.
