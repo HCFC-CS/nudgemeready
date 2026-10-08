@@ -31,6 +31,37 @@ async function clickText(page, text, timeout = 8000) {
   await loc.click();
 }
 
+async function clickTab(page, name) {
+  const loc = page.getByRole("button", { name, exact: true }).last();
+  await loc.waitFor({ state: "visible", timeout: 8000 });
+  await loc.click();
+}
+
+async function hasTab(page, name) {
+  return (await page.getByRole("button", { name, exact: true }).count()) > 0;
+}
+
+async function goAdd(page) {
+  await clickTab(page, "Add a nudge");
+  await page.waitForTimeout(600);
+}
+
+async function goAddHome(page) {
+  for (let i = 0; i < 8; i++) {
+    const body = await visibleText(page);
+    if (body.includes("Type it") && /What’s on your mind\?|What's on your mind\?/.test(body)) {
+      return;
+    }
+    const back = page.getByText("Back", { exact: true }).last();
+    if (await back.count()) {
+      await back.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(350);
+      continue;
+    }
+    await goAdd(page);
+  }
+}
+
 async function main() {
   await mkdir(shotDir, { recursive: true });
   await mkdir(videoDir, { recursive: true });
@@ -186,9 +217,9 @@ async function main() {
   }
 
   // Nudges week
-  const nudgesTab = page.getByLabel("Nudges");
-  if (await nudgesTab.count()) {
-    await nudgesTab.click();
+  const hasNudges = await hasTab(page, "Nudges");
+  if (hasNudges) {
+    await clickTab(page, "Nudges");
     await page.waitForTimeout(800);
     const week = page.getByText("Week", { exact: true }).first();
     if (await week.count()) {
@@ -207,131 +238,160 @@ async function main() {
   }
 
   // Prepare for something
-  const addTab = page.getByLabel("Add a nudge");
-  if (await addTab.count()) {
-    await addTab.click();
-    await page.waitForTimeout(600);
-    await dump(page, "08-add");
-    await clickText(page, "Plan it");
-    await page.waitForTimeout(500);
-    await clickText(page, "Prepare for something");
-    await page.waitForTimeout(800);
-    text = await visibleText(page);
-    await dump(page, "09-prepare-for");
-    if (/Prepare for/.test(text) && (text.includes("Save") || text.includes("item") || text.includes("Title") || text.includes("Notes"))) {
-      log("prepare", "PASS", "Prepare for something opened details instead of auto-saving");
-    } else if (text.includes("Prepare for something") && text.includes("Plan it")) {
-      log("prepare", "FAIL", "Still on the action list — tap may have missed");
+  const hasAdd = await hasTab(page, "Add a nudge");
+  try {
+    if (hasAdd) {
+      await goAdd(page);
+      await dump(page, "08-add");
+      await clickText(page, "Plan it");
+      await page.waitForTimeout(500);
+      await clickText(page, "Prepare for something");
+      await page.waitForTimeout(800);
+      text = await visibleText(page);
+      await dump(page, "09-prepare-for");
+      if (/TITLE|Title/.test(text) && /When\?/.test(text) && /Task/.test(text) && !/Or pick a path/.test(text)) {
+        log("prepare", "PASS", "Prepare for something opened details instead of auto-saving");
+      } else if (text.includes("Prepare for something") && text.includes("Plan it")) {
+        log("prepare", "FAIL", "Still on the action list — tap may have missed");
+      } else {
+        log("prepare", "INFO", `After Prepare for: ${text.slice(0, 180).replace(/\n/g, " / ")}`);
+      }
     } else {
-      log("prepare", "INFO", `After Prepare for: ${text.slice(0, 180).replace(/\n/g, " / ")}`);
+      log("prepare", "FAIL", "Add tab not found");
     }
-
-    // Back to add → plan something
-    const back = page.getByLabel(/back/i).first();
-    if (await back.count()) {
-      await back.click();
-      await page.waitForTimeout(400);
-    }
-  } else {
-    log("prepare", "FAIL", "Add tab not found");
+  } catch (error) {
+    log("prepare", "FAIL", String(error).slice(0, 180));
+    await dump(page, "09-prepare-for-error");
   }
 
   // Plan something / project
-  if (await addTab.count()) {
-    await addTab.click();
-    await page.waitForTimeout(500);
-    const planIt = page.getByText("Plan it", { exact: true });
-    if (await planIt.count()) {
-      await planIt.click();
-      await page.waitForTimeout(400);
-    }
-    const planSomething = page.getByText("Plan something", { exact: true });
-    if (await planSomething.count()) {
-      await planSomething.click();
-      await page.waitForTimeout(800);
-      text = await visibleText(page);
-      await dump(page, "10-project");
-      const titleField = page.getByPlaceholder("Kitchen Refresh");
-      if (await titleField.count()) {
-        await titleField.fill("Kitchen");
-        const smallStep = page.getByText("Task", { exact: true }).first();
-        if (await smallStep.count()) {
-          await smallStep.click();
-          await page.waitForTimeout(800);
-          text = await visibleText(page);
-          await dump(page, "11-project-child");
-          const childTitle = page.locator("input, textarea").first();
-          if (await childTitle.count()) {
-            await childTitle.fill("Buy paint");
-          }
-          const save = page.getByText("Save", { exact: true }).first();
-          if (await save.count()) {
-            await save.click();
-            await page.waitForTimeout(800);
-          }
-          text = await visibleText(page);
-          await dump(page, "12-after-child-save");
-          if (/Kitchen|Buy paint|Project/i.test(text)) {
-            log("project", "PASS", "Project/task save path ran without dropping the screen");
-          } else {
-            log("project", "INFO", `After child save: ${text.slice(0, 160).replace(/\n/g, " / ")}`);
-          }
+  try {
+    if (hasAdd) {
+      await goAdd(page);
+      const planIt = page.getByText("Plan it", { exact: true });
+      if (await planIt.count()) {
+        await planIt.first().click();
+        await page.waitForTimeout(400);
+      }
+      const planSomething = page.getByText("Plan something", { exact: true });
+      if (await planSomething.count()) {
+        await planSomething.first().click();
+        await page.waitForTimeout(800);
+        text = await visibleText(page);
+        await dump(page, "10-project");
+        const titleField = page.getByLabel("Project title");
+        if (await titleField.count()) {
+          await titleField.fill("Kitchen");
         } else {
-          log("project", "INFO", "Project screen opened but Task chip not found");
+          await page.getByPlaceholder("Kitchen Refresh").fill("Kitchen");
+        }
+        const addTask = page.getByRole("button", { name: "Task", exact: true }).last();
+        await addTask.scrollIntoViewIfNeeded();
+        await addTask.click({ force: true });
+        await page.waitForTimeout(800);
+        text = await visibleText(page);
+        await dump(page, "11-project-child");
+        const childTitle = page.getByLabel("Title").last();
+        await childTitle.waitFor({ state: "visible", timeout: 5000 });
+        await childTitle.fill("Buy paint");
+        const saveChip = page.getByRole("button", { name: /^Save$/ }).last();
+        if (await saveChip.count()) {
+          await saveChip.scrollIntoViewIfNeeded();
+          await saveChip.click({ force: true });
+          await page.waitForTimeout(800);
+        }
+        text = await visibleText(page);
+        await dump(page, "12-after-child-save");
+        if (/Kitchen|Buy paint|Project/i.test(text)) {
+          log("project", "PASS", "Project/task save path ran without dropping the screen");
+        } else {
+          log("project", "INFO", `After child save: ${text.slice(0, 160).replace(/\n/g, " / ")}`);
         }
       } else {
-        log("project", "INFO", `Plan something screen: ${text.slice(0, 160).replace(/\n/g, " / ")}`);
+        log("project", "INFO", "Plan something not on this Add screen");
       }
     }
+  } catch (error) {
+    log("project", "FAIL", String(error).slice(0, 180));
+    await dump(page, "10-project-error");
   }
 
   // Typed date via Type it
-  if (await addTab.count()) {
-    await addTab.click();
-    await page.waitForTimeout(500);
-    const typeIt = page.getByText("Type it", { exact: true });
-    if (await typeIt.count()) {
-      await typeIt.click();
-      await page.waitForTimeout(400);
-      await page.getByPlaceholder(/Call the dentist/i).fill("Call the dentist tomorrow morning");
-      await clickText(page, "Continue");
-      await page.waitForTimeout(600);
-      text = await visibleText(page);
-      await dump(page, "13-typed-date");
-      if (/tomorrow|morning|9:00|09:00|am/i.test(text)) {
-        log("typed-date", "PASS", "Confirmation kept a when from the typed words");
+  try {
+    if (hasAdd) {
+      await goAddHome(page);
+      const typeIt = page.getByText("Type it", { exact: true });
+      if (await typeIt.count()) {
+        await typeIt.last().click();
+        await page.waitForTimeout(400);
+        await page.getByPlaceholder(/Call the dentist/i).fill("Call the dentist tomorrow morning");
+        await clickText(page, "Continue");
+        await page.waitForTimeout(600);
+        text = await visibleText(page);
+        await dump(page, "13-typed-date");
+        if (/tomorrow|morning|9:00|09:00|am/i.test(text)) {
+          log("typed-date", "PASS", "Confirmation kept a when from the typed words");
+        } else {
+          log("typed-date", "FAIL", `No when on confirm: ${text.slice(0, 180).replace(/\n/g, " / ")}`);
+        }
+        const save = page.getByRole("button", { name: /^Save$/ }).last();
+        if (await save.count()) {
+          await save.click({ force: true });
+          await page.waitForTimeout(800);
+        }
       } else {
-        log("typed-date", "FAIL", `No when on confirm: ${text.slice(0, 180).replace(/\n/g, " / ")}`);
-      }
-      const save = page.getByText("Save", { exact: true }).first();
-      if (await save.count()) {
-        await save.click();
-        await page.waitForTimeout(800);
+        log("typed-date", "INFO", "Type it not on this Add screen");
       }
     }
+  } catch (error) {
+    log("typed-date", "FAIL", String(error).slice(0, 180));
+    await dump(page, "13-typed-date-error");
   }
 
   // Chips readable: open a nudge if possible
-  if (await nudgesTab.count()) {
-    await nudgesTab.click();
-    await page.waitForTimeout(500);
-    const today = page.getByText("Today", { exact: true }).first();
-    if (await today.count()) {
-      await today.click();
-    }
-    await dump(page, "14-nudges-today");
-    text = await visibleText(page);
-    if (text.includes("Save") && text.includes("Sorted") && text.includes("Later")) {
-      log("chips", "PASS", "Save · Sorted · Later visible on a nudge surface");
-    } else {
-      log("chips", "INFO", "Chip row not on this Nudges list (may be on item screen only)");
+  if (hasNudges) {
+    try {
+      text = await visibleText(page);
+      if (!(text.includes("Sorted") && text.includes("Later"))) {
+        const addDetails = page.getByRole("button", { name: "Add details" });
+        if (await addDetails.count()) {
+          await addDetails.first().click({ force: true });
+          await page.waitForTimeout(700);
+        } else {
+          await clickTab(page, "Nudges");
+          await page.waitForTimeout(400);
+          const all = page.getByText("All", { exact: true }).first();
+          if (await all.count()) {
+            await all.click();
+            await page.waitForTimeout(400);
+          }
+          const item = page.getByText(/Kitchen|Buy paint|bins|dentist/i).first();
+          if ((await item.count()) > 0) {
+            await item.click({ force: true, timeout: 4000 }).catch(() => {});
+            await page.waitForTimeout(500);
+          }
+        }
+      }
+      const finish = page.getByText("Finish this gently");
+      if (await finish.count()) {
+        await finish.last().scrollIntoViewIfNeeded();
+      }
+      await dump(page, "14-nudges-today");
+      text = await visibleText(page);
+      if (text.includes("Save") && text.includes("Sorted") && text.includes("Later")) {
+        log("chips", "PASS", "Save · Sorted · Later visible on a nudge surface");
+      } else {
+        log("chips", "INFO", "Chip row not on this Nudges list (may be on item screen only)");
+      }
+    } catch (error) {
+      log("chips", "INFO", String(error).slice(0, 160));
+      await dump(page, "14-nudges-today");
     }
   }
 
   // Documents hub
-  const menu = page.getByLabel("Menu");
-  if (await menu.count()) {
-    await menu.click();
+  if (await hasTab(page, "Menu")) {
+    await clickTab(page, "Menu");
     await page.waitForTimeout(500);
     text = await visibleText(page);
     await dump(page, "15-menu");
