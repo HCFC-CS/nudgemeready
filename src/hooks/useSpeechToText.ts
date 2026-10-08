@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Platform } from "react-native";
 
+import { buildSpeechStartOptions, resultTranscript, speechErrorCopy } from "../services/speechCapture";
 import {
   getSpeechRecognitionModule,
   isSpeechRecognitionSupported
@@ -36,10 +38,7 @@ export function useSpeechToText() {
           setIsListening(false);
         }),
         module.addListener("result", (event) => {
-          const text = event.results
-            .map((result) => result.transcript)
-            .join(" ")
-            .trim();
+          const text = resultTranscript(event);
           if (!text) {
             return;
           }
@@ -51,8 +50,12 @@ export function useSpeechToText() {
             recordingUriRef.current = event.uri;
           }
         }),
+        module.addListener("nomatch", () => {
+          setError(speechErrorCopy("nomatch"));
+          setIsListening(false);
+        }),
         module.addListener("error", (event) => {
-          setError(event.message ?? event.error);
+          setError(speechErrorCopy(event.error, event.message));
           setIsListening(false);
         })
       ];
@@ -102,29 +105,51 @@ export function useSpeechToText() {
       return false;
     }
 
-    const supportsRecording =
+    if (Platform.OS === "ios" && typeof module.requestSpeechRecognizerPermissionsAsync === "function") {
+      try {
+        const speechPermission = await module.requestSpeechRecognizerPermissionsAsync();
+        if (speechPermission.restricted) {
+          setError("Voice isn't available on this phone right now. You can type it instead.");
+          return false;
+        }
+      } catch {
+        // On-device capture can still work with microphone permission only.
+      }
+    }
+
+    const persistRecording =
       typeof module.supportsRecording === "function" && module.supportsRecording();
+    const onDevice =
+      Platform.OS === "ios" &&
+      typeof module.supportsOnDeviceRecognition === "function" &&
+      module.supportsOnDeviceRecognition();
 
-    module.start({
-      lang: "en-GB",
-      interimResults: true,
-      continuous: false,
-      ...(supportsRecording
-        ? {
-            recordingOptions: {
-              persist: true
-            }
-          }
-        : {})
-    });
-
-    return true;
+    try {
+      module.start(buildSpeechStartOptions({ persistRecording, onDevice }));
+      setIsListening(true);
+      return true;
+    } catch {
+      try {
+        module.start(buildSpeechStartOptions({ persistRecording, onDevice: false }));
+        setIsListening(true);
+        return true;
+      } catch {
+        setError("The microphone didn't start. Try once more.");
+        return false;
+      }
+    }
   }, [reset]);
 
-  const finish = useCallback(() => {
+  const finish = useCallback(async () => {
     stop();
+    await new Promise((resolve) => setTimeout(resolve, 350));
     const capturedText = transcriptRef.current.trim();
     const voiceNoteUrl = recordingUriRef.current || `voice://${Date.now()}`;
+    if (!capturedText) {
+      setIsListening(false);
+      setError(speechErrorCopy("no-speech"));
+      return { capturedText: "", voiceNoteUrl };
+    }
     reset();
     return { capturedText, voiceNoteUrl };
   }, [reset, stop]);

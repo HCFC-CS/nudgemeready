@@ -36,7 +36,7 @@ export function SpeakButton({
     }
 
     if (speech.isListening) {
-      const { capturedText } = speech.finish();
+      const { capturedText } = await speech.finish();
       if (capturedText) {
         onTranscript(capturedText);
         Vibration.vibrate(160);

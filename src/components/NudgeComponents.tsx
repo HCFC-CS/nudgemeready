@@ -389,9 +389,9 @@ export function VoiceCaptureButton({
     Vibration.vibrate(100);
   }
 
-  function captureText() {
+  async function captureText() {
     if (useSpeech) {
-      const { capturedText, voiceNoteUrl } = speech.finish();
+      const { capturedText, voiceNoteUrl } = await speech.finish();
       if (!capturedText) {
         return;
       }
@@ -429,7 +429,13 @@ export function VoiceCaptureButton({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={isListening ? "Done speaking" : "Tap to speak"}
-          onPress={isListening ? captureText : startListening}
+          onPress={() => {
+            if (isListening) {
+              void captureText();
+            } else {
+              void startListening();
+            }
+          }}
           disabled={!isEditable}
           style={({ pressed }) => [
             styles.compactMic,
@@ -452,7 +458,7 @@ export function VoiceCaptureButton({
             style={styles.compactInput}
             autoFocus={!useSpeech}
             editable={!useSpeech}
-            onSubmitEditing={captureText}
+            onSubmitEditing={() => void captureText()}
           />
         ) : null}
         {speech.error ? (
@@ -502,7 +508,13 @@ export function VoiceCaptureButton({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={isListening ? "Done speaking" : idleLabel}
-          onPress={isListening ? captureText : startListening}
+          onPress={() => {
+            if (isListening) {
+              void captureText();
+            } else {
+              void startListening();
+            }
+          }}
           disabled={!isEditable}
           style={({ pressed }) => [
             styles.heroMicButton,
@@ -566,7 +578,13 @@ export function VoiceCaptureButton({
       </View>
       <Button
         tone={isListening ? "primary" : idleTone}
-        onPress={isListening ? captureText : startListening}
+        onPress={() => {
+          if (isListening) {
+            void captureText();
+          } else {
+            void startListening();
+          }
+        }}
         disabled={!isEditable}
       >
         {isListening ? "Done speaking" : idleLabel}

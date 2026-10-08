@@ -43,6 +43,15 @@ export function announceVoiceReady() {
 
     // If speech never callbacks (some devices), continue after a short beat.
     setTimeout(finish, 1200);
+  }).then(async () => {
+    // iOS keeps the playback session until the cue fully stops. Wait before
+    // opening the mic or recognition captures silence.
+    try {
+      Speech.stop();
+    } catch {
+      // Ignore stop failures.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400));
   });
 }
 
