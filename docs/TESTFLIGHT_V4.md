@@ -1,5 +1,7 @@
 # Nudge me Ready v4 — TestFlight (fresh start beside v2 and v3)
 
+**v4 now has its own GitHub repository:** [HCFC-CS/nudgemeready-v4](https://github.com/HCFC-CS/nudgemeready-v4). See [NUDGEMEREADY_V4_REPO.md](NUDGEMEREADY_V4_REPO.md). This repo still holds v2 and v3.
+
 Use this so **v2 testers keep 0.2.0**, **v3 stays as it is**, and you install **Nudge me Ready v4** next to both. v4 is the same product as the first 0.3.1 drop, with a new home-screen icon and its own data.
 
 | | **v2** | **v3** | **v4 (fresh)** |
