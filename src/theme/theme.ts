@@ -7,6 +7,8 @@ export const brand = {
   babyBlue: "#7BA8C9",
   babyBlueDark: "#5A8AAF",
   babyBlueSoft: "#B4C9DC",
+  /** Text/border blue that stays readable on taupe and ivory. */
+  babyBlueInk: "#1A425C",
   softGrey: "#8E959E",
   charcoal: "#3A3F45",
   softGold: "#B8954F",
@@ -25,6 +27,7 @@ export const colors = {
   warmIvory: brand.warmIvory,
   softTaupe: brand.softTaupe,
   babyBlue: brand.babyBlue,
+  babyBlueInk: brand.babyBlueInk,
   softGrey: brand.softGrey,
   charcoal: brand.charcoal,
   midnightBlue: brand.midnightBlue,
@@ -85,20 +88,20 @@ export const classificationColors = {
 };
 
 export const taskTypeAccentColors: Record<string, string> = {
-  task: brand.babyBlueDark,
-  taskJob: brand.babyBlueDark,
-  subtask: brand.babyBlue,
+  task: brand.babyBlueInk,
+  taskJob: brand.babyBlueInk,
+  subtask: brand.babyBlueInk,
   project: brand.midnightBlue,
   reminder: brand.softGold,
-  appointment: brand.babyBlueDark,
+  appointment: brand.babyBlueInk,
   event: brand.softGold,
-  list: brand.softTaupe,
+  list: brand.charcoal,
   alert: brand.midnightBlue,
   occasion: brand.softGold,
   special_day: brand.softGold,
-  chore: brand.babyBlue,
-  routine: brand.babyBlue,
-  note: brand.softGrey
+  chore: brand.babyBlueInk,
+  routine: brand.babyBlueInk,
+  note: brand.charcoal
 };
 
 export const spacing = {
