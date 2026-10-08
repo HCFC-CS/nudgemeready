@@ -18,7 +18,7 @@ import {
   type DeviceContact
 } from "../services/deviceContacts";
 import { contactFavoriteKey, toggleFavoriteContactKey } from "../services/favoriteContactsStorage";
-import { announceVoiceReady } from "../services/textToSpeech";
+import { releasePlaybackForMicrophone } from "../services/textToSpeech";
 import { colors, radii, shadows, spacing } from "../theme/theme";
 import { Button } from "./Button";
 import { Card } from "./Card";
@@ -376,7 +376,7 @@ export function VoiceCaptureButton({
     if (!isEditable) {
       return;
     }
-    await announceVoiceReady();
+    await releasePlaybackForMicrophone();
     if (useSpeech) {
       const started = await speech.start();
       if (started) {
@@ -531,7 +531,7 @@ export function VoiceCaptureButton({
           <Ionicons name="mic" size={40} color={colors.primaryDark} />
         </Pressable>
         <AppText variant="heading" style={styles.heroMicLabel}>
-          {isListening ? "Listening…" : idleLabel}
+          {isListening ? liveText || "Listening…" : idleLabel}
         </AppText>
         {isListening ? (
           <AppText variant="caption" style={styles.heroMicHint}>

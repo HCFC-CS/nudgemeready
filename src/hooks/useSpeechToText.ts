@@ -119,24 +119,31 @@ export function useSpeechToText() {
 
     const persistRecording =
       typeof module.supportsRecording === "function" && module.supportsRecording();
-    const onDevice =
-      Platform.OS === "ios" &&
-      typeof module.supportsOnDeviceRecognition === "function" &&
-      module.supportsOnDeviceRecognition();
+
+    if (Platform.OS === "ios") {
+      try {
+        if (typeof module.setCategoryIOS === "function") {
+          module.setCategoryIOS({
+            category: "playAndRecord",
+            categoryOptions: ["defaultToSpeaker", "allowBluetooth"],
+            mode: "measurement"
+          });
+        }
+        if (typeof module.setAudioSessionActiveIOS === "function") {
+          module.setAudioSessionActiveIOS(true, { notifyOthersOnDeactivation: true });
+        }
+      } catch {
+        // start() still sets playAndRecord via iosCategory.
+      }
+    }
 
     try {
-      module.start(buildSpeechStartOptions({ persistRecording, onDevice }));
+      module.start(buildSpeechStartOptions({ persistRecording, onDevice: false }));
       setIsListening(true);
       return true;
     } catch {
-      try {
-        module.start(buildSpeechStartOptions({ persistRecording, onDevice: false }));
-        setIsListening(true);
-        return true;
-      } catch {
-        setError("The microphone didn't start. Try once more.");
-        return false;
-      }
+      setError("The microphone didn't start. Try once more.");
+      return false;
     }
   }, [reset]);
 

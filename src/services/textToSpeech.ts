@@ -15,7 +15,17 @@ export function isSpeaking() {
   return speaking;
 }
 
-/** Short cue so mic / speak buttons feel responsive when listening starts. */
+/** Stop any spoken cue so iOS can switch the audio session to the microphone. */
+export async function releasePlaybackForMicrophone() {
+  try {
+    Speech.stop();
+  } catch {
+    // Ignore stop failures.
+  }
+  await new Promise((resolve) => setTimeout(resolve, 200));
+}
+
+/** Short cue before reading text aloud. Do not use this before the microphone. */
 export function announceVoiceReady() {
   return new Promise<void>((resolve) => {
     let settled = false;

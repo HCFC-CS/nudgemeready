@@ -4,7 +4,7 @@ import { Alert, Pressable, StyleSheet, Vibration } from "react-native";
 import { useSpeechToText } from "../hooks/useSpeechToText";
 import { useOptionalVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
 import { isSpeechRecognitionSupported } from "../services/speechRecognition";
-import { announceVoiceReady } from "../services/textToSpeech";
+import { releasePlaybackForMicrophone } from "../services/textToSpeech";
 import { colors } from "../theme/theme";
 
 export function SpeakButton({
@@ -44,7 +44,7 @@ export function SpeakButton({
       return;
     }
 
-    await announceVoiceReady();
+    await releasePlaybackForMicrophone();
     const started = await speech.start();
     if (started) {
       Vibration.vibrate(100);
