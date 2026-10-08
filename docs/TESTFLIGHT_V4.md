@@ -52,7 +52,13 @@ git pull origin cursor/ready4-platform-audit-fixes
 npx eas-cli build --platform ios --profile v4
 ```
 
-If Expo asks about expo-updates, type **n**.
+If Expo asks about expo-updates, type **Y**. v4 now includes EAS Update so later JavaScript-only fixes can go out without a new IPA. The first v4 IPA still needs a native build so the update client is inside the app. After that IPA is on TestFlight:
+
+```powershell
+npx eas-cli update --channel v4 --platform ios --message "what changed"
+```
+
+`eas update` is not an EAS **build** credit. It still needs you to be logged into Expo on your machine. The update is downloaded in the background after the taupe screen has painted, and it applies the next time the app is opened — it does not reload during signup.
 
 When the build finishes:
 

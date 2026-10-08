@@ -33,6 +33,7 @@ I cannot see your phone from here, and this environment is not logged into Expo,
 2. After slice 6 (document picker — native)
 3. After slice 7 (Nudges timeline — big screens)
 4. After slice 10 (first-run / splash path)
+5. After slice 12 (EAS Update native client — needed before `eas update` can reach a phone)
 
 Between checkpoints, I keep going in git. If my checks fail, I stop and we do not build.
 
@@ -43,7 +44,9 @@ Between checkpoints, I keep going in git. If my checks fail, I stop and we do no
 3. At a checkpoint, you run one EAS/TestFlight build from the v4 folder.
 4. If that IPA opens, we keep those slices. If it crashes, those slices are the suspect — we revert them. We do not stack the old splash/native crash fixes on top.
 
-Do **not** re-apply the September–October splash / Keychain / new-architecture / Expo Updates series. Those were crash-loop patches, not product features.
+Do **not** re-apply the September–October splash / Keychain / new-architecture crash-fix series. Those were crash-loop patches, not product features.
+
+EAS Update for **v4** is a separate, later slice: native check stays off at launch, JS fetches after paint, and the bundle applies on the next reopen. That is not the old crash-fix stack.
 
 ---
 
@@ -151,6 +154,12 @@ Each slice is one **code** change. “What to try” is what I check here, and w
 - **Risk:** Low if slice 10 already opens.
 - **What to try:** Tomorrow reminder visible in Week. First-run empty state does not look pre-saved.
 
+### Slice 12 — EAS Update (v4)
+
+- **What you see:** Nothing on screen. After a v4 IPA that includes `expo-updates`, later JavaScript-only fixes can be published with `eas update --channel v4` and appear the next time the app is opened.
+- **Risk:** Medium (native module). Check-on-launch is **off**. The client is loaded only after the taupe screen has painted, and it never reloads during signup.
+- **What to try:** App still opens past the title. Signup is not interrupted. This needs one native TestFlight before OTA can work on a phone.
+
 ---
 
 ## Do not put back as a bundle
@@ -170,7 +179,7 @@ These came **after** `260cc81`. They were launch-crash patches and rollbacks. Re
 | `c285e61` | Branded shell instead of white screen |
 | `bbb8044` | Leave the title if storage never returns — last v3 IPA that **stayed open** (build 14) |
 | `fc70ddc` | Show register if launch stalls — later v3 builds stuck or crashed |
-| `7aeeec5`–`bcfef6f` | Expo Updates, then remove them, pod / SDK pinning |
+| `7aeeec5`–`bcfef6f` | Old v3 Expo Updates add/remove / pod pinning — do not replay; v4 uses slice 12 |
 | `f316be3` | Roll back to build 14 |
 | `a945018` | Restore 0.3.1 (1) |
 | `702b037` | Restore slices 1–11 **all at once** — crashed |
@@ -197,8 +206,8 @@ Do not treat these as “new” slices. They were in the first drop:
 
 ## Status
 
-Slices **1–11 are in git** on this branch and have been checked here (tests). No Expo credit yet.
+Slices **1–12 are in git** on this branch and have been checked here (tests). No Expo credit yet.
 
-The September–October splash / Keychain / Expo Updates crash-fix series is still **not** applied.
+The September–October splash / Keychain crash-fix series is still **not** applied.
 
-The next phone TestFlight would cover all eleven slices in one IPA. That is the first real-device check of first-run after signup.
+The next phone TestFlight would cover slices 1–12 in one IPA. That IPA is also the first that can receive later `eas update` JS drops. That is the first real-device check of first-run after signup.

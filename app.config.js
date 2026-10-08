@@ -46,6 +46,17 @@ module.exports = {
   slug: base.slug,
   version: identity.version,
   scheme: identity.scheme,
+  // Written here (not only in app.json) so `eas build` can see EAS Update
+  // on a dynamic app.config.js and does not try to rewrite this file.
+  runtimeVersion: {
+    policy: "appVersion"
+  },
+  updates: {
+    url: "https://u.expo.dev/6ca4ec88-2487-43ae-a858-5c3d96abf41e",
+    enabled: true,
+    checkAutomatically: "NEVER",
+    fallbackToCacheTimeout: 0
+  },
   ios: {
     ...base.ios,
     bundleIdentifier: identity.bundleIdentifier,
