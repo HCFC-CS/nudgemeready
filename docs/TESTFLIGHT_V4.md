@@ -42,35 +42,84 @@ Do this **before** the first v4 Expo build.
 
 ---
 
-## Build & upload v4
+## Build & upload v4 (do this in order)
 
-From the project folder, after Apple setup:
+Use the existing folder `C:\Users\HCCun\Documents\nudgemeready` and branch `cursor/ready4-platform-audit-fixes`. That is where slices 1–12 live. Do **not** build from a separate `nudgemeready-v4` folder, and do **not** use `--profile v3` or `--profile production`.
+
+This first drop uses **one EAS build credit**. Later JavaScript-only fixes can use `eas update` and do not need another IPA.
+
+### A. On your PC — get the code
+
+1. Open **PowerShell**.
+2. Run:
 
 ```powershell
 cd C:\Users\HCCun\Documents\nudgemeready
+git fetch origin cursor/ready4-platform-audit-fixes
+git checkout cursor/ready4-platform-audit-fixes
 git pull origin cursor/ready4-platform-audit-fixes
+```
+
+3. Confirm you are logged into Expo:
+
+```powershell
+npx eas-cli whoami
+```
+
+If it says you are not logged in:
+
+```powershell
+npx eas-cli login
+```
+
+Use your Expo account (the same one as v2 / v3).
+
+### B. On your PC — start the v4 iOS build
+
+4. Run:
+
+```powershell
 npx eas-cli build --platform ios --profile v4
 ```
 
-If Expo asks about expo-updates, type **Y**. v4 now includes EAS Update so later JavaScript-only fixes can go out without a new IPA. The first v4 IPA still needs a native build so the update client is inside the app. After that IPA is on TestFlight:
+5. If Expo asks whether to set up **expo-updates**, type **Y** and press Enter.  
+6. If it asks which Apple team, choose **656UL52XWW**.  
+7. Wait until Expo says the build finished. This can take a while. Leave the window open.
 
-```powershell
-npx eas-cli update --channel v4 --platform ios --message "what changed"
-```
+### C. On your PC — send it to TestFlight
 
-`eas update` is not an EAS **build** credit. It still needs you to be logged into Expo on your machine. The update is downloaded in the background after the taupe screen has painted, and it applies the next time the app is opened — it does not reload during signup.
-
-When the build finishes:
+8. When the build is finished, run:
 
 ```powershell
 npx eas-cli submit --platform ios --profile v4 --latest
 ```
 
-In TestFlight for the **v4** app only:
+9. Confirm Apple login / 2FA if asked.  
+10. Wait until App Store Connect shows the v4 build as **Ready to Test**.
 
-1. Wait until the build is **Ready to Test**.
-2. Add yourself to an **Internal Testing** group on **v4**.
-3. Do **not** add this IPA to the v2 or v3 groups.
+### D. On your iPhone — install only v4
+
+11. Open **TestFlight**.  
+12. Open the app named **Nudge me Ready v4** (not v2, not v3).  
+13. Install / update that app.  
+14. Open it. You should get past the title to register or Home.  
+15. Leave **Nudge me Ready** (v2) and **Nudge me Ready v3** as they are.
+
+### E. Later — JavaScript-only update (no new IPA)
+
+Only after that v4 app is already on your phone. Do this when we have a small JS fix and you do not need a new native build.
+
+16. On your PC, in the same folder and branch:
+
+```powershell
+cd C:\Users\HCCun\Documents\nudgemeready
+git pull origin cursor/ready4-platform-audit-fixes
+npx eas-cli update --channel v4 --platform ios --message "short note about what changed"
+```
+
+17. On the iPhone: force-close **Nudge me Ready v4**, wait a few seconds, open it once (it may download in the background), then force-close and open it **again**. The new JavaScript applies on that second open.
+
+`eas update` is not a build credit. If the change needs a new native module, skip this and do another `--profile v4` build instead.
 
 ---
 
