@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
 
-import { colors, radii, spacing } from "../theme/theme";
+import { actionChipColors, colors, radii, spacing } from "../theme/theme";
 import { AppText } from "./Text";
 
 /**
@@ -104,14 +104,7 @@ function ActionChip({
   disabled?: boolean;
   tone: "save" | "done" | "quiet" | "danger";
 }) {
-  const iconColor =
-    tone === "save"
-      ? colors.babyBlue
-      : tone === "done"
-        ? colors.done
-        : tone === "danger"
-          ? colors.danger
-          : colors.accent;
+  const palette = actionChipColors[tone];
 
   return (
     <Pressable
@@ -121,23 +114,13 @@ function ActionChip({
       onPress={onPress}
       style={({ pressed }) => [
         styles.chip,
-        tone === "save" && styles.chipSave,
-        tone === "done" && styles.chipDone,
-        tone === "danger" && styles.chipDanger,
+        { borderColor: palette.borderColor, backgroundColor: palette.backgroundColor },
         disabled && styles.chipDisabled,
         pressed && !disabled && styles.pressed
       ]}
     >
-      <Ionicons name={icon} size={18} color={iconColor} />
-      <AppText
-        variant="caption"
-        style={[
-          styles.chipLabel,
-          tone === "save" && styles.chipLabelSave,
-          tone === "done" && styles.chipLabelDone,
-          tone === "danger" && styles.chipLabelDanger
-        ]}
-      >
+      <Ionicons name={icon} size={18} color={palette.color} />
+      <AppText variant="caption" style={[styles.chipLabel, { color: palette.color }]}>
         {label}
       </AppText>
     </Pressable>
@@ -165,37 +148,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    backgroundColor: colors.card
-  },
-  chipSave: {
-    borderColor: colors.babyBlue,
-    backgroundColor: colors.primarySoft
-  },
-  chipDone: {
-    borderColor: colors.done,
-    backgroundColor: colors.doneSoft
-  },
-  chipDanger: {
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerSoft
+    borderWidth: 1
   },
   chipDisabled: {
     opacity: 0.45
   },
   chipLabel: {
-    color: colors.primaryDark,
     fontWeight: "700"
-  },
-  chipLabelSave: {
-    color: colors.babyBlue
-  },
-  chipLabelDone: {
-    color: colors.done
-  },
-  chipLabelDanger: {
-    color: colors.danger
   },
   pressed: {
     opacity: 0.88
