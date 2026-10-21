@@ -52,6 +52,21 @@ export function isSpeechTargetActive(activeId: string | null | undefined, target
   return Boolean(activeId && activeId === targetId);
 }
 
+/** Another field is already listening, so this speak button should not start or steal. */
+export function canStartSpeechTarget(activeId: string | null | undefined, targetId: string) {
+  return !activeId || activeId === targetId;
+}
+
+export function speakToggleAccessibilityLabel(isListening: boolean, idleLabel = "Tap to speak") {
+  return isListening ? "Tap again to capture" : idleLabel;
+}
+
+export function speakListeningHint(useSpeech = true) {
+  return useSpeech
+    ? "Listening… tap the same button again to capture."
+    : "Type what you would say, then tap the same button again.";
+}
+
 export function resultTranscript(event: { results?: Array<{ transcript?: string }> } | null | undefined): string {
   return (event?.results ?? [])
     .map((result) => result?.transcript ?? "")

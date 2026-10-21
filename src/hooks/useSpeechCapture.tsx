@@ -8,7 +8,7 @@ import {
   useState
 } from "react";
 
-import { isSpeechTargetActive } from "../services/speechCapture";
+import { canStartSpeechTarget, isSpeechTargetActive } from "../services/speechCapture";
 import { useSpeechToText } from "./useSpeechToText";
 
 type FinishResult = {
@@ -36,8 +36,8 @@ export function SpeechCaptureProvider({ children }: PropsWithChildren) {
 
   const startFor = useCallback(
     async (id: string) => {
-      if (activeIdRef.current && activeIdRef.current !== id) {
-        reset();
+      if (!canStartSpeechTarget(activeIdRef.current, id)) {
+        return false;
       }
       activeIdRef.current = id;
       setActiveId(id);
@@ -48,7 +48,7 @@ export function SpeechCaptureProvider({ children }: PropsWithChildren) {
       }
       return ok;
     },
-    [reset, start]
+    [start]
   );
 
   const finishFor = useCallback(
@@ -101,6 +101,7 @@ export function useSpeechCapture(targetId: string) {
   const mine = isSpeechTargetActive(context.activeId, targetId);
   return {
     isListening: context.isListening && mine,
+    isBusyElsewhere: Boolean(context.activeId && !mine),
     transcript: mine ? context.transcript : "",
     error: mine ? context.error : null,
     isAvailable: context.isAvailable,

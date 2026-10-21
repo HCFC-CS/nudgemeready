@@ -18,6 +18,7 @@ import {
   type DeviceContact
 } from "../services/deviceContacts";
 import { contactFavoriteKey, toggleFavoriteContactKey } from "../services/favoriteContactsStorage";
+import { speakListeningHint, speakToggleAccessibilityLabel } from "../services/speechCapture";
 import { releasePlaybackForMicrophone } from "../services/textToSpeech";
 import { colors, radii, shadows, spacing } from "../theme/theme";
 import { Button } from "./Button";
@@ -376,7 +377,7 @@ export function VoiceCaptureButton({
   const liveText = useSpeech ? speech.transcript : fallbackInput;
 
   async function startListening() {
-    if (!isEditable) {
+    if (!isEditable || speech.isBusyElsewhere) {
       return;
     }
     await releasePlaybackForMicrophone();
@@ -390,6 +391,14 @@ export function VoiceCaptureButton({
     setFallbackInput("");
     setFallbackListening(true);
     Vibration.vibrate(100);
+  }
+
+  function toggleSpeak() {
+    if (isListening) {
+      void captureText();
+      return;
+    }
+    void startListening();
   }
 
   async function captureText() {
@@ -422,32 +431,26 @@ export function VoiceCaptureButton({
     setFallbackListening(false);
   }
 
-  const listeningCopy = useSpeech
-    ? "Listening… tap done when finished."
-    : "Type what you would say, then tap done.";
+  const listeningCopy = speakListeningHint(useSpeech);
+  const speakLabel = speakToggleAccessibilityLabel(isListening, idleLabel || "Tap to speak");
 
   if (compact) {
     return (
       <View style={styles.compactVoice}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={isListening ? "Done speaking" : "Tap to speak"}
-          onPress={() => {
-            if (isListening) {
-              void captureText();
-            } else {
-              void startListening();
-            }
-          }}
+          accessibilityLabel={speakLabel}
+          onPress={toggleSpeak}
           disabled={!isEditable}
           style={({ pressed }) => [
             styles.compactMic,
             isListening && styles.voiceIconActive,
+            speech.isBusyElsewhere && styles.compactMicMuted,
             pressed && styles.compactMicPressed
           ]}
         >
           <Ionicons
-            name={isListening ? "checkmark" : "mic"}
+            name="mic"
             size={22}
             color={isListening ? colors.onPrimary : colors.primaryDark}
           />
@@ -510,18 +513,13 @@ export function VoiceCaptureButton({
       <View style={styles.heroMicWrap}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={isListening ? "Done speaking" : idleLabel}
-          onPress={() => {
-            if (isListening) {
-              void captureText();
-            } else {
-              void startListening();
-            }
-          }}
+          accessibilityLabel={speakLabel}
+          onPress={toggleSpeak}
           disabled={!isEditable}
           style={({ pressed }) => [
             styles.heroMicButton,
             isListening && styles.heroMicListening,
+            speech.isBusyElsewhere && styles.compactMicMuted,
             pressed && styles.compactMicPressed
           ]}
         >
@@ -538,7 +536,7 @@ export function VoiceCaptureButton({
         </AppText>
         {isListening ? (
           <AppText variant="caption" style={styles.heroMicHint}>
-            Tap to stop
+            Tap again to capture
           </AppText>
         ) : null}
         {isListening ? (
@@ -564,10 +562,16 @@ export function VoiceCaptureButton({
 
   return (
     <HeroSurface>
-      <View style={styles.voiceHero}>
-        <View style={[styles.voiceIcon, isListening && styles.voiceIconActive]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={speakLabel}
+        onPress={toggleSpeak}
+        disabled={!isEditable}
+        style={styles.voiceHero}
+      >
+        <View style={[styles.voiceIcon, isListening && styles.voiceIconActive, speech.isBusyElsewhere && styles.compactMicMuted]}>
           <Ionicons
-            name={isListening ? "mic" : "mic-outline"}
+            name="mic"
             size={28}
             color={isListening ? "#FFFFFF" : colors.primaryDark}
           />
@@ -575,22 +579,17 @@ export function VoiceCaptureButton({
         <View style={styles.voiceCopy}>
           <AppText variant="heading">{isListening ? "Listening…" : "Say it out loud"}</AppText>
           <AppText variant="caption">
-            {isListening ? listeningCopy : "Tap to capture a nudge by voice."}
+            {isListening ? listeningCopy : "Tap to speak, then tap the same button again to capture."}
           </AppText>
         </View>
-      </View>
+      </Pressable>
       <Button
+        accessibilityLabel={speakLabel}
         tone={isListening ? "primary" : idleTone}
-        onPress={() => {
-          if (isListening) {
-            void captureText();
-          } else {
-            void startListening();
-          }
-        }}
+        onPress={toggleSpeak}
         disabled={!isEditable}
       >
-        {isListening ? "Done speaking" : idleLabel}
+        {idleLabel}
       </Button>
       {isListening ? (
         <>
@@ -829,6 +828,9 @@ const styles = StyleSheet.create({
   },
   compactMicPressed: {
     opacity: 0.85
+  },
+  compactMicMuted: {
+    opacity: 0.55
   },
   compactInput: {
     width: 160,

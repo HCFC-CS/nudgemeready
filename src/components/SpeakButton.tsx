@@ -4,6 +4,7 @@ import { Alert, Pressable, StyleSheet, Vibration } from "react-native";
 
 import { useSpeechCapture } from "../hooks/useSpeechCapture";
 import { useOptionalVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
+import { speakToggleAccessibilityLabel } from "../services/speechCapture";
 import { isSpeechRecognitionSupported } from "../services/speechRecognition";
 import { releasePlaybackForMicrophone } from "../services/textToSpeech";
 import { colors } from "../theme/theme";
@@ -49,6 +50,10 @@ export function SpeakButton({
       return;
     }
 
+    if (speech.isBusyElsewhere) {
+      return;
+    }
+
     await releasePlaybackForMicrophone();
     const started = await speech.start();
     if (started) {
@@ -59,18 +64,18 @@ export function SpeakButton({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={speech.isListening ? "Done speaking" : "Tap to speak"}
+      accessibilityLabel={speakToggleAccessibilityLabel(speech.isListening)}
       onPress={() => void handlePress()}
       style={({ pressed }) => [
         styles.button,
         { width: size, height: size, borderRadius: size / 2 },
         speech.isListening && styles.buttonActive,
-        !supported && styles.buttonMuted,
+        (!supported || speech.isBusyElsewhere) && styles.buttonMuted,
         pressed && styles.buttonPressed
       ]}
     >
       <Ionicons
-        name={speech.isListening ? "checkmark" : "mic"}
+        name="mic"
         size={iconSize}
         color={speech.isListening ? colors.onPrimary : colors.primaryDark}
       />
