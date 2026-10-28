@@ -1,4 +1,5 @@
 import { createItem } from "./nudgeItems";
+import { READY_4_PACK_LABEL } from "../content/ready4Copy";
 import { canInstallPack, type ReadyPackEntitlementLedger } from "./readyPackEntitlements";
 import type { NudgeItem, NudgeListItem } from "../types/nudge";
 import type {
@@ -44,6 +45,7 @@ export function templateToItem(
       priority: template.priority,
       sourcePackId: pack.id,
       sourceTemplateId: template.id,
+      dueDaysBeforePlannerEvent: template.dueDaysBeforePlannerEvent,
       userEdited: false
     },
     now
@@ -83,10 +85,10 @@ export function installPack(
 ): InstallResult {
   const entitlement = canInstallPack(pack, ledger);
   if (!entitlement.allowed) {
-    throw new Error(entitlement.reason ?? "Not entitled to install this ReadyPack.");
+    throw new Error(entitlement.reason ?? `Not entitled to install this ${READY_4_PACK_LABEL}.`);
   }
   if (state.installed[pack.id]) {
-    throw new Error("This ReadyPack is already installed. Uninstall it first or use update.");
+    throw new Error(`This ${READY_4_PACK_LABEL} is already installed. Uninstall it first or use update.`);
   }
 
   const templateItemIds: Record<string, string> = {};
@@ -137,17 +139,38 @@ export function uninstallPack(
 
   let removedCount = 0;
   let keptEditedCount = 0;
-  const nextItems = items.filter((item) => {
+  const nextItems: NudgeItem[] = [];
+
+  for (const item of items) {
     if (item.sourcePackId !== packId) {
-      return true;
+      nextItems.push(item);
+      continue;
     }
+
+    // Core / user nudges that only linked a pack must survive uninstall.
+    // Clear the association; never delete the underlying nudge.
+    if (item.nudgeIntent) {
+      keptEditedCount += 1;
+      nextItems.push({
+        ...item,
+        sourcePackId: undefined,
+        sourceTemplateId: undefined
+      });
+      continue;
+    }
+
     if (mode === "unedited_only" && item.userEdited) {
       keptEditedCount += 1;
-      return true;
+      nextItems.push({
+        ...item,
+        sourcePackId: undefined,
+        sourceTemplateId: undefined
+      });
+      continue;
     }
+
     removedCount += 1;
-    return false;
-  });
+  }
 
   const nextInstalled = { ...state.installed };
   delete nextInstalled[packId];

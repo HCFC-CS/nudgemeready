@@ -5,6 +5,7 @@ export const ready4DigitalLifePack = ready4Pack({
   name: "Digital Life",
   icon: "laptop-outline",
   category: "lifestyle",
+  version: "1.1.0",
   summary:
     "Passwords, updates, subscriptions, backups and device health — digital admin in small steps.",
   features: [
@@ -17,6 +18,21 @@ export const ready4DigitalLifePack = ready4Pack({
   ],
   productId: "ready.pack.ready4_digital_life",
   templates: [
+    {
+      id: "what-helps",
+      title: "What would help with digital life?",
+      type: "list",
+      notes: "Pick one area. Open that tool next.",
+      listItems: [
+        { title: "Password review" },
+        { title: "Software updates" },
+        { title: "Subscriptions" },
+        { title: "Backup check" },
+        { title: "Device health" },
+        { title: "Digital inventory" },
+        { title: "Rest — also valid" }
+      ]
+    },
     {
       id: "password-review",
       title: "Password review",

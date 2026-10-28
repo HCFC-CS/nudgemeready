@@ -51,7 +51,7 @@ export async function loadNudgeItems(): Promise<LoadNudgeItemsResult> {
     }
     return {
       items: [],
-      error: caught instanceof Error ? caught.message : "Could not load nudges."
+      error: "Your saved nudges could not be read just now. Try again in a moment."
     };
   }
 }

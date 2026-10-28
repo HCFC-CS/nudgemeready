@@ -1,4 +1,5 @@
 import { getEncryptedItem, setEncryptedItem } from "./encryptedStorage";
+import { READY_4_PACK_LABEL } from "../content/ready4Copy";
 import type { ReadyPack } from "../types/readyPacks";
 import {
   isIapConfiguredForCurrentPlatform,
@@ -82,7 +83,7 @@ export function getPackAccessLabel(
   options: { canInstall: boolean; allowAll: boolean }
 ): string {
   if (isPackFree(pack)) {
-    return "Free ReadyPack.";
+    return `Free ${READY_4_PACK_LABEL}.`;
   }
   if (!READY_PACK_STORE_BILLING_ENABLED) {
     return "Included in this version. App Store / Play purchases are not enabled yet — you will not be charged.";
@@ -115,7 +116,7 @@ export function canInstallPack(
   }
   return {
     allowed: false,
-    reason: "This ReadyPack needs a purchase. Restore purchases in Settings if you already bought it."
+    reason: `This ${READY_4_PACK_LABEL} needs a purchase. Restore purchases in Settings if you already bought it.`
   };
 }
 

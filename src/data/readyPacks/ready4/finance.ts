@@ -5,6 +5,7 @@ export const ready4FinancePack = ready4Pack({
   name: "Finance",
   icon: "wallet-outline",
   category: "lifestyle",
+  version: "1.1.0",
   summary:
     "Bills, subscriptions, renewals and a simple budget glance — organised calmly, not judged.",
   features: [
@@ -17,11 +18,25 @@ export const ready4FinancePack = ready4Pack({
   productId: "ready.pack.ready4_finance",
   templates: [
     {
+      id: "what-helps",
+      title: "What would help with money admin?",
+      type: "list",
+      notes: "Pick one section. Open that tool next. Amounts stay optional.",
+      listItems: [
+        { title: "Upcoming bills" },
+        { title: "Subscription review" },
+        { title: "Annual renewals" },
+        { title: "Budget glance" },
+        { title: "Payment due soon" },
+        { title: "Rest — also valid" }
+      ]
+    },
+    {
       id: "bill-calendar",
       title: "Upcoming bills",
       type: "list",
       repeatRule: { frequency: "monthly" },
-      notes: "Organisational only — not financial advice. Edit amounts and dates to suit you.",
+      notes: "Organisational only — not financial advice. Edit amounts and dates to suit you. When ready, tap Sorted / Later / Ask.",
       listItems: [
         { title: "Bill 1 — (edit me)" },
         { title: "Bill 2 — (edit me)" },
@@ -34,7 +49,7 @@ export const ready4FinancePack = ready4Pack({
       title: "Subscription review",
       type: "list",
       repeatRule: { frequency: "monthly" },
-      notes: "Keep, pause or cancel — your choice. No shame for unused trials.",
+      notes: "Keep, Review later, Cancelled, or Not sure — your choice. No shame for unused trials.",
       listItems: [
         { title: "Streaming / media" },
         { title: "Apps / cloud" },

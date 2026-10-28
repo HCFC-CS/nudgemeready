@@ -88,11 +88,11 @@ flowchart TD
 
 ---
 
-## 4. ReadyPack browse → install
+## 4. Ready4Packs browse → install
 
 ```mermaid
 flowchart TD
-  A[Home or More: ReadyPacks] --> B[Catalogue list]
+  A[Home or More: Ready4Packs] --> B[Catalogue list]
   B --> C[Preview pack]
   C --> D{Free pack?}
   D -->|Yes Home / Wellbeing| E[Install allowed]
@@ -175,7 +175,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  A[Ready 4 Travel item] --> B[User opens shop / booking link]
+  A[Ready4 Travel item] --> B[User opens shop / booking link]
   B --> C{Partner host?}
   C -->|Yes Amazon / Booking / extras| D{Programme IDs set?}
   D -->|Yes| E[Affiliate params applied]
@@ -213,7 +213,7 @@ Current example: **0.2.0 build 13** (see Expo build dashboard).
 flowchart TD
   A[User contacts support] --> B{Topic}
   B --> C[Lock / recovery]
-  B --> D[ReadyPacks / charging]
+  B --> D[Ready4Packs / charging]
   B --> E[Crew invite]
   B --> F[Permissions Face ID calendar contacts]
   B --> G[Data loss]
@@ -226,7 +226,7 @@ flowchart TD
 
 ---
 
-## 10. Content publishing (Ready 4)
+## 10. Content publishing (Ready4)
 
 ```mermaid
 flowchart TD
@@ -241,5 +241,5 @@ flowchart TD
 ## Related documents
 
 - [Product Spec Catalogue](./01-Product_Spec_Catalogue.md)  
-- [Ready 4 Catalogue Edition 1](./02-Ready4_Catalogue_Edition_1.md)  
+- [Ready4 Catalogue Edition 1](./02-Ready4_Catalogue_Edition_1.md)  
 - [User Guides](./03-User_Guides.md)  

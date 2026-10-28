@@ -11,7 +11,8 @@ export function VoiceFieldActions({
   onChangeText,
   editable = true,
   size = 28,
-  replaceOnSpeak = false
+  replaceOnSpeak = false,
+  captureId
 }: {
   value: string;
   onChangeText?: (text: string) => void;
@@ -19,12 +20,14 @@ export function VoiceFieldActions({
   size?: number;
   /** When true, spoken text replaces the field instead of appending */
   replaceOnSpeak?: boolean;
+  captureId?: string;
 }) {
   return (
     <View style={styles.row}>
       {editable && onChangeText ? (
         <SpeakButton
           size={size}
+          captureId={captureId}
           onTranscript={(spoken) =>
             onChangeText(replaceOnSpeak ? spoken.trim() : appendSpokenText(value, spoken))
           }

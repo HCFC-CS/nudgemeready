@@ -6,15 +6,52 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "v4"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "APP_VARIANT": "v4"
+      }
     },
     "production": {
       "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "APP_VARIANT": "v2"
+      },
       "ios": {
         "distribution": "store"
+      }
+    },
+    "v3": {
+      "autoIncrement": true,
+      "distribution": "store",
+      "channel": "v3",
+      "env": {
+        "APP_VARIANT": "v3"
+      },
+      "ios": {
+        "distribution": "store"
+      }
+    },
+    "v4": {
+      "autoIncrement": true,
+      "distribution": "store",
+      "channel": "v4",
+      "cache": {
+        "key": "v4-updates-sdk54-devclient6"
+      },
+      "env": {
+        "APP_VARIANT": "v4"
+      },
+      "ios": {
+        "distribution": "store",
+        "image": "sdk-54"
       }
     }
   },
@@ -22,6 +59,16 @@
     "production": {
       "ios": {
         "ascAppId": "6777057778"
+      }
+    },
+    "v3": {
+      "ios": {
+        "ascAppId": "6805037796"
+      }
+    },
+    "v4": {
+      "ios": {
+        "ascAppId": "6820066881"
       }
     }
   }

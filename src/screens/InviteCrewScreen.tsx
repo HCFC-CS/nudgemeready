@@ -114,7 +114,7 @@ export function InviteCrewScreen() {
     };
 
     if (channel === "copy") {
-      await Share.share({ message: sentInviteLink });
+      await Share.share({ message: getSmsInviteCopy(fakeInvite) });
       setNotice("Invite link ready to share.");
       return;
     }
@@ -181,7 +181,7 @@ export function InviteCrewScreen() {
       {step === "profile" ? (
         <View style={styles.section}>
           <AppText variant="heading">Whose Crew is this for?</AppText>
-          <AppText variant="muted">Only you (the nudgee) or a Crew Captain can invite people into a crew.</AppText>
+          <AppText variant="muted">Only the main user or a Crew Captain can invite people into a crew.</AppText>
           <View style={styles.chips}>
             {supportableProfiles.map((entry) => (
               <CategoryChip
@@ -193,7 +193,7 @@ export function InviteCrewScreen() {
             ))}
           </View>
           {!supportableProfiles.length ? (
-            <AppText variant="muted">You can only invite for your own crew, or a crew where you are Captain.</AppText>
+            <AppText variant="muted">You can only invite for yourself, or a crew where you are Captain.</AppText>
           ) : null}
           <PrimaryButton onPress={() => setStep("roles")} disabled={!supportableProfiles.length}>
             Continue
@@ -246,7 +246,7 @@ export function InviteCrewScreen() {
           <SoftCard>
             <AppText variant="heading">Invite ready</AppText>
             {notice ? <AppText>{notice}</AppText> : null}
-            <AppText variant="muted">{sentInviteLink}</AppText>
+            <AppText variant="muted">Share the short link. They can open it to join.</AppText>
           </SoftCard>
           <View style={styles.shareRow}>
             <SecondaryButton onPress={() => shareInvite("copy")}>Copy link</SecondaryButton>

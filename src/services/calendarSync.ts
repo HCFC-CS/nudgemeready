@@ -4,6 +4,7 @@ import * as Sharing from "expo-sharing";
 import { Platform } from "react-native";
 
 import { loadAppPreferences, saveAppPreferences } from "./appPreferencesStorage";
+import { isNoisyCalendarName, shouldImportPhoneCalendarEvent } from "./calendarNoiseFilter";
 import { createItem, updateItem } from "./nudgeItems";
 import type { AppointmentGuest, NudgeItem } from "../types/nudge";
 
@@ -148,10 +149,20 @@ function toIsoDate(value: Date | string | undefined) {
 
 function eventToNudgeDraft(
   event: Calendar.Event,
-  actor?: NudgeItem["createdBy"]
+  actor?: NudgeItem["createdBy"],
+  calendarMeta?: { title?: string; sourceName?: string }
 ): NudgeItem | undefined {
   const title = (event.title ?? "").trim();
   if (!title || event.id.startsWith("ics:")) {
+    return undefined;
+  }
+  if (
+    !shouldImportPhoneCalendarEvent({
+      title,
+      calendarTitle: calendarMeta?.title,
+      calendarSourceName: calendarMeta?.sourceName
+    })
+  ) {
     return undefined;
   }
   const startDate = toIsoDate(event.startDate);
@@ -209,10 +220,27 @@ export async function fetchPhoneCalendarNudgeDrafts(options?: {
       return { ok: false, added: 0, updated: 0, scanned: 0, drafts: [], message: listed.message };
     }
 
+    const calendarById = new Map(listed.calendars.map((calendar) => [calendar.id, calendar]));
     const calendarIds =
       options?.calendarIds?.length
         ? options.calendarIds
-        : listed.calendars.map((calendar) => calendar.id);
+        : listed.calendars
+            .filter(
+              (calendar) =>
+                !isNoisyCalendarName(calendar.title) && !isNoisyCalendarName(calendar.sourceName)
+            )
+            .map((calendar) => calendar.id);
+
+    if (!calendarIds.length) {
+      return {
+        ok: true,
+        added: 0,
+        updated: 0,
+        scanned: 0,
+        drafts: [],
+        message: "No personal calendars found to import."
+      };
+    }
 
     const start = new Date();
     start.setHours(0, 0, 0, 0);
@@ -223,7 +251,13 @@ export async function fetchPhoneCalendarNudgeDrafts(options?: {
 
     const events = await Calendar.getEventsAsync(calendarIds, start, end);
     const drafts = events
-      .map((event) => eventToNudgeDraft(event, options?.actor))
+      .map((event) => {
+        const calendar = calendarById.get(event.calendarId);
+        return eventToNudgeDraft(event, options?.actor, {
+          title: calendar?.title,
+          sourceName: calendar?.sourceName
+        });
+      })
       .filter((item): item is NudgeItem => Boolean(item));
 
     return {

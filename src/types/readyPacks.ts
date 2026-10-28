@@ -44,6 +44,11 @@ export type ReadyPackTemplate = {
   /** Days from install date for due/reminder (optional). */
   dueInDays?: number;
   reminderInDays?: number;
+  /**
+   * When the user picks a planner event (exam, deadline, etc.), set the list
+   * due this many days before that event. 0 = same day, 1 = night before.
+   */
+  dueDaysBeforePlannerEvent?: number;
   listItems?: ReadyPackListRow[];
   priority?: "not_urgent" | "soon" | "important" | "needs_attention";
 };
@@ -86,6 +91,32 @@ export type CharacterPackPayload = {
   voiceKey: string;
 };
 
+/** Shop-search partners used by pack find-it categories. URLs still go through `withAffiliate`. */
+export type ReadyPackShopPartnerId =
+  | "amazon"
+  | "argos"
+  | "john_lewis"
+  | "etsy"
+  | "ebay"
+  | "notonthehighstreet"
+  | "moonpig";
+
+export type ReadyPackAffiliateCategory = {
+  id: string;
+  title: string;
+  query: string;
+  partners: ReadyPackShopPartnerId[];
+};
+
+/** Pack-owned find-it configuration. Ranking happens in the shared affiliate engine. */
+export type ReadyPackAffiliateConfig = {
+  sectionTitle: string;
+  hint: string;
+  templateIds: string[];
+  keywords: string[];
+  categories: ReadyPackAffiliateCategory[];
+};
+
 export type ReadyPackContent = {
   templates: ReadyPackTemplate[];
   aiCoachPrompts?: string[];
@@ -94,6 +125,7 @@ export type ReadyPackContent = {
   theme?: ThemePackPayload;
   voice?: VoicePackPayload;
   character?: CharacterPackPayload;
+  affiliate?: ReadyPackAffiliateConfig;
 };
 
 export type ReadyPack = ReadyPackMeta & {

@@ -50,7 +50,11 @@ export function createItem(input: NudgeItemInput, now = new Date()): NudgeItem {
     giftReminderAt: input.giftReminderAt,
     sourcePackId: input.sourcePackId,
     sourceTemplateId: input.sourceTemplateId,
-    userEdited: input.userEdited
+    anchorPlannerItemId: input.anchorPlannerItemId,
+    dueDaysBeforePlannerEvent: input.dueDaysBeforePlannerEvent,
+    userEdited: input.userEdited,
+    nudgeIntent: input.nudgeIntent,
+    adaptationOfferedAt: input.adaptationOfferedAt
   };
 }
 
@@ -66,6 +70,33 @@ export function updateItem(items: NudgeItem[], itemId: string, updates: Partial<
         }
       : item
   );
+}
+
+/** Keep parent.children in sync when a linked nudge is saved. */
+export function linkChildToParent(items: NudgeItem[], child: NudgeItem, now = new Date()): NudgeItem[] {
+  const parentId = child.parentId;
+  if (!parentId) {
+    return items;
+  }
+  return items.map((item) => {
+    if (item.id !== parentId) {
+      return item;
+    }
+    if (item.children.includes(child.id)) {
+      return item;
+    }
+    return {
+      ...item,
+      children: [...item.children, child.id],
+      updatedAt: now.toISOString()
+    };
+  });
+}
+
+export function upsertNudgeItem(items: NudgeItem[], item: NudgeItem, now = new Date()): NudgeItem[] {
+  const exists = items.some((candidate) => candidate.id === item.id);
+  const next = exists ? updateItem(items, item.id, item, now) : [{ ...item, updatedAt: now.toISOString() }, ...items];
+  return linkChildToParent(next, item, now);
 }
 
 export function deleteItem(items: NudgeItem[], itemId: string) {
@@ -111,7 +142,12 @@ export function calculateProjectProgress(items: NudgeItem[], projectId: string) 
 }
 
 export function getItemsForToday(items: NudgeItem[], today = new Date()): NudgeItemWithParent[] {
-  return withParentProjectNames(items, items.filter((item) => isRelevantToday(item, today)));
+  return withParentProjectNames(
+    items,
+    items
+      .filter((item) => isRelevantToday(item, today) && !isReady4PackItem(item))
+      .sort(compareNudgesByDate)
+  );
 }
 
 export function getUpcomingItems(items: NudgeItem[], today = new Date()): NudgeItemWithParent[] {
@@ -120,15 +156,62 @@ export function getUpcomingItems(items: NudgeItem[], today = new Date()): NudgeI
     items,
     items
       .filter((item) => {
+        if (isReady4PackItem(item)) {
+          return false;
+        }
         const itemDate = getPrimaryDate(item);
         return item.status !== "done" && Boolean(itemDate && itemDate.getTime() > todayStart);
       })
-      .sort((first, second) => (getPrimaryDate(first)?.getTime() ?? 0) - (getPrimaryDate(second)?.getTime() ?? 0))
+      .sort(compareNudgesByDate)
   );
 }
 
 export function getItemsByType(items: NudgeItem[], type: NudgeItemType): NudgeItemWithParent[] {
-  return withParentProjectNames(items, items.filter((item) => item.type === type));
+  return withParentProjectNames(
+    items,
+    items.filter((item) => item.type === type && !isReady4PackItem(item)).sort(compareNudgesByDate)
+  );
+}
+
+/** True when the item was installed from an Edition 1 Ready4 content pack. */
+export function isReady4PackItem(item: Pick<NudgeItem, "sourcePackId">): boolean {
+  return Boolean(item.sourcePackId?.startsWith("ready4-"));
+}
+
+/**
+ * Sort by primary date/time ascending (start / due / reminder / end).
+ * Undated items follow dated ones (newest created first among undated).
+ * Title is never used as the primary order — only a final stable tie-break.
+ */
+export function compareNudgesByDate(first: NudgeItem, second: NudgeItem): number {
+  const firstScheduled = getPrimaryDate(first);
+  const secondScheduled = getPrimaryDate(second);
+  if (firstScheduled && secondScheduled) {
+    const byDate = firstScheduled.getTime() - secondScheduled.getTime();
+    if (byDate !== 0) {
+      return byDate;
+    }
+  } else if (firstScheduled && !secondScheduled) {
+    return -1;
+  } else if (!firstScheduled && secondScheduled) {
+    return 1;
+  } else {
+    const byCreated =
+      new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
+    if (byCreated !== 0) {
+      return byCreated;
+    }
+  }
+  return first.id.localeCompare(second.id);
+}
+
+export function getPrimaryDate(item: NudgeItem) {
+  const value = item.startDate ?? item.dueDate ?? item.reminderDate ?? item.endDate;
+  if (!value) {
+    return undefined;
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 function withParentProjectNames(allItems: NudgeItem[], items: NudgeItem[]): NudgeItemWithParent[] {
@@ -152,15 +235,6 @@ function isRelevantToday(item: NudgeItem, today: Date) {
     .map((value) => (value ? new Date(value) : undefined))
     .filter((value): value is Date => value instanceof Date && !Number.isNaN(value.getTime()));
   return dates.some((date) => isSameDay(date, today));
-}
-
-function getPrimaryDate(item: NudgeItem) {
-  const value = item.startDate ?? item.dueDate ?? item.reminderDate ?? item.endDate;
-  if (!value) {
-    return undefined;
-  }
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 function isSameDay(first: Date, second: Date) {

@@ -1,11 +1,13 @@
 import * as Notifications from "expo-notifications";
 
+import type { NudgeItem } from "../types/nudge";
 import { loadAppPreferences } from "./appPreferencesStorage";
-import { adjustDateForQuietHours, shouldAllowNotifications } from "./notificationPrefs";
+import { buildDailySummaryBody } from "./dailySummaryCopy";
+import { loadNudgeItems } from "./nudgeItemsStorage";
 
 const DAILY_SUMMARY_ID = "nudge-daily-summary";
 
-export async function syncDailySummaryNotification() {
+export async function syncDailySummaryNotification(items?: NudgeItem[]) {
   try {
     await Notifications.cancelScheduledNotificationAsync(DAILY_SUMMARY_ID);
   } catch {
@@ -22,19 +24,25 @@ export async function syncDailySummaryNotification() {
     return;
   }
 
+  const list = items ?? (await loadNudgeItems()).items;
+  const body = buildDailySummaryBody(list);
+  if (!body) {
+    return;
+  }
+
   await Notifications.scheduleNotificationAsync({
     identifier: DAILY_SUMMARY_ID,
     content: {
       title: "Your day ahead",
-      body: "Open Nudge me Ready for a calm look at what’s waiting.",
+      body,
       data: { role: "daily-summary" }
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour: prefs.quietHours ? 8 : 8,
+      hour: 8,
       minute: 0
     }
   });
 }
 
-export { adjustDateForQuietHours, shouldAllowNotifications };
+export { buildDailySummaryBody, itemsDueToday } from "./dailySummaryCopy";

@@ -4,6 +4,8 @@ import * as TaskManager from "expo-task-manager";
 
 import {
   buildLeavingPlaceSpeechText,
+  getPlaceChecklist,
+  getPlaceThresholdMeters,
   getReminderPlaces,
   hasReminderPlaces,
   loadHomeSettings,
@@ -31,6 +33,7 @@ TaskManager.defineTask(LEAVING_HOME_GEOFENCE_TASK, async ({ data, error }) => {
     region?: { identifier?: string };
   } | undefined;
 
+  // Only on leave — never a scheduled daily “forget something” reminder.
   if (payload?.eventType !== Location.GeofencingEventType.Exit) {
     return;
   }
@@ -47,7 +50,7 @@ TaskManager.defineTask(LEAVING_HOME_GEOFENCE_TASK, async ({ data, error }) => {
     return;
   }
 
-  if (!shouldPlayLeavingHomeReminder()) {
+  if (!shouldPlayLeavingHomeReminder(kind)) {
     return;
   }
 
@@ -57,7 +60,8 @@ TaskManager.defineTask(LEAVING_HOME_GEOFENCE_TASK, async ({ data, error }) => {
     return;
   }
 
-  const speakText = buildLeavingPlaceSpeechText(kind, settings.checklistItems);
+  const checklist = getPlaceChecklist(place);
+  const speakText = buildLeavingPlaceSpeechText(kind, checklist);
   await Notifications.scheduleNotificationAsync({
     content: {
       title: `Leaving ${PLACE_LABELS[kind]}`,
@@ -79,7 +83,7 @@ export async function syncLeavingHomeGeofence(settings: HomeSettings) {
     identifier: place.kind,
     latitude: place.latitude!,
     longitude: place.longitude!,
-    radius: settings.thresholdMeters,
+    radius: getPlaceThresholdMeters(place),
     notifyOnEnter: true,
     notifyOnExit: true
   }));

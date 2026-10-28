@@ -64,35 +64,125 @@ export function getLocationLabel(location?: NudgeLocation) {
   return location?.label ?? location?.address ?? "";
 }
 
+function destinationText(location: NudgeLocation) {
+  return (location.address || location.label || "").trim();
+}
+
+function hasCoordinates(location: NudgeLocation) {
+  return location.latitude != null && location.longitude != null;
+}
+
+/** Place pin / search URL for Apple Maps or Google Maps. */
+export function buildMapsPlaceUrl(location: NudgeLocation, platform: typeof Platform.OS = Platform.OS) {
+  const label = encodeURIComponent(location.label || location.address || "Location");
+  const query = encodeURIComponent(destinationText(location));
+
+  if (hasCoordinates(location)) {
+    const { latitude, longitude } = location;
+    if (platform === "ios") {
+      return `maps:0,0?q=${label}@${latitude},${longitude}`;
+    }
+    if (platform === "android") {
+      return `geo:${latitude},${longitude}?q=${latitude},${longitude}(${query})`;
+    }
+    return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+  }
+
+  if (!query) {
+    return undefined;
+  }
+  return `https://www.google.com/maps/search/?api=1&query=${query}`;
+}
+
+/** Turn-by-turn directions to the venue (Apple Maps on iOS, Google Maps elsewhere). */
+export function buildDirectionsUrl(location: NudgeLocation, platform: typeof Platform.OS = Platform.OS) {
+  const text = destinationText(location);
+  if (hasCoordinates(location)) {
+    const { latitude, longitude } = location;
+    if (platform === "ios") {
+      return `http://maps.apple.com/?daddr=${latitude},${longitude}&dirflg=d`;
+    }
+    return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+  }
+  if (!text) {
+    return undefined;
+  }
+  if (platform === "ios") {
+    return `http://maps.apple.com/?daddr=${encodeURIComponent(text)}&dirflg=d`;
+  }
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(text)}`;
+}
+
+/** Waze navigate link (opens the app when installed). */
+export function buildWazeUrl(location: NudgeLocation) {
+  if (hasCoordinates(location)) {
+    return `https://waze.com/ul?ll=${location.latitude},${location.longitude}&navigate=yes`;
+  }
+  const text = destinationText(location);
+  if (!text) {
+    return undefined;
+  }
+  return `https://waze.com/ul?q=${encodeURIComponent(text)}&navigate=yes`;
+}
+
+async function openNavigationUrl(url: string | undefined, webFallback?: string) {
+  if (!url && !webFallback) {
+    return false;
+  }
+  const preferred = url ?? webFallback!;
+  try {
+    const canOpen = await Linking.canOpenURL(preferred);
+    if (canOpen) {
+      await Linking.openURL(preferred);
+      return true;
+    }
+  } catch {
+    // Fall through to web fallback.
+  }
+  if (webFallback && webFallback !== preferred) {
+    await Linking.openURL(webFallback);
+    return true;
+  }
+  if (url) {
+    await Linking.openURL(url);
+    return true;
+  }
+  return false;
+}
+
 export async function openInMaps(location?: NudgeLocation) {
   if (!location) {
     return false;
   }
-
+  const query = encodeURIComponent(destinationText(location));
   const label = encodeURIComponent(location.label || location.address || "Location");
-  const query = encodeURIComponent(location.address || location.label || "");
+  const url = buildMapsPlaceUrl(location);
+  const webFallback = hasCoordinates(location)
+    ? `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`
+    : query
+      ? `https://www.google.com/maps/search/?api=1&query=${query}`
+      : `https://www.google.com/maps/search/?api=1&query=${label}`;
+  return openNavigationUrl(url, webFallback);
+}
 
-  let url: string | undefined;
-  if (location.latitude != null && location.longitude != null) {
-    const { latitude, longitude } = location;
-    url = Platform.select({
-      ios: `maps:0,0?q=${label}@${latitude},${longitude}`,
-      android: `geo:${latitude},${longitude}?q=${latitude},${longitude}(${query})`,
-      default: `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
-    });
-  } else if (location.address || location.label) {
-    url = `https://www.google.com/maps/search/?api=1&query=${query}`;
-  }
-
-  if (!url) {
+export async function openDirections(location?: NudgeLocation) {
+  if (!location) {
     return false;
   }
+  const text = destinationText(location);
+  const url = buildDirectionsUrl(location);
+  const webFallback = hasCoordinates(location)
+    ? `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`
+    : text
+      ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(text)}`
+      : undefined;
+  return openNavigationUrl(url, webFallback);
+}
 
-  const canOpen = await Linking.canOpenURL(url);
-  if (!canOpen) {
-    await Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query || label}`);
-    return true;
+export async function openInWaze(location?: NudgeLocation) {
+  if (!location) {
+    return false;
   }
-  await Linking.openURL(url);
-  return true;
+  const url = buildWazeUrl(location);
+  return openNavigationUrl(url);
 }

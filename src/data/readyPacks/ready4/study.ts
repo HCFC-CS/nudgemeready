@@ -5,15 +5,16 @@ export const ready4StudyPack = ready4Pack({
   name: "Study",
   icon: "school-outline",
   category: "education",
+  version: "1.1.0",
   summary:
     "Assignments, revision, exams and calm study routines — without shame around deadlines.",
   features: [
+    "What would help today",
     "Assignment planner",
     "Revision planner",
     "Exam countdown",
-    "Lecture prep",
-    "Study routine",
-    "Weekly reset"
+    "Weekly budget glance",
+    "I'm overwhelmed"
   ],
   productId: "ready.pack.ready4_study",
   templates: [
@@ -21,11 +22,15 @@ export const ready4StudyPack = ready4Pack({
       id: "what-helps",
       title: "What would help today?",
       type: "list",
-      notes: "Pick one. Missing a deadline does not mean you failed — edit and restart.",
+      notes:
+        "Pick one, then open that tool. Missing a deadline does not mean you failed — edit and restart.",
       listItems: [
         { title: "Break one assignment into steps" },
         { title: "A short revision block" },
         { title: "Prep for class" },
+        { title: "Exam countdown" },
+        { title: "Student budget glance" },
+        { title: "I'm overwhelmed — one tiny step" },
         { title: "Admin / form catch-up" },
         { title: "Rest — also valid" }
       ]
@@ -67,6 +72,8 @@ export const ready4StudyPack = ready4Pack({
       title: "Exam day checklist",
       type: "list",
       dueInDays: 3,
+      /** Same day as the exam you pick in the Study planner. */
+      dueDaysBeforePlannerEvent: 0,
       priority: "important",
       listItems: [
         { title: "Confirm time and room" },
@@ -74,6 +81,21 @@ export const ready4StudyPack = ready4Pack({
         { title: "Plan travel" },
         { title: "Rest and water" },
         { title: "Phone on silent / left outside if required" }
+      ]
+    },
+    {
+      id: "exam-night-before",
+      title: "Night before exam",
+      type: "list",
+      dueInDays: 1,
+      /** Evening before the exam you pick in the Study planner. */
+      dueDaysBeforePlannerEvent: 1,
+      notes: "Gentle prep only — rest matters. Pick your exam in the planner to set this date.",
+      listItems: [
+        { title: "Bag ready by the door" },
+        { title: "Alarm set (with buffer)" },
+        { title: "Light review only if it helps" },
+        { title: "Wind down / sleep when you can" }
       ]
     },
     {
@@ -90,12 +112,43 @@ export const ready4StudyPack = ready4Pack({
       ]
     },
     {
+      id: "class-follow-up",
+      title: "After class — anything to remember?",
+      type: "note",
+      notes: "One line is enough. Capture a date, task, or question while it is fresh."
+    },
+    {
       id: "study-routine",
       title: "Study routine block",
       type: "reminder",
       notes: "A short focus window. A break afterwards is part of the plan.",
       speakingReminderText: "Study time when you are ready.",
       priority: "soon"
+    },
+    {
+      id: "weekly-budget",
+      title: "Student money glance",
+      type: "list",
+      repeatRule: { frequency: "weekly" },
+      notes: "A glance, not a lecture. Amounts optional — organisational only.",
+      listItems: [
+        { title: "Money in this week noted" },
+        { title: "Must-pays noted" },
+        { title: "Flexible spend comfort" },
+        { title: "One money admin task (optional)" }
+      ]
+    },
+    {
+      id: "overwhelm",
+      title: "I'm overwhelmed — one tiny step",
+      type: "list",
+      notes: "Shrink the day to one startable action. Everything else can wait.",
+      listItems: [
+        { title: "Name the one thing that matters most today" },
+        { title: "Do the first 5–10 minutes only" },
+        { title: "Take a short break" },
+        { title: "Stop or continue — both are fine" }
+      ]
     },
     {
       id: "weekly-reset",
