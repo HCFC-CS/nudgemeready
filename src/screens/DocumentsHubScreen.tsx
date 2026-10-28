@@ -7,6 +7,7 @@ import { NudgeListRow, nudgeRowMeta } from "../components/NudgeListRow";
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useNudgeItems } from "../hooks/useNudgeItems";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { pickDocumentFile, titleFromAttachmentName } from "../services/documentAttachments";
 import { compareNudgesByDate, createItem } from "../services/nudgeItems";
 import { spacing } from "../theme/theme";
@@ -90,7 +91,12 @@ export function DocumentsHubScreen() {
               ]}
               isDone={item.status === "done"}
               onPress={() => navigation.navigate("ItemDetails", { draft: item })}
-              onToggleDone={() => setItemStatus(item.id, item.status === "done" ? "open" : "done")}
+              onToggleDone={() => {
+                if (item.status !== "done") {
+                  playConfirmHaptic();
+                }
+                setItemStatus(item.id, item.status === "done" ? "open" : "done");
+              }}
             />
           ))}
         </View>

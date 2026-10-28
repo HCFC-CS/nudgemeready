@@ -7,6 +7,7 @@ import { PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../compone
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useBudget } from "../hooks/useBudget";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { createItem } from "../services/nudgeItems";
 import { useNudgeActor } from "../hooks/useNudgeActor";
 import {
@@ -66,6 +67,7 @@ export function BudgetItemScreen() {
   }
 
   function handleSave() {
+    playConfirmHaptic();
     updateItem(item!.id, {
       name: name.trim() || item!.name,
       expectedAmountMinor: parseMoneyToMinor(expected),

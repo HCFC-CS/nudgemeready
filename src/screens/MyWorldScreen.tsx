@@ -7,6 +7,7 @@ import { FilterScroll, SearchBar, StatPill } from "../components/ModernUI";
 import { PageHeader } from "../components/NudgeComponents";
 import { Screen } from "../components/Screen";
 import { useNudgeItems } from "../hooks/useNudgeItems";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { compareNudgesByDate, isReady4PackItem } from "../services/nudgeItems";
 import { READY_4_PACKS_LABEL } from "../content/ready4Copy";
 import { spacing } from "../theme/theme";
@@ -96,9 +97,13 @@ export function MyWorldScreen() {
             meta={nudgeRowMeta(item)}
             isDone={item.status === "done"}
             onPress={() => navigation.navigate("ItemDetails", { draft: item })}
-            onToggleDone={() =>
-              setItemStatus(item.id, item.status === "done" ? "open" : item.status === "paused" ? "open" : "done")
-            }
+            onToggleDone={() => {
+              const nextStatus = item.status === "done" ? "open" : item.status === "paused" ? "open" : "done";
+              if (nextStatus === "done") {
+                playConfirmHaptic();
+              }
+              setItemStatus(item.id, nextStatus);
+            }}
           />
         ))}
       </View>

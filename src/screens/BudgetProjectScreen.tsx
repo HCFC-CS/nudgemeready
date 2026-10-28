@@ -7,6 +7,7 @@ import { PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../compone
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useBudget } from "../hooks/useBudget";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import {
   categoriesForBudget,
   itemsForBudget,
@@ -45,6 +46,7 @@ export function BudgetProjectScreen() {
   }
 
   function saveEnvelope() {
+    playConfirmHaptic();
     const parsed = parseMoneyToMinor(envelope);
     updateBudget(budgetId, { envelopeMinor: parsed });
   }

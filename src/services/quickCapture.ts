@@ -80,8 +80,29 @@ export function isUnfinishedPromptTitle(title: string, promptTitle?: string): bo
   return trimmed === promptTitle.trim();
 }
 
+/** “Remind me” on its own names no thing to remember. */
+export function isBareRemindMe(text: string): boolean {
+  const trimmed = text
+    .trim()
+    .replace(/[.!?…,]+$/g, "")
+    .trim()
+    .toLowerCase();
+  return trimmed === "remind me" || trimmed === "remind me to";
+}
+
 export function canQuickSave(title: string, promptTitle?: string): boolean {
   return !isUnfinishedPromptTitle(title, promptTitle);
+}
+
+/** Where Add should go after this title. A bare “remind me” stays on the add page. */
+export function nextAfterQuickCapture(title: string, promptTitle?: string): "add" | "details" | "today" {
+  if (isBareRemindMe(title)) {
+    return "add";
+  }
+  if (!canQuickSave(title, promptTitle)) {
+    return "details";
+  }
+  return "today";
 }
 
 export function formatNudgeWhen(iso?: string): string {

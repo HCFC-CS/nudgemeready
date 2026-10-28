@@ -8,6 +8,7 @@ import { AppText } from "../components/Text";
 import { useNudgeActor } from "../hooks/useNudgeActor";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useRewardBank } from "../hooks/useRewardBank";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { createItem } from "../services/nudgeItems";
 import { formatRewardEarnNotice } from "../services/rewardBank";
 import { colors, radii, spacing } from "../theme/theme";
@@ -43,6 +44,7 @@ export function DidSomethingScreen({ navigation }: { navigation: any }) {
       setNotice("What did you get done?");
       return;
     }
+    playConfirmHaptic();
     const entry = createItem({
       type: "note",
       title: trimmed,

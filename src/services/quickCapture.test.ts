@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { CORE_NUDGE_ACTIONS } from "./coreNudgeActions";
-import { applyDefaultWhen, canQuickSave, defaultWhenIso, ensureFutureWhen } from "./quickCapture";
+import { applyDefaultWhen, canQuickSave, defaultWhenIso, ensureFutureWhen, nextAfterQuickCapture } from "./quickCapture";
 
 describe("quickCapture", () => {
   it("saves when there is a title", () => {
@@ -13,6 +13,17 @@ describe("quickCapture", () => {
     expect(canQuickSave("Prepare for ", "Prepare for ")).toBe(false);
     expect(canQuickSave("Prepare for", "Prepare for ")).toBe(false);
     expect(canQuickSave("Prepare for the dentist", "Prepare for ")).toBe(true);
+    expect(nextAfterQuickCapture("Prepare for ", "Prepare for ")).toBe("details");
+    expect(nextAfterQuickCapture("Prepare for the dentist", "Prepare for ")).toBe("today");
+  });
+
+  it("returns a bare remind me to the add page", () => {
+    expect(nextAfterQuickCapture("remind me")).toBe("add");
+    expect(nextAfterQuickCapture("Remind me")).toBe("add");
+    expect(nextAfterQuickCapture("remind me.")).toBe("add");
+    expect(nextAfterQuickCapture("remind me to")).toBe("add");
+    expect(nextAfterQuickCapture("Remind me to take the bins out")).toBe("today");
+    expect(nextAfterQuickCapture("Take the bins out")).toBe("today");
   });
 
   it("treats other unfinished action prefixes the same way", () => {

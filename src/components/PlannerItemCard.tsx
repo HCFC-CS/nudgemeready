@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { SoftCard } from "./NudgeComponents";
 import { AppText } from "./Text";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import {
   accentColor,
   plannerStatusLabel,
@@ -97,7 +98,15 @@ export function PlannerItemCard({
           {onStart && (item.type === "revision" || item.type === "study" || item.type === "task") ? (
             <ActionChip label="Start" onPress={onStart} />
           ) : null}
-          {onDone ? <ActionChip label="Sorted" onPress={onDone} /> : null}
+          {onDone ? (
+            <ActionChip
+              label="Sorted"
+              onPress={() => {
+                playConfirmHaptic();
+                onDone();
+              }}
+            />
+          ) : null}
           {onMove ? <ActionChip label="Move" onPress={onMove} /> : null}
           <ActionChip label={showMore ? "Less" : "More"} onPress={() => setShowMore((value) => !value)} />
         </View>

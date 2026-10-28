@@ -7,6 +7,7 @@ import { PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../compone
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { useBudget } from "../hooks/useBudget";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { frequencyLabel, formatMoneyMinor } from "../services/budgetMoney";
 import { parseBudgetQuickAdd } from "../services/budgetParse";
 import { colors, spacing } from "../theme/theme";
@@ -29,6 +30,7 @@ export function BudgetQuickAddScreen() {
     if (!raw.trim()) {
       return;
     }
+    playConfirmHaptic();
     addItemFromDraft(parseBudgetQuickAdd(raw), matchedCategory?.id ?? null);
     navigation.goBack();
   }

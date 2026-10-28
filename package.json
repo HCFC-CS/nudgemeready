@@ -15,12 +15,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:ios:v4": "eas build --platform ios --profile v4",
+    "build:ios:v4": "npx eas-cli build --platform ios --profile v4",
     "build:ios:v3": "eas build --platform ios --profile v3",
     "build:ios:v2": "eas build --platform ios --profile production",
-    "submit:ios:v4": "eas submit --platform ios --profile v4 --latest",
+    "submit:ios:v4": "node scripts/submit-ios-v4.cjs",
     "submit:ios:v3": "eas submit --platform ios --profile v3 --latest",
-    "update:ios:v4": "eas update --channel v4 --platform ios"
+    "update:ios:v4": "node scripts/update-ios-v4.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -40,6 +40,7 @@
     "expo-dev-client": "~6.0.21",
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.23",
+    "expo-haptics": "~15.0.8",
     "expo-image-picker": "~17.0.11",
     "expo-linking": "~8.0.12",
     "expo-local-authentication": "~17.0.8",

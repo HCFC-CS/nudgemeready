@@ -7,6 +7,7 @@ import { PageHeader, PrimaryButton, SecondaryButton, SoftCard } from "../compone
 import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { parsePlannerQuickAdd, useReady4Planner } from "../hooks/useReady4Planner";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { getPlannerConfig } from "../services/ready4PlannerConfigs";
 import { spacing } from "../theme/theme";
 
@@ -25,6 +26,7 @@ export function PlannerQuickAddScreen() {
     if (!raw.trim()) {
       return;
     }
+    playConfirmHaptic();
     const item = addFromDraft(parsePlannerQuickAdd(raw, preferredPackId));
     if (alsoNudge) {
       linkNudge(item.id, item);

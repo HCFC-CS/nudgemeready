@@ -8,6 +8,7 @@ import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { WeeklyReviewCard } from "../components/WeeklyReviewCard";
 import { useRewardBank } from "../hooks/useRewardBank";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { colors, spacing } from "../theme/theme";
 import type { RewardDefinition } from "../types/rewards";
 
@@ -30,6 +31,7 @@ export function RewardBankScreen() {
   }
 
   function saveEdit() {
+    playConfirmHaptic();
     replaceRewards(draftRewards);
     setEditing(false);
     setNotice("Rewards updated.");

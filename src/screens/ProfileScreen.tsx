@@ -10,6 +10,7 @@ import { Screen } from "../components/Screen";
 import { AppText } from "../components/Text";
 import { type ProfileDraft, useProfile } from "../hooks/useProfile";
 import { useCrew } from "../hooks/useCrew";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { spacing } from "../theme/theme";
 import { formatDateOfBirthDisplay, validateDateOfBirthForSignup } from "../utils/dateOfBirth";
 
@@ -60,6 +61,7 @@ export function ProfileScreen() {
     try {
       const dateOfBirth = validateDateOfBirthForSignup(dobInput);
       saveProfile({ ...draft, dateOfBirth });
+      playConfirmHaptic();
       renameSelfProfile(draft.name);
       setDraft((current) => ({ ...current, dateOfBirth }));
       setDobInput(formatDateOfBirthDisplay(dateOfBirth));

@@ -3,10 +3,11 @@ import {
   type PropsWithChildren,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
-  useRef,
-  useState
+  useRef
 } from "react";
+import { AppState } from "react-native";
 
 import { canStartSpeechTarget, isSpeechTargetActive } from "../services/speechCapture";
 import { useSpeechToText } from "./useSpeechToText";
@@ -17,71 +18,66 @@ type FinishResult = {
 };
 
 type SpeechCaptureContextValue = {
-  isListening: boolean;
+  phase: string;
+  targetId: string | null;
   transcript: string;
   error: string | null;
+  errorTargetId: string | null;
   isAvailable: boolean;
-  activeId: string | null;
   startFor: (id: string) => Promise<boolean>;
   finishFor: (id: string) => Promise<FinishResult>;
-  resetActive: () => void;
+  abort: (ownerTargetId?: string) => void;
 };
 
 const SpeechCaptureContext = createContext<SpeechCaptureContextValue | undefined>(undefined);
 
 export function SpeechCaptureProvider({ children }: PropsWithChildren) {
-  const { isListening, transcript, error, isAvailable, start, finish, reset } = useSpeechToText();
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const activeIdRef = useRef<string | null>(null);
+  const { session, isAvailable, begin, finish, abort } = useSpeechToText();
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (next) => {
+      if (next === "background") {
+        abort();
+      }
+    });
+    return () => subscription.remove();
+  }, [abort]);
 
   const startFor = useCallback(
     async (id: string) => {
-      if (!canStartSpeechTarget(activeIdRef.current, id)) {
+      if (!canStartSpeechTarget(sessionRef.current.targetId, id)) {
         return false;
       }
-      activeIdRef.current = id;
-      setActiveId(id);
-      const ok = await start();
-      if (!ok) {
-        activeIdRef.current = null;
-        setActiveId(null);
-      }
-      return ok;
+      return begin(id);
     },
-    [start]
+    [begin]
   );
 
   const finishFor = useCallback(
     async (id: string) => {
-      if (!isSpeechTargetActive(activeIdRef.current, id)) {
+      if (!isSpeechTargetActive(sessionRef.current.targetId, id)) {
         return { capturedText: "", voiceNoteUrl: "" };
       }
-      const result = await finish();
-      activeIdRef.current = null;
-      setActiveId(null);
-      return result;
+      return finish(id);
     },
     [finish]
   );
 
-  const resetActive = useCallback(() => {
-    reset();
-    activeIdRef.current = null;
-    setActiveId(null);
-  }, [reset]);
-
   const value = useMemo(
     () => ({
-      isListening,
-      transcript,
-      error,
+      phase: session.phase,
+      targetId: session.targetId,
+      transcript: session.transcript,
+      error: session.error,
+      errorTargetId: session.errorTargetId,
       isAvailable,
-      activeId,
       startFor,
       finishFor,
-      resetActive
+      abort
     }),
-    [isListening, transcript, error, isAvailable, activeId, startFor, finishFor, resetActive]
+    [session, isAvailable, startFor, finishFor, abort]
   );
 
   return <SpeechCaptureContext.Provider value={value}>{children}</SpeechCaptureContext.Provider>;
@@ -98,15 +94,17 @@ export function useSpeechCapture(targetId: string) {
     throw new Error("useSpeechCapture must be used within SpeechCaptureProvider");
   }
 
-  const mine = isSpeechTargetActive(context.activeId, targetId);
+  const mine = isSpeechTargetActive(context.targetId, targetId);
+  const active = context.phase !== "idle";
   return {
-    isListening: context.isListening && mine,
-    isBusyElsewhere: Boolean(context.activeId && !mine),
+    isListening: mine && (context.phase === "listening" || context.phase === "heard"),
+    isEngaged: mine && active,
+    isBusyElsewhere: active && !mine,
     transcript: mine ? context.transcript : "",
-    error: mine ? context.error : null,
+    error: context.errorTargetId === targetId ? context.error : null,
     isAvailable: context.isAvailable,
     start: () => context.startFor(targetId),
     finish: () => context.finishFor(targetId),
-    reset: context.resetActive
+    reset: () => context.abort(targetId)
   };
 }

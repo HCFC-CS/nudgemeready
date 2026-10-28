@@ -22,6 +22,7 @@ import { READY_4_LABEL, READY_4_PACKS_LABEL, READY_PACKS_SHOP_LABEL } from "../c
 import { useCrew } from "../hooks/useCrew";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useRewardBank } from "../hooks/useRewardBank";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { compareNudgesByDate, getPrimaryDate, isReady4PackItem } from "../services/nudgeItems";
 import {
   markAdaptationOffered,
@@ -225,6 +226,7 @@ export function TodayScreen() {
     const nextStatus = item.status === "done" ? "open" : "done";
     setItemStatus(item.id, nextStatus);
     if (nextStatus === "done") {
+      playConfirmHaptic();
       earn({
         difficulty: difficultyForItem(item),
         title: item.title,

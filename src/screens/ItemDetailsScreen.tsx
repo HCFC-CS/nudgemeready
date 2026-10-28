@@ -55,6 +55,7 @@ import { getUnsharedMembers, shareListWithMember, unshareListWithMember } from "
 import { defaultEventPrepSteps } from "../services/eventPrepTimeline";
 import { getLocationLabel } from "../services/placeSearch";
 import { formatDateInput, formatTimeInput, getReminderAt, getReminderParts } from "../services/reminderDates";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { createItem, getChildrenForParent } from "../services/nudgeItems";
 import {
   frequencyReductionNotice,
@@ -332,6 +333,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     if (!editable) {
       return;
     }
+    playConfirmHaptic();
     let saved = buildSavedItem(status);
 
     if (draft.type === "note" && noteFollowUp === "Turn into task") {
@@ -424,6 +426,7 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
     if (!editable) {
       return;
     }
+    playConfirmHaptic();
     if (draft.status !== "done") {
       earn({
         difficulty: difficultyFromEffort(draft.estimatedEffort),
@@ -608,9 +611,13 @@ function ItemDetailsScreenContent({ navigation, route }: Props) {
   }
 
   function toggleListItemDone(itemId: string) {
+    const markingDone = listItems.some((item) => item.id === itemId && item.status !== "done");
     const next = listItems.map((item) =>
       item.id === itemId ? { ...item, status: item.status === "done" ? ("open" as const) : ("done" as const) } : item
     );
+    if (editable && markingDone) {
+      playConfirmHaptic();
+    }
     persistListItems(next);
   }
 

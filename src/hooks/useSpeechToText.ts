@@ -1,19 +1,44 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 
-import { buildSpeechStartOptions, resultTranscript, speechErrorCopy } from "../services/speechCapture";
+import {
+  abortSpeechSession,
+  applySpeechResult,
+  buildSpeechStartOptions,
+  completeSpeechFinish,
+  confirmSpeechStart,
+  createSpeechSession,
+  failSpeechSession,
+  noteSpeechEngineEnd,
+  requestSpeechFinish,
+  requestSpeechStart,
+  resultTranscript,
+  speechErrorCopy,
+  type SpeechSession
+} from "../services/speechCapture";
 import {
   getSpeechRecognitionModule,
   isSpeechRecognitionSupported
 } from "../services/speechRecognition";
 
+const FINISH_SETTLE_MS = 350;
+
 export function useSpeechToText() {
-  const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [session, setSession] = useState<SpeechSession>(createSpeechSession);
   const [isAvailable, setIsAvailable] = useState(false);
-  const transcriptRef = useRef("");
+  const sessionRef = useRef(session);
   const recordingUriRef = useRef("");
+  const armedGenerationRef = useRef<number | null>(null);
+
+  const commit = useCallback((next: SpeechSession) => {
+    sessionRef.current = next;
+    setSession(next);
+    return next;
+  }, []);
+
+  const disarm = useCallback(() => {
+    armedGenerationRef.current = null;
+  }, []);
 
   useEffect(() => {
     try {
@@ -29,34 +54,66 @@ export function useSpeechToText() {
         return;
       }
 
+      const acceptEngineEvent = () => {
+        const current = sessionRef.current;
+        return (
+          armedGenerationRef.current !== null &&
+          armedGenerationRef.current === current.generation &&
+          current.phase !== "idle"
+        );
+      };
+
       const listeners = [
         module.addListener("start", () => {
-          setIsListening(true);
-          setError(null);
-        }),
-        module.addListener("end", () => {
-          setIsListening(false);
-        }),
-        module.addListener("result", (event) => {
-          const text = resultTranscript(event);
-          if (!text) {
+          if (!acceptEngineEvent()) {
             return;
           }
-          transcriptRef.current = text;
-          setTranscript(text);
+          commit(confirmSpeechStart(sessionRef.current, sessionRef.current.generation));
+        }),
+        module.addListener("end", () => {
+          if (!acceptEngineEvent()) {
+            return;
+          }
+          const next = noteSpeechEngineEnd(sessionRef.current, sessionRef.current.generation);
+          if (next.phase === "idle") {
+            disarm();
+          }
+          commit(next);
+        }),
+        module.addListener("result", (event) => {
+          if (!acceptEngineEvent()) {
+            return;
+          }
+          const text = resultTranscript(event);
+          commit(applySpeechResult(sessionRef.current, sessionRef.current.generation, text));
         }),
         module.addListener("audioend", (event) => {
-          if (event.uri) {
-            recordingUriRef.current = event.uri;
+          if (!event.uri || !acceptEngineEvent()) {
+            return;
           }
+          recordingUriRef.current = event.uri;
         }),
         module.addListener("nomatch", () => {
-          setError(speechErrorCopy("nomatch"));
-          setIsListening(false);
+          if (!acceptEngineEvent()) {
+            return;
+          }
+          const current = sessionRef.current;
+          if (current.phase === "finishing" || current.phase === "heard") {
+            return;
+          }
+          disarm();
+          commit(failSpeechSession(current, current.generation, speechErrorCopy("nomatch")));
         }),
         module.addListener("error", (event) => {
-          setError(speechErrorCopy(event.error, event.message));
-          setIsListening(false);
+          if (!acceptEngineEvent()) {
+            return;
+          }
+          const current = sessionRef.current;
+          if (current.phase === "finishing" || current.phase === "heard") {
+            return;
+          }
+          disarm();
+          commit(failSpeechSession(current, current.generation, speechErrorCopy(event.error, event.message)));
         })
       ];
 
@@ -66,109 +123,178 @@ export function useSpeechToText() {
     } catch {
       setIsAvailable(false);
     }
-  }, []);
-
-  const reset = useCallback(() => {
-    transcriptRef.current = "";
-    recordingUriRef.current = "";
-    setTranscript("");
-    setError(null);
-    setIsListening(false);
-  }, []);
+  }, [commit, disarm]);
 
   const stop = useCallback(() => {
     const module = getSpeechRecognitionModule();
     if (!module) {
-      setIsListening(false);
       return;
     }
-
     try {
       module.stop();
     } catch {
-      setIsListening(false);
+      // The session state already says whether capture is still open.
     }
   }, []);
 
-  const start = useCallback(async () => {
-    reset();
+  const begin = useCallback(
+    async (targetId: string) => {
+      const requested = requestSpeechStart(sessionRef.current, targetId);
+      if (!requested.accepted) {
+        return false;
+      }
+      const generation = requested.session.generation;
+      commit(requested.session);
+      recordingUriRef.current = "";
+      disarm();
 
-    const module = getSpeechRecognitionModule();
-    if (!module || !isSpeechRecognitionSupported()) {
-      setError("Speech recognition needs a development build of this app.");
-      return false;
-    }
+      const module = getSpeechRecognitionModule();
+      if (!module || !isSpeechRecognitionSupported()) {
+        if (sessionRef.current.generation === generation) {
+          commit(
+            failSpeechSession(
+              sessionRef.current,
+              generation,
+              "Speech recognition needs a development build of this app."
+            )
+          );
+        }
+        return false;
+      }
 
-    const permission = await module.requestPermissionsAsync();
-    if (!permission.granted) {
-      setError("Microphone permission is needed for voice input.");
-      return false;
-    }
+      const permission = await module.requestPermissionsAsync();
+      if (sessionRef.current.generation !== generation) {
+        return false;
+      }
+      if (!permission.granted) {
+        commit(failSpeechSession(sessionRef.current, generation, speechErrorCopy("not-allowed")));
+        return false;
+      }
 
-    if (Platform.OS === "ios" && typeof module.requestSpeechRecognizerPermissionsAsync === "function") {
+      if (Platform.OS === "ios" && typeof module.requestSpeechRecognizerPermissionsAsync === "function") {
+        try {
+          const speechPermission = await module.requestSpeechRecognizerPermissionsAsync();
+          if (sessionRef.current.generation !== generation) {
+            return false;
+          }
+          if (speechPermission.restricted) {
+            commit(
+              failSpeechSession(
+                sessionRef.current,
+                generation,
+                speechErrorCopy("service-not-allowed")
+              )
+            );
+            return false;
+          }
+        } catch {
+          // On-device capture can still work with microphone permission only.
+        }
+      }
+
+      if (sessionRef.current.generation !== generation) {
+        return false;
+      }
+
+      const persistRecording =
+        typeof module.supportsRecording === "function" && module.supportsRecording();
+
+      if (Platform.OS === "ios") {
+        try {
+          if (typeof module.setCategoryIOS === "function") {
+            module.setCategoryIOS({
+              category: "playAndRecord",
+              categoryOptions: ["defaultToSpeaker", "allowBluetooth"],
+              mode: "measurement"
+            });
+          }
+          if (typeof module.setAudioSessionActiveIOS === "function") {
+            module.setAudioSessionActiveIOS(true, { notifyOthersOnDeactivation: true });
+          }
+        } catch {
+          // start() still sets playAndRecord via iosCategory.
+        }
+      }
+
+      if (sessionRef.current.generation !== generation) {
+        return false;
+      }
+
       try {
-        const speechPermission = await module.requestSpeechRecognizerPermissionsAsync();
-        if (speechPermission.restricted) {
-          setError("Voice isn't available on this phone right now. You can type it instead.");
+        armedGenerationRef.current = generation;
+        module.start(buildSpeechStartOptions({ persistRecording, onDevice: false }));
+        if (sessionRef.current.generation !== generation) {
+          if (armedGenerationRef.current === generation) {
+            disarm();
+            stop();
+          }
           return false;
         }
-      } catch {
-        // On-device capture can still work with microphone permission only.
-      }
-    }
-
-    const persistRecording =
-      typeof module.supportsRecording === "function" && module.supportsRecording();
-
-    if (Platform.OS === "ios") {
-      try {
-        if (typeof module.setCategoryIOS === "function") {
-          module.setCategoryIOS({
-            category: "playAndRecord",
-            categoryOptions: ["defaultToSpeaker", "allowBluetooth"],
-            mode: "measurement"
-          });
+        if (sessionRef.current.phase === "heard") {
+          return true;
         }
-        if (typeof module.setAudioSessionActiveIOS === "function") {
-          module.setAudioSessionActiveIOS(true, { notifyOthersOnDeactivation: true });
+        if (sessionRef.current.phase !== "starting") {
+          return sessionRef.current.phase === "listening";
         }
+        commit(confirmSpeechStart(sessionRef.current, generation));
+        return true;
       } catch {
-        // start() still sets playAndRecord via iosCategory.
+        disarm();
+        if (sessionRef.current.generation === generation) {
+          commit(failSpeechSession(sessionRef.current, generation, speechErrorCopy("audio-capture")));
+        }
+        return false;
       }
-    }
+    },
+    [commit, disarm, stop]
+  );
 
-    try {
-      module.start(buildSpeechStartOptions({ persistRecording, onDevice: false }));
-      setIsListening(true);
-      return true;
-    } catch {
-      setError("The microphone didn't start. Try once more.");
-      return false;
-    }
-  }, [reset]);
+  const finish = useCallback(
+    async (targetId: string) => {
+      const requested = requestSpeechFinish(sessionRef.current, targetId);
+      if (!requested.accepted) {
+        return { capturedText: "", voiceNoteUrl: "" };
+      }
+      const generation = requested.generation;
+      commit(requested.session);
+      stop();
+      await new Promise((resolve) => setTimeout(resolve, FINISH_SETTLE_MS));
+      const completed = completeSpeechFinish(sessionRef.current, generation);
+      if (!completed.applied) {
+        return { capturedText: "", voiceNoteUrl: "" };
+      }
+      disarm();
+      commit(completed.session);
+      if (!completed.capturedText) {
+        recordingUriRef.current = "";
+        return { capturedText: "", voiceNoteUrl: "" };
+      }
+      const voiceNoteUrl = recordingUriRef.current || `voice://${Date.now()}`;
+      recordingUriRef.current = "";
+      return { capturedText: completed.capturedText, voiceNoteUrl };
+    },
+    [commit, disarm, stop]
+  );
 
-  const finish = useCallback(async () => {
-    stop();
-    await new Promise((resolve) => setTimeout(resolve, 350));
-    const capturedText = transcriptRef.current.trim();
-    const voiceNoteUrl = recordingUriRef.current || `voice://${Date.now()}`;
-    if (!capturedText) {
-      setIsListening(false);
-      setError(speechErrorCopy("no-speech"));
-      return { capturedText: "", voiceNoteUrl };
-    }
-    reset();
-    return { capturedText, voiceNoteUrl };
-  }, [reset, stop]);
+  const abort = useCallback(
+    (ownerTargetId?: string) => {
+      const next = abortSpeechSession(sessionRef.current, ownerTargetId);
+      if (next === sessionRef.current) {
+        return;
+      }
+      disarm();
+      commit(next);
+      recordingUriRef.current = "";
+      stop();
+    },
+    [commit, disarm, stop]
+  );
 
   return {
-    isListening,
-    transcript,
-    error,
+    session,
     isAvailable,
-    start,
-    stop,
+    begin,
     finish,
-    reset
+    abort
   };
 }

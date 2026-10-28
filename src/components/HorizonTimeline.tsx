@@ -8,6 +8,7 @@ import { AppText } from "./Text";
 import { useNudgeHorizon } from "../hooks/useNudgeHorizon";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useReady4Planner } from "../hooks/useReady4Planner";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { stillNeedCopy } from "../services/nudgeHorizonEngine";
 import { colors, spacing } from "../theme/theme";
 import type { HorizonEntry, NudgeHorizonId, SimplifyMode } from "../types/nudgeHorizon";
@@ -249,7 +250,13 @@ function TodayBody({
               <HorizonEntryCard entry={entry} onPress={() => onOpen(entry)} compact />
               {entry.sourceKind === "planner" ? (
                 <View style={styles.inlineActions}>
-                  <SecondaryButton size="compact" onPress={() => onDonePlanner(entry.sourceId)}>
+                  <SecondaryButton
+                    size="compact"
+                    onPress={() => {
+                      playConfirmHaptic();
+                      onDonePlanner(entry.sourceId);
+                    }}
+                  >
                     Sorted
                   </SecondaryButton>
                   <SecondaryButton size="compact" onPress={() => onMovePlanner(entry.sourceId)}>

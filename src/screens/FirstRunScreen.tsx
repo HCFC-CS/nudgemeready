@@ -11,6 +11,7 @@ import { useProfile } from "../hooks/useProfile";
 import { useSpeechCaptureStatus } from "../hooks/useSpeechCapture";
 import { loadAppPreferences, saveAppPreferences } from "../services/appPreferencesStorage";
 import { buildCapturePreview, resolveCaptureSave } from "../services/capturePreview";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { createItem } from "../services/nudgeItems";
 import { enableGentleNudges, markGentleNudgeAskOffered } from "../services/notificationAsk";
 import { colors, radii, spacing } from "../theme/theme";
@@ -98,6 +99,7 @@ export function FirstRunScreen() {
       notes: resolved.suggestedFields.notes || text,
       voiceNoteUrl
     });
+    playConfirmHaptic();
     saveItem(saved);
     finishToHome();
   }

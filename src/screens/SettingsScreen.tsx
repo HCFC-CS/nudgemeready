@@ -17,6 +17,7 @@ import { persistPayLaterEnabled } from "../hooks/usePayLaterMonitor";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useProfile } from "../hooks/useProfile";
 import { useReadyPacks } from "../hooks/useReadyPacks";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { READY_PACK_STORE_BILLING_ENABLED } from "../services/readyPackEntitlements";
 import { useVoiceCaptureSettings } from "../hooks/useVoiceCaptureSettings";
 import { formatAlexaLinkCodeForSpeech } from "../services/alexaBridge";
@@ -252,6 +253,7 @@ export function SettingsScreen() {
     setSavedPayLaterEnabled(payLaterEnabled);
     await syncDailySummaryNotification(items);
     setSavedPrefsSnapshot(clonePrefs(prefsDraft));
+    playConfirmHaptic();
     setNotice("All settings saved.");
   }
 

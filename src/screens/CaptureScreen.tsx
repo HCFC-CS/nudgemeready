@@ -16,11 +16,12 @@ import {
   type UnifiedNudgeAction
 } from "../services/nudgeIntentCatalog";
 import { buildCapturePreview, resolveCaptureSave } from "../services/capturePreview";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { createItem } from "../services/nudgeItems";
 import {
   applyDefaultWhen,
-  canQuickSave,
-  formatNudgeWhen
+  formatNudgeWhen,
+  nextAfterQuickCapture
 } from "../services/quickCapture";
 import {
   enableGentleNudges,
@@ -116,10 +117,19 @@ export function CaptureScreen() {
   }
 
   function finishDraft(draft: NudgeItem, promptTitle?: string) {
-    if (!canQuickSave(draft.title, promptTitle)) {
+    const next = nextAfterQuickCapture(draft.title, promptTitle);
+    if (next === "add") {
+      playConfirmHaptic();
+      saveItem(draft);
+      goHome();
+      void offerAfterSave(draft);
+      return;
+    }
+    if (next === "details") {
       navigation.navigate("ItemDetails", { draft });
       return;
     }
+    playConfirmHaptic();
     saveItem(draft);
     goToNudges();
     void offerAfterSave(draft);
@@ -196,6 +206,10 @@ export function CaptureScreen() {
   function openConfirm(rawText: string, capturedVoiceUrl?: string) {
     const text = rawText.trim();
     if (!text) {
+      return;
+    }
+    if (nextAfterQuickCapture(text) === "add") {
+      goHome();
       return;
     }
     const preview = buildCapturePreview(text, installedPackIds);

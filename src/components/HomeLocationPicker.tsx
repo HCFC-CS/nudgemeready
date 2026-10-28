@@ -16,6 +16,7 @@ import {
   type HomeAddressOption,
   type PostcodeArea
 } from "../services/homeAddressLookup";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { getCurrentCoordinates } from "../services/locationReminders";
 import {
   buildLeavingPlaceSpeechText,
@@ -307,6 +308,7 @@ export function HomeLocationPicker() {
       setMessage("Already saved.");
       return;
     }
+    playConfirmHaptic();
     if (draft.latitude == null || draft.longitude == null) {
       clearPlace(activeKind);
       setPlaceReminder(activeKind, draft.reminderEnabled);

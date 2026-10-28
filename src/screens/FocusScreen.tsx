@@ -12,6 +12,7 @@ import { AppText } from "../components/Text";
 import { useNudgeItems } from "../hooks/useNudgeItems";
 import { useRewardBank } from "../hooks/useRewardBank";
 import { loadAppPreferences } from "../services/appPreferencesStorage";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { compareNudgesByDate, isReady4PackItem } from "../services/nudgeItems";
 import { moveNudgeToTomorrow } from "../services/nudgeAdaptation";
 import { formatRewardEarnNotice } from "../services/rewardBank";
@@ -223,7 +224,7 @@ export function FocusScreen() {
             onPress={() => {
               setIsRunning(false);
               setIsComplete(true);
-              Vibration.vibrate(250);
+              playConfirmHaptic();
               if (selectedItem) {
                 completeNudgeItem(selectedItem.id);
                 const points = earn({

@@ -23,6 +23,7 @@ import { useAppSecurity } from "../hooks/useAppSecurity";
 import { useCrew } from "../hooks/useCrew";
 import { type AuthProvider, type ProfileIcon, useProfile } from "../hooks/useProfile";
 import { createEmailResetLink, credentialLabel, SUPPORT_EMAIL, type CredentialType } from "../services/appSecurity";
+import { playConfirmHaptic } from "../services/confirmHaptic";
 import { pollCrewUnlockApproval, requestCrewUnlock } from "../services/crewUnlock";
 import { isDevAdminAvailable } from "../services/devAdmin";
 import { peekPendingInvite } from "../services/pendingDeepLinks";
@@ -396,6 +397,7 @@ export function SplashScreen({ navigation, route }: Props) {
       await resetSecurityLockPrompt();
       setFreshRecoveryCode(recoveryCode);
       clearDrafts();
+      playConfirmHaptic();
       setStep("recoveryShown");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not set up sign-in.");
@@ -704,6 +706,7 @@ export function SplashScreen({ navigation, route }: Props) {
       const code = await completePasswordReset(credential, resetType);
       setFreshRecoveryCode(code);
       clearDrafts();
+      playConfirmHaptic();
       setStep("recoveryShown");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not reset sign-in.");

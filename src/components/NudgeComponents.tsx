@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState, type PropsWithChildren } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type PropsWithChildren } from "react";
 import { Pressable, StyleSheet, TextInput, Vibration, View, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -373,8 +373,25 @@ export function VoiceCaptureButton({
   const isEditable = edit?.editable ?? true;
   const voiceEnabled = voiceSettings?.enabled ?? true;
   const useSpeech = voiceEnabled && speech.isAvailable;
-  const isListening = useSpeech ? speech.isListening : fallbackListening;
+  const isListening = useSpeech ? speech.isListening || speech.isEngaged : fallbackListening;
   const liveText = useSpeech ? speech.transcript : fallbackInput;
+  const mountedRef = useRef(true);
+  const resetRef = useRef(speech.reset);
+  resetRef.current = speech.reset;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      resetRef.current();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!voiceEnabled || !isEditable) {
+      resetRef.current();
+    }
+  }, [voiceEnabled, isEditable]);
 
   async function startListening() {
     if (!isEditable || speech.isBusyElsewhere) {
@@ -394,6 +411,9 @@ export function VoiceCaptureButton({
   }
 
   function toggleSpeak() {
+    if (useSpeech && speech.isEngaged && !speech.isListening) {
+      return;
+    }
     if (isListening) {
       void captureText();
       return;
@@ -404,7 +424,7 @@ export function VoiceCaptureButton({
   async function captureText() {
     if (useSpeech) {
       const { capturedText, voiceNoteUrl } = await speech.finish();
-      if (!capturedText) {
+      if (!mountedRef.current || !capturedText) {
         return;
       }
       onCaptured?.(capturedText, voiceNoteUrl);
